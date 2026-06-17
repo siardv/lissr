@@ -1,0 +1,1143 @@
+# ========================================================================
+# LISS Panel Culture and Sports (CS) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: cs
+  module_label: Culture and Sports
+  recipe_version: "1.0.0"
+  created: '2026-02-10'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  - cs20m
+  - cs21n
+  - cs22o
+  - cs23p
+  - cs24q
+  notes: >-
+    All rule IDs are prefixed A1-A6 to match the six anomaly categories. Rules
+    are applied in the order: rename -> type_coercion -> recode -> boundary ->
+    derive -> drop.
+
+    realigned the A3 crosswalk to the thirteen-block organisation battery (old
+    stems 003-058 in steps of five, plus 523, mapped to 607-619) and corrected
+    the org_type assignments that were shifted by one block from 033 onward;
+    corrected the A4d_stem431_platform phase windows to the item lifetime
+    cs12e-cs19l (discontinued at cs20m); added five DK-shift recodes for the
+    social-network background families (origin 9, education 8, employment 4,
+    age 14, household position 6, all -> -9, restricted to cs08a-cs19l) and an
+    evening-socialization DK recode (8 -> -9 on stems 290-293 and 634-636);
+    extended A5_na_code_9 and V06 to the cs23p replacement stems 634-636;
+    replaced the V01 scope with the empirically derived 999-DK stem list (001,
+    002, 283); removed late-discontinued stems 163/168/170 from the V04 scope
+    and added stem 500 to the hobby flag and missingness scopes; expanded the
+    DR01 drop list (072, 471, 482, 532-534, 537) and reworded its reason;
+    populated source_spec.
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_numeric
+  missing_variable_policy: warn_and_skip
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+wave_index:
+- id: cs08a
+  year: 2008
+  file_pattern: cs08a
+  notes: ''
+  fieldwork_var: cs08a_m
+  period: early_instrument
+  role_map: &id001
+    instrument_period: instrument_period
+    any_dk: any_dk
+- id: cs09b
+  year: 2009
+  file_pattern: cs09b
+  notes: ''
+  fieldwork_var: cs09b_m
+  period: early_instrument
+  role_map: *id001
+- id: cs10c
+  year: 2010
+  file_pattern: cs10c
+  notes: ''
+  fieldwork_var: cs10c_m
+  period: early_instrument
+  role_map: *id001
+- id: cs11d
+  year: 2011
+  file_pattern: cs11d
+  notes: ''
+  fieldwork_var: cs11d_m
+  period: early_instrument
+  role_map: *id001
+- id: cs12e
+  year: 2012
+  file_pattern: cs12e
+  notes: ''
+  fieldwork_var: cs12e_m
+  period: early_instrument
+  role_map: *id001
+- id: cs13f
+  year: 2013
+  file_pattern: cs13f
+  notes: ''
+  fieldwork_var: cs13f_m
+  period: early_instrument
+  role_map: *id001
+- id: cs14g
+  year: 2014
+  file_pattern: cs14g
+  notes: ''
+  fieldwork_var: cs14g_m
+  period: early_instrument
+  role_map: *id001
+- id: cs15h
+  year: 2015
+  file_pattern: cs15h
+  notes: ''
+  fieldwork_var: cs15h_m
+  period: early_instrument
+  role_map: *id001
+- id: cs16i
+  year: 2016
+  file_pattern: cs16i
+  notes: ''
+  fieldwork_var: cs16i_m
+  period: early_instrument
+  role_map: *id001
+- id: cs17j
+  year: 2017
+  file_pattern: cs17j
+  notes: ''
+  fieldwork_var: cs17j_m
+  period: early_instrument
+  role_map: *id001
+- id: cs18k
+  year: 2018
+  file_pattern: cs18k
+  notes: ''
+  fieldwork_var: cs18k_m
+  period: early_instrument
+  role_map: *id001
+- id: cs19l
+  year: 2019
+  file_pattern: cs19l
+  notes: ''
+  fieldwork_var: cs19l_m
+  period: early_instrument
+  role_map: *id001
+- id: cs20m
+  year: 2020
+  file_pattern: cs20m
+  notes: ''
+  fieldwork_var: cs20m_m
+  period: redesigned_instrument
+  role_map: *id001
+- id: cs21n
+  year: 2021
+  file_pattern: cs21n
+  notes: ''
+  fieldwork_var: cs21n_m
+  period: redesigned_instrument
+  role_map: *id001
+- id: cs22o
+  year: 2022
+  file_pattern: cs22o
+  notes: ''
+  fieldwork_var: cs22o_m
+  period: redesigned_instrument
+  role_map: *id001
+- id: cs23p
+  year: 2023
+  file_pattern: cs23p
+  notes: ''
+  fieldwork_var: cs23p_m
+  period: post_reorganization
+  role_map: *id001
+- id: cs24q
+  year: 2024
+  file_pattern: cs24q
+  notes: ''
+  fieldwork_var: cs24q_m
+  period: post_reorganization
+  role_map: *id001
+variable_rules:
+- rule_id: TC01
+  anomaly_ref: null
+  description: coerce haven_labelled to numeric per global policy
+  action: use_global_policy
+  apply_to: all_labelled
+  if_absent: warn_and_skip
+  log: true
+harmonization_rules:
+- rule_id: A1_dk_recode
+  anomaly_ref: A-01
+  description: 'Recode 999 -> -9 for all variables with DK label in pre-cs20m waves. Post-cs20m waves already use -9.
+
+    '
+  action: value_recode
+  waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  apply_to: all_with_value_label
+  match_label_regex: (?i)don.?t\s*know
+  from_value: 999
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+  preserve_original_suffix: _dk_orig
+- rule_id: A1_dk_shift_origin
+  anomaly_ref: A-01
+  description: 'Recode in-scale DK code 9 -> -9 on social-network member origin items (stems 320, 331, 342, 353, 364) in
+    cs08a-cs19l. The wave restriction is essential: from cs20m onward code 9 on these items is the substantive category
+    ''European (excl. Dutch)''.
+
+    '
+  action: value_recode
+  stems:
+  - '320'
+  - '331'
+  - '342'
+  - '353'
+  - '364'
+  waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  from_value: 9
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A1_dk_shift_education
+  anomaly_ref: A-01
+  description: 'Recode in-scale DK code 8 -> -9 on social-network member education items (stems 326, 337, 348, 359, 370)
+    in cs08a-cs19l; from cs20m onward these items carry -9 directly.
+
+    '
+  action: value_recode
+  stems:
+  - '326'
+  - '337'
+  - '348'
+  - '359'
+  - '370'
+  waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  from_value: 8
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A1_dk_shift_employment
+  anomaly_ref: A-01
+  description: 'Recode in-scale DK code 4 -> -9 on social-network member employment items (stems 327, 338, 349, 360, 371)
+    in cs08a-cs19l; from cs20m onward these items carry -9 directly.
+
+    '
+  action: value_recode
+  stems:
+  - '327'
+  - '338'
+  - '349'
+  - '360'
+  - '371'
+  waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  from_value: 4
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A1_dk_shift_age
+  anomaly_ref: A-01
+  description: 'Recode in-scale DK code 14 -> -9 on social-network member age-category items (stems 329, 340, 351, 362,
+    373) in cs08a-cs19l; from cs20m onward these items carry -9 directly.
+
+    '
+  action: value_recode
+  stems:
+  - '329'
+  - '340'
+  - '351'
+  - '362'
+  - '373'
+  waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  from_value: 14
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A1_dk_shift_hhposition
+  anomaly_ref: A-01
+  description: 'Recode in-scale DK code 6 -> -9 on social-network member household-position items (stems 330, 341, 352,
+    363, 374) in cs08a-cs19l; from cs20m onward these items carry -9 directly.
+
+    '
+  action: value_recode
+  stems:
+  - '330'
+  - '341'
+  - '352'
+  - '363'
+  - '374'
+  waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  from_value: 6
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A1_dk_evening_social
+  anomaly_ref: A-01
+  description: 'Recode in-scale DK code 8 -> -9 on evening-socialization items (stems 290, 291, 292, 293; replacement stems
+    634, 635, 636 introduced in cs23p). Code 8 is labelled DK on this family in all 17 waves, so no wave restriction is
+    needed; the ''not applicable'' code 9 on the same family is handled by A5_na_code_9.
+
+    '
+  action: value_recode
+  stems:
+  - '290'
+  - '291'
+  - '292'
+  - '293'
+  - '634'
+  - '635'
+  - '636'
+  waves: all
+  from_value: 8
+  to_value: -9
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A5_na_code_4
+  anomaly_ref: A-05
+  description: 'Recode ''not applicable'' code 4 -> -8 on stems where scale max = 3 (social network ''how long known'' items:
+    325, 336, 347, 358, 369).
+
+    '
+  action: value_recode
+  stems:
+  - '325'
+  - '336'
+  - '347'
+  - '358'
+  - '369'
+  waves: all
+  from_value: 4
+  to_value: -7
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A5_na_code_5
+  anomaly_ref: A-05
+  description: 'Recode ''not applicable'' code 5 -> -8 on stems where scale max = 4 (social network ''how often talk'' items:
+    323, 334, 345, 356, 367).
+
+    '
+  action: value_recode
+  stems:
+  - '323'
+  - '334'
+  - '345'
+  - '356'
+  - '367'
+  waves: all
+  from_value: 5
+  to_value: -7
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A5_na_code_8
+  anomaly_ref: A-05
+  description: 'Recode ''not applicable'' code 8 -> -8 on stems where scale max = 7 (social network ''discuss politics'' items:
+    324, 335, 346, 357, 368).
+
+    '
+  action: value_recode
+  stems:
+  - '324'
+  - '335'
+  - '346'
+  - '357'
+  - '368'
+  waves: all
+  from_value: 8
+  to_value: -7
+  if_absent: warn_and_skip
+  log: true
+- rule_id: A5_na_code_9
+  anomaly_ref: A-05
+  description: 'Recode ''not applicable'' code 9 -> -8 on evening-socialization items where scale max = 8 (stems 290, 291,
+    292, 293; replacement stems 634, 635, 636 introduced in cs23p). Stem 293 is discontinued after cs19l; per-wave absence
+    is skipped.
+
+    '
+  action: value_recode
+  stems:
+  - '290'
+  - '291'
+  - '292'
+  - '293'
+  - '634'
+  - '635'
+  - '636'
+  waves: all
+  from_value: 9
+  to_value: -7
+  if_absent: warn_and_skip
+  log: true
+boundary_rules:
+- rule_id: A2_hobby_freq_flag
+  anomaly_ref: A-02
+  description: 'Flag stems 160-179 as non-comparable across cs19l/cs20m boundary. Pre-cs20m: numeric open entry, conditional
+    on participation, 80-96% structural missing.  Post-cs20m: categorical with code 99=''never'', asked unconditionally, 0%
+    missing.  Conservative strategy: do NOT pool.
+
+    '
+  action: add_period_flag
+  waves_early:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  waves_late:
+  - cs20m
+  - cs21n
+  - cs22o
+  - cs23p
+  - cs24q
+  stems:
+  - '160'
+  - '161'
+  - '162'
+  - '163'
+  - '164'
+  - '165'
+  - '166'
+  - '167'
+  - '168'
+  - '169'
+  - '170'
+  - '171'
+  - '172'
+  - '173'
+  - '174'
+  - '175'
+  - '176'
+  - '177'
+  - '178'
+  - '179'
+  - '500'  # present cs15h+; relabelled from blu-ray/DVD to films and series at cs20m
+  flag_column: hobby_freq_period
+  early_label: open_numeric
+  late_label: categorical_99
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 'Flag stems 160-179 as non-comparable across cs19l/cs20m boundary. Pre-cs20m: numeric open entry, conditional
+      on participation, 80-96% structural missing.  Post-cs20m: categorical with code 99=''never'', asked unconditionally,
+      0% missing.  Conservative strategy: do NOT pool.
+
+      '
+- rule_id: A3_org_no_connection
+  anomaly_ref: A-03
+  description: 'Map the thirteen organisation-battery ''no connection'' stems (003-058 in steps of five, plus 523 introduced
+    at cs20m) to the ''none of these'' replacement stems (607-619) introduced in cs23p. Conservative strategy: do NOT pool.
+    A single flag column (org_membership_period) marks the period.
+
+    '
+  action: add_period_flag
+  # TODO_REEXPRESS: the crosswalk payload below is documentation-only under the current engine.
+  # Re-expressing it as crosswalk_rename would pool the old and new columns, contradicting pool: false below, and would
+  # preempt the engine unmapped-value policy decision.
+  crosswalk:
+  - old_stem: '003'
+    new_stem: '607'
+    org_type: sports_club
+  - old_stem: '008'
+    new_stem: '608'
+    org_type: cultural_hobby
+  - old_stem: '013'
+    new_stem: '609'
+    org_type: trade_union
+  - old_stem: '018'
+    new_stem: '610'
+    org_type: business_professional
+  - old_stem: '023'
+    new_stem: '611'
+    org_type: consumers_auto
+  - old_stem: '028'
+    new_stem: '612'
+    org_type: humanitarian
+  - old_stem: '523'  # battery item introduced at cs20m; old-period coverage cs20m-cs22o only
+    new_stem: '613'
+    org_type: migrants
+  - old_stem: '033'
+    new_stem: '614'
+    org_type: environment_peace
+  - old_stem: '038'
+    new_stem: '615'
+    org_type: religious
+  - old_stem: '043'
+    new_stem: '616'
+    org_type: political_party
+  - old_stem: '048'
+    new_stem: '617'
+    org_type: science_education
+  - old_stem: '053'
+    new_stem: '618'
+    org_type: social_society_youth_seniors
+  - old_stem: '058'
+    new_stem: '619'
+    org_type: other_voluntary
+  waves_old:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  - cs20m
+  - cs21n
+  - cs22o
+  waves_new:
+  - cs23p
+  - cs24q
+  flag_column: org_membership_period
+  old_label: no_connection
+  new_label: none_of_these
+  pool: false
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 'Map the thirteen organisation-battery ''no connection'' stems (003-058 in steps of five, plus 523
+      introduced at cs20m) to the ''none of these'' replacement stems (607-619) introduced in cs23p. Conservative strategy:
+      do NOT pool. A single flag column (org_membership_period) marks the period.
+
+      '
+- rule_id: A4a_stem166_scope
+  anomaly_ref: A-04
+  description: 'Stem 166 changed scope: ''caring for plants/animals'' (cs08a-cs15h) -> ''caring for plants (incl. garden)
+    or animals'' (cs16i-cs19l) -> ''caring for animals'' (cs20m+).  Do NOT pool across cs19l->cs20m.
+
+    '
+  action: add_period_flag
+  stems:
+  - '166'
+  phases:
+  - label: plants_and_animals
+    waves:
+    - cs08a
+    - cs09b
+    - cs10c
+    - cs11d
+    - cs12e
+    - cs13f
+    - cs14g
+    - cs15h
+  - label: plants_garden_animals
+    waves:
+    - cs16i
+    - cs17j
+    - cs18k
+    - cs19l
+  - label: animals_only
+    waves:
+    - cs20m
+    - cs21n
+    - cs22o
+    - cs23p
+    - cs24q
+  flag_column: stem166_scope
+  pool: false
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 'Stem 166 changed scope: ''caring for plants/animals'' (cs08a-cs15h) -> ''caring for plants (incl. garden)
+      or animals'' (cs16i-cs19l) -> ''caring for animals'' (cs20m+).  Do NOT pool across cs19l->cs20m.
+
+      '
+- rule_id: A4b_stem131_wording
+  anomaly_ref: A-04
+  description: 'Stem 131 wording: ''read from beginning to end'' (cs08a-cs19l) -> ''finish reading'' (cs20m-cs22o) -> reverted
+    (cs23p-cs24q). Conservative: flag the three-wave non-comparable window.
+
+    '
+  action: add_period_flag
+  stems:
+  - '131'
+  phases:
+  - label: read_beginning_to_end
+    waves:
+    - cs08a
+    - cs09b
+    - cs10c
+    - cs11d
+    - cs12e
+    - cs13f
+    - cs14g
+    - cs15h
+    - cs16i
+    - cs17j
+    - cs18k
+    - cs19l
+  - label: finish_reading
+    waves:
+    - cs20m
+    - cs21n
+    - cs22o
+  - label: read_beginning_to_end_reverted
+    waves:
+    - cs23p
+    - cs24q
+  flag_column: stem131_wording
+  pool: false
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 'Stem 131 wording: ''read from beginning to end'' (cs08a-cs19l) -> ''finish reading'' (cs20m-cs22o) -> reverted
+      (cs23p-cs24q). Conservative: flag the three-wave non-comparable window.
+
+      '
+- rule_id: A4c_stem116_typo
+  anomaly_ref: A-04
+  description: 'Stem 116 label ''swinning'' (typo) in cs20m-cs22o.  Documentation error only; no data impact.  Correct label
+    in metadata.
+
+    '
+  action: fix_label
+  stems:
+  - '116'
+  corrected_label: swimming
+  waves:
+  - cs20m
+  - cs21n
+  - cs22o
+  log: true
+- rule_id: A4d_stem264_platform
+  anomaly_ref: A-04
+  description: Stem 264 (chatting/MSN -> WhatsApp etc.) Discontinued after cs19l.
+  action: add_period_flag
+  stems:
+  - '264'
+  phases:
+  - label: msn_era
+    waves:
+    - cs08a
+    - cs09b
+    - cs10c
+    - cs11d
+    - cs12e
+    - cs13f
+  - label: modern_platforms
+    waves:
+    - cs14g
+    - cs15h
+    - cs16i
+    - cs17j
+    - cs18k
+    - cs19l
+  flag_column: stem264_platform
+  pool: false
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: Stem 264 (chatting/MSN -> WhatsApp etc.) Discontinued after cs19l.
+- rule_id: A4d_stem431_platform
+  anomaly_ref: A-04
+  description: 'Stem 431 question text changed twice within its cs12e-cs19l lifetime: social network sites (like Facebook,
+    Hyves, Myspace, ...) in cs12e-cs13f -> platform list adds Twitter, LinkedIn, Google+ at cs14g -> reading and viewing
+    social media (e.g. Facebook, Instagram, ...) from cs15h. Discontinued at cs20m.
+
+    '
+  action: add_period_flag
+  stems:
+  - '431'
+  phases:
+  - label: hyves_myspace
+    waves:
+    - cs12e
+    - cs13f
+  - label: twitter_linkedin
+    waves:
+    - cs14g
+  - label: reading_viewing
+    waves:
+    - cs15h
+    - cs16i
+    - cs17j
+    - cs18k
+    - cs19l
+  flag_column: stem431_platform
+  pool: false
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 'Stem 431 question text changed twice within its cs12e-cs19l lifetime: social network sites (like Facebook,
+      Hyves, Myspace, ...) in cs12e-cs13f -> platform list adds Twitter, LinkedIn, Google+ at cs14g -> reading and viewing
+      social media (e.g. Facebook, Instagram, ...) from cs15h. Discontinued at cs20m.
+
+      '
+- rule_id: A4d_stem476_platform
+  anomaly_ref: A-04
+  description: Stem 476 (Twitter -> X) at cs23p.
+  action: add_period_flag
+  stems:
+  - '476'
+  phases:
+  - label: twitter
+    waves:
+    - cs14g
+    - cs15h
+    - cs16i
+    - cs17j
+    - cs18k
+    - cs19l
+    - cs20m
+    - cs21n
+    - cs22o
+  - label: x_formerly_twitter
+    waves:
+    - cs23p
+    - cs24q
+  flag_column: stem476_platform
+  pool: false
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: Stem 476 (Twitter -> X) at cs23p.
+drop_retain_rules:
+- rule_id: A6a_nohouse_encr
+  anomaly_ref: A-06
+  description: 'nohouse_encr present cs08a-cs12e only.  Retain where available; fill NA elsewhere.  Document that household-level
+    analysis is limited to 2008-2012 unless external linkage file is supplied.
+
+    '
+  action: retain_if_present
+  variable: nohouse_encr
+  fill_missing_waves: NA
+  log: true
+- rule_id: A6b_stem002_dropped
+  anomaly_ref: A-06
+  description: 'Stem 002 (satisfaction with way of spending leisure) present in cs08a-cs19l only.  Retain where available;
+    fill NA in cs20m+.
+
+    '
+  action: retain_if_present
+  variable: stem_002
+  present_waves:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  absent_waves:
+  - cs20m
+  - cs21n
+  - cs22o
+  - cs23p
+  - cs24q
+  fill_missing_waves: NA
+  log: true
+- rule_id: DR01_open_text
+  anomaly_ref: null
+  description: Drop open-text comment/name/specify variables, interview timestamps, and the labelled illness-type item.
+  action: drop
+  stems:
+  - '065'
+  - '072'
+  - '078'
+  - '123'
+  - '322'
+  - '333'
+  - '344'
+  - '355'
+  - '366'
+  - '375'
+  - '376'
+  - '377'
+  - '378'
+  - '471'
+  - '482'
+  - '528'
+  - '529'
+  - '530'
+  - '531'
+  - '532'
+  - '533'
+  - '534'
+  - '535'
+  - '536'
+  - '537'
+  - '538'
+  - '539'
+  - '540'
+  - '549'
+  - '557'
+  reason: free-text and name/specify fields, interview timestamps (375-378), and the haven_labelled illness-type item (549);
+    not suited for quantitative merge
+  log: true
+derived_variables:
+- name: instrument_period
+  rule_id: DV01_instrument_period
+  anomaly_ref: null
+  description: 'Indicator for the three instrument eras, derived from wave_id.
+
+    '
+  type: character
+  # TODO_REEXPRESS: the source payload below is documentation-only; the engine materialises derived variables as
+  # all-NA.
+  source:
+    early_instrument:
+      waves:
+      - cs08a
+      - cs09b
+      - cs10c
+      - cs11d
+      - cs12e
+      - cs13f
+      - cs14g
+      - cs15h
+      - cs16i
+      - cs17j
+      - cs18k
+      - cs19l
+    redesigned_instrument:
+      waves:
+      - cs20m
+      - cs21n
+      - cs22o
+    post_reorganization:
+      waves:
+      - cs23p
+      - cs24q
+  if_absent: warn_and_create_na
+  log: true
+- name: any_dk
+  rule_id: DV02_dk_flag
+  anomaly_ref: null
+  description: 'Binary flag: 1 if any substantive variable on this row equals -9 (don''t know), 0 otherwise.
+
+    '
+  type: integer
+  # TODO_REEXPRESS: the source and depends_on payloads below are documentation-only; the engine materialises derived
+  # variables as all-NA.
+  source: as.integer(any(c_across(starts_with('stem_')) == -9, na.rm = TRUE))
+  if_absent: warn_and_create_na
+  log: true
+  depends_on: all_stem_vars
+validation_checks:
+- check_id: V01_no_999_remaining
+  anomaly_ref: A-01
+  description: 'After DK harmonization, no value of 999 should remain on the stems that carried a 999 DK label in
+    cs08a-cs19l (empirically 001, 002, 283). Euro amount stems 064-076 carry no 999 DK label and are excluded by design,
+    since 999 can be a legitimate amount there and a blanket all_stem_vars scope would raise false errors.
+
+    '
+  type: none_equal
+  severity: error
+  scope:
+  - '001'
+  - '002'
+  - '283'
+  value: 999
+- check_id: V02_dk_code_present_all_waves
+  anomaly_ref: A-01
+  description: DK code -9 should appear in at least one variable per wave.
+  type: value_present_per_wave
+  severity: warning
+  scope: stem_001
+  value: -9
+- check_id: V03_hobby_freq_missingness_early
+  anomaly_ref: A-02
+  description: 'Stems 160-179 should have >50% NA in early-instrument waves (structural missing from skip logic).
+
+    '
+  type: na_rate_above
+  severity: warning
+  scope:
+  - stem_160
+  - stem_161
+  - stem_162
+  - stem_163
+  - stem_164
+  - stem_165
+  - stem_166
+  - stem_167
+  - stem_168
+  - stem_169
+  - stem_170
+  - stem_171
+  - stem_172
+  - stem_173
+  - '500'  # blu-ray/DVD item present from cs15h; conditional like the rest of the early battery
+  wave_filter:
+  - cs08a
+  - cs09b
+  - cs10c
+  - cs11d
+  - cs12e
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  threshold: 0.5
+- check_id: V04_hobby_freq_missingness_late
+  anomaly_ref: A-02
+  description: 'Stems 160-179 should have <5% NA in post-redesign waves (asked unconditionally after cs20m).
+
+    '
+  type: na_rate_below
+  severity: warning
+  scope:
+  - stem_160
+  - stem_161
+  - stem_162
+  - stem_164
+  - stem_165
+  - stem_166
+  - stem_167
+  - stem_169
+  - stem_171
+  - stem_172
+  - stem_173
+  # stems 163, 168, 170 removed (discontinued after cs19l, cs14g, cs19l respectively; always-NA in late waves)
+  - '500'  # relabelled films and series at cs20m; asked unconditionally post-redesign
+  wave_filter:
+  - cs20m
+  - cs21n
+  - cs22o
+  - cs23p
+  - cs24q
+  threshold: 0.05
+- check_id: V05_no_duplicate_ids
+  anomaly_ref: null
+  description: No respondent should appear more than once within a wave.
+  type: unique_per_wave
+  severity: error
+  scope: nomem_encr
+- check_id: V06_na_codes_standardized
+  anomaly_ref: A-05
+  description: 'After NA and DK harmonization, stems 290-293 and 634-636 should contain no value of 9 (not applicable -> -7) and no value of 8 (DK -> -9); stems 323/334/345/356/367 no value of 5, stems 324/335/346/357/368 no value of 8,
+    stems 325/336/347/358/369 no value of 4.
+
+    '
+  type: ''
+  severity: error
+  checks:
+  - stems:
+    - '290'
+    - '291'
+    - '292'
+    - '293'
+    - '634'
+    - '635'
+    - '636'
+    forbidden_value: 9
+  - stems:
+    - '290'
+    - '291'
+    - '292'
+    - '293'
+    - '634'
+    - '635'
+    - '636'
+    forbidden_value: 8
+  - stems:
+    - '323'
+    - '334'
+    - '345'
+    - '356'
+    - '367'
+    forbidden_value: 5
+  - stems:
+    - '324'
+    - '335'
+    - '346'
+    - '357'
+    - '368'
+    forbidden_value: 8
+  - stems:
+    - '325'
+    - '336'
+    - '347'
+    - '358'
+    - '369'
+    forbidden_value: 4
+- check_id: V07_wave_count
+  anomaly_ref: null
+  description: Merged dataset must contain exactly 17 distinct wave_ids.
+  type: n_distinct_wave
+  severity: error
+  expected: 17
+- check_id: V08_stem002_absent_post_cs19l
+  anomaly_ref: A-06
+  description: stem_002 should be all-NA in waves cs20m-cs24q.
+  type: all_na
+  severity: error
+  scope: stem_002
+  wave_filter:
+  - cs20m
+  - cs21n
+  - cs22o
+  - cs23p
+  - cs24q
+- check_id: V09_nohouse_absent_post_cs12e
+  anomaly_ref: A-06
+  description: nohouse_encr should be all-NA in waves cs13f-cs24q.
+  type: all_na
+  severity: error
+  scope: nohouse_encr
+  wave_filter:
+  - cs13f
+  - cs14g
+  - cs15h
+  - cs16i
+  - cs17j
+  - cs18k
+  - cs19l
+  - cs20m
+  - cs21n
+  - cs22o
+  - cs23p
+  - cs24q
+logging:
+  log_file: cs_merge_log.jsonl
+  report_file: cs_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates

@@ -1,0 +1,788 @@
+# ========================================================================
+# LISS Panel Religion and Ethnicity (CR) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+#
+# anomaly references (anomaly_ref: A-NN) point at the eight audited
+# categories, expanded to a stable
+# two-digit code list:
+#   A-01 structural redesign at cr19l (and second contraction at cr21n)
+#   A-02 current-religion recoding across three eras (013 -> 013 -> 144)
+#   A-03 attendance/prayer frequency scale, 8-point -> 6-point
+#   A-04 afterlife-belief scale, 4-point -> 3-point
+#   A-05 don't-know sentinel migration (99/999 -> -9)
+#   A-06 yes/no label capitalisation drift
+#   A-07 apostrophe encoding drift in labels
+#   A-08 early-era religion label evolution (incl. humanism leading space)
+#   A-09 duration variable (120) absent in cr08a; format drift
+#   A-10 household id (nohouse_encr) present only cr11d, cr12e
+#   A-11 grandparent birthplace one-off module (cr09b only)
+#   A-12 fieldwork timing shift (Jan/Feb -> Aug/Sep) at cr15h
+#   A-13 interview-time type drift (character vs hms)
+#   A-14 questionnaire-evaluation item wording/label drift (109-113)
+#   A-15 new post-2019 religion/ethnicity block (134-181)
+#
+# pooling and bridging judgments that resist clean expression in the
+# current vocabulary are noted separately, not resolved here.
+
+meta:
+  module: "cr"
+  module_label: "Religion and Ethnicity"
+  schema_version: "1.0.0"
+  recipe_version: "1.0.0"
+  created: "2026-06-13"
+  source_spec: "cross-wave harmonization specification"
+  covered_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i,
+                  cr17j, cr18k, cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+  notes: >-
+    content-level corrections only. (1) sentinel recodes retargeted to the
+    exact suffixes that carry 99/999/-9 as don't-know, so the continuous
+    duration variable (120) is never swept. (2) nationality/birthplace block
+    (043,044,053,057,060) corrected to present in cr08a-cr10c only, not
+    through cr18k as the audit narrative implied. (3) three-era religion
+    harmonisation rebuilt from the verified value labels. (4) fieldwork shift
+    located at cr15h (2015), the first August wave. all action names and
+    payload shapes are engine-conformant; payloads that target a pending or
+    stub mechanism are marked TODO_REEXPRESS. verification: the three religion
+    crosswalks (HR10/HR11/HR12) were checked against the official category
+    definitions in the cr14g and cr19l codebooks (cr14g003 = legacy
+    14-category scheme, cr14g013 = era-2 12-category scheme, cr19l144 = era-3
+    14-category scheme) and reproduce them exactly. the afterlife 4-point to
+    3-point break (BR30) is confirmed at cr19l by the value labels for 031
+    across all 18 waves.
+
+# ----------------------------------------------------------------------------
+# global settings
+# ----------------------------------------------------------------------------
+global:
+  id_variable: "nomem_encr"
+  wave_variable: "wave_id"
+  year_variable: "wave_year"
+  labelled_policy: "to_numeric"
+  missing_variable_policy: "warn_and_create_na"
+  strip_label_whitespace: true
+  # era-3 negative sentinel; the era-1/2 positive sentinels (99,999) are
+  # handled by the targeted recode_to_na rules below, because some numeric
+  # variables (e.g. duration 120) legitimately take values >= 99.
+  na_sentinel_codes: [-9]
+
+  expected_presence:
+    critical:
+      - variable: "nomem_encr"
+        waves: "all"
+        on_absence: "error"
+    optional_note: >
+      fieldwork_ym is intentionally NOT listed here. the engine derives
+      fieldwork_ym from the per-wave _m column, and pre-declaring it under
+      expected_presence currently suppresses that derivation. revisit once the engine-side fix lands.
+
+# ----------------------------------------------------------------------------
+# wave index (id, year, file_pattern derived from the project CSVs)
+# era = current-religion coding era (1,2,3); see add_era_flag (BR10).
+# ----------------------------------------------------------------------------
+wave_index:
+  - { id: cr08a, year: 2008, file_pattern: "cr08a_*", era: 1 }
+  - { id: cr09b, year: 2009, file_pattern: "cr09b_*", era: 1 }
+  - { id: cr10c, year: 2010, file_pattern: "cr10c_*", era: 1 }
+  - { id: cr11d, year: 2011, file_pattern: "cr11d_*", era: 1 }
+  - { id: cr12e, year: 2012, file_pattern: "cr12e_*", era: 1 }
+  - { id: cr13f, year: 2013, file_pattern: "cr13f_*", era: 1 }
+  - { id: cr14g, year: 2014, file_pattern: "cr14g_*", era: 2 }
+  - { id: cr15h, year: 2015, file_pattern: "cr15h_*", era: 2 }
+  - { id: cr16i, year: 2016, file_pattern: "cr16i_*", era: 2 }
+  - { id: cr17j, year: 2017, file_pattern: "cr17j_*", era: 2 }
+  - { id: cr18k, year: 2018, file_pattern: "cr18k_*", era: 2 }
+  - { id: cr19l, year: 2019, file_pattern: "cr19l_*", era: 3 }
+  - { id: cr20m, year: 2020, file_pattern: "cr20m_*", era: 3 }
+  - { id: cr21n, year: 2021, file_pattern: "cr21n_*", era: 3 }
+  - { id: cr22o, year: 2022, file_pattern: "cr22o_*", era: 3 }
+  - { id: cr23p, year: 2023, file_pattern: "cr23p_*", era: 3 }
+  - { id: cr24q, year: 2024, file_pattern: "cr24q_*", era: 3 }
+  - { id: cr25r, year: 2025, file_pattern: "cr25r_*", era: 3 }
+
+# ----------------------------------------------------------------------------
+# variable rules (run first: prefix strip, then type coercion)
+# after prefix stripping a bare numeric suffix such as 001 resolves to s001,
+# so rules below target the bare suffix and the engine maps it to s<suffix>.
+# ----------------------------------------------------------------------------
+variable_rules:
+
+  - rule_id: VR01
+    action: strip_prefix
+    description: >
+      remove the wave prefix (e.g. cr08a013 -> 013, cr19l144 -> 144) so that
+      the same survey item shares one canonical suffix across waves.
+    anomaly_ref: null
+    pattern: "^cr[0-9]{2}[a-z]"
+
+  - rule_id: VR02
+    action: type_coerce
+    description: >
+      interview start/end time are character in most waves but hms in
+      cr12e-cr15h. coerce to character everywhere for a single representation.
+    anomaly_ref: A-13
+    suffixes: ["117", "119"]
+    target_type: character
+
+  - rule_id: VR03
+    action: type_coerce
+    description: >
+      duration in seconds (120) is numeric throughout but stored with varying
+      display precision (F6.0/F8.2/F8.0/F10.0). coerce to numeric so the .2
+      display formats do not surface as a type difference downstream.
+    anomaly_ref: A-09
+    suffixes: ["120"]
+    target_type: numeric
+
+# ----------------------------------------------------------------------------
+# harmonization rules (value-level; run after variable_rules)
+# ----------------------------------------------------------------------------
+harmonization_rules:
+
+  # --- A-05 don't-know sentinel migration -----------------------------------
+  # targeted at the exact suffixes whose value labels define the code as
+  # "I don't know", so legitimate numeric values elsewhere are untouched.
+
+  - rule_id: HR01
+    action: recode_to_na
+    description: >
+      era-1/2 religion-membership items use 999 for don't-know; map to NA.
+      suffixes verified to carry code 999='I dont know': 003, 013, 022.
+    anomaly_ref: A-05
+    suffixes: ["003", "013", "022"]
+    codes: [999]
+    waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+
+  - rule_id: HR02
+    action: recode_to_na
+    description: >
+      era-1/2 scale and categorical items use 99 for don't-know; map to NA.
+      suffixes verified to carry code 99='I dont know'.
+    anomaly_ref: A-05
+    suffixes: ["002", "004", "005", "006", "011", "012", "014", "015", "021",
+               "023", "024", "041", "042", "053", "057", "060",
+               "121", "124", "127", "130", "133"]
+    codes: [99]
+    waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+
+  - rule_id: HR03
+    action: recode_to_na
+    description: >
+      era-3 items use -9 for don't-know; map to NA. suffixes verified to carry
+      code -9='I don't know': 041, 042, 134, 135, 136, 142, 143, 144, 145, 162.
+    anomaly_ref: A-05
+    suffixes: ["041", "042", "134", "135", "136", "142", "143", "144", "145", "162"]
+    codes: [-9]
+    waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+
+  # --- A-02 three-era current-religion value harmonisation ------------------
+  # harmonised target code scheme (coarse, lowest common denominator):
+  #   1 Roman Catholic
+  #   2 Protestant Church in the Netherlands (PKN)
+  #   3 Reformed family (Dutch Reformed, Gereformeerd, Liberated,
+  #     Christian Reformed, Reformed Congregations)
+  #   4 Eastern Orthodox
+  #   5 Evangelical / Pentecostal / Baptist
+  #   6 other Christian
+  #   7 Islam
+  #   8 Hinduism
+  #   9 Buddhism
+  #   10 Judaism
+  #   11 other Eastern religion
+  #   12 Humanism
+  #   13 other non-Christian religion
+  # the fold of the Reformed denominations into code 3, and the era-2 gap
+  # (Dutch Reformed/Gereformeerd dropped from 013, captured by 133), are
+  # judgment calls documented separately.
+
+  - rule_id: HR10
+    action: value_recode
+    description: >
+      era-1 current religion (suffix 013, cr08a-cr13f) into the harmonised
+      religion scheme. source labels verified from cr_value_labels.csv.
+    anomaly_ref: A-02
+    suffix: "013"
+    waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f]
+    mapping: { 1: 1, 2: 2, 3: 4, 4: 5, 5: 3, 6: 3, 7: 6, 8: 8, 9: 9, 10: 11, 11: 10, 12: 7, 13: 12, 14: 13 }
+
+  - rule_id: HR11
+    action: value_recode
+    description: >
+      era-2 current religion (suffix 013, cr14g-cr18k) into the harmonised
+      scheme. codes 5-12 were reassigned vs era-1; Dutch Reformed and
+      Gereformeerd were removed from 013 (now via bridge variable 133).
+    anomaly_ref: A-02
+    suffix: "013"
+    waves: [cr14g, cr15h, cr16i, cr17j, cr18k]
+    mapping: { 1: 1, 2: 2, 3: 4, 4: 5, 5: 6, 6: 8, 7: 9, 8: 11, 9: 10, 10: 7, 11: 12, 12: 13 }
+
+  - rule_id: HR12
+    action: value_recode
+    description: >
+      era-3 current religion (suffix 144, cr19l-cr25r) into the harmonised
+      scheme. 16-value instrument with finer Protestant distinctions; all
+      Reformed denominations (codes 3-6) fold into harmonised code 3.
+      targets native suffix 144 so it is order-independent of the
+      144 -> 013 crosswalk_rename in boundary_rules.
+    anomaly_ref: A-02
+    suffix: "144"
+    waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    mapping: { 1: 1, 2: 2, 3: 3, 4: 3, 5: 3, 6: 3, 7: 5, 8: 4, 9: 6, 10: 7, 11: 8, 12: 9, 13: 10, 14: 13 }
+
+  # --- A-08 early-era religion label evolution ------------------------------
+  # NOTE: under labelled_policy to_numeric the engine currently drops value
+  # labels, so fix_label is presently a no-op on the data (engine-side fix scheduled). encoded so it functions once labels
+  # round-trip; documents a real label defect.
+
+  - rule_id: HR20
+    action: fix_label
+    description: >
+      remove the stray leading space in the Humanism label (value 13) that
+      appears in cr09b-cr13f, so exact-match label code does not fail.
+    anomaly_ref: A-08
+    suffix: "013"
+    waves: [cr09b, cr10c, cr11d, cr12e, cr13f]
+    old_fragment: " Humanism (Humanistisch Verbond)"
+    new_fragment: "Humanism (Humanistisch Verbond)"
+
+  - rule_id: HR21
+    action: fix_label
+    description: >
+      same leading-space Humanism fix for the past-religion item (suffix 022),
+      which shares the defect in the early waves.
+    anomaly_ref: A-08
+    suffix: "022"
+    waves: [cr09b, cr10c, cr11d, cr12e, cr13f]
+    old_fragment: " Humanism (Humanistisch Verbond)"
+    new_fragment: "Humanism (Humanistisch Verbond)"
+
+  # --- A-06 yes/no capitalisation drift -------------------------------------
+  - rule_id: HR30
+    action: lowercase_labels
+    description: >
+      language-at-home items (079-087) shift from lowercase yes/no in
+      cr08a-cr18k to title case Yes/No in cr19l onward. normalise to lowercase
+      so label-text matching is stable. (no-op under to_numeric; see HR20 note.)
+    anomaly_ref: A-06
+    suffixes: ["079", "080", "081", "082", "083", "084", "085", "086", "087"]
+    waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+
+  # --- A-07 apostrophe encoding drift ---------------------------------------
+  - rule_id: HR40
+    action: fix_label
+    description: >
+      early waves omit apostrophes ("I dont know"); later waves include a
+      curly apostrophe. normalise the don't-know label text on the
+      don't-know-bearing frequency items. (no-op under to_numeric; see HR20.)
+    anomaly_ref: A-07
+    suffixes: ["041", "042"]
+    waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    old_fragment: "I dont know"
+    new_fragment: "I don't know"
+
+  # --- A-14 questionnaire-evaluation label drift ----------------------------
+  - rule_id: HR50
+    action: strip_question_stem
+    description: >
+      evaluation items 109-113 gain a numeric prefix in late waves
+      ("1 Certainly not" ... "5 Certainly yes"). strip the numeric prefix from
+      the label so the 5-point scale labels match earlier waves. the response
+      scale itself is unchanged; the wording boundary is flagged in
+      boundary_rules (BR60). (no-op under to_numeric; see HR20 note.)
+    anomaly_ref: A-14
+    suffixes: ["109", "110", "111", "112", "113"]
+    waves: [cr22o, cr23p, cr24q, cr25r]
+
+# ----------------------------------------------------------------------------
+# boundary rules (structural breaks, era flags, splits, renames, structural NA)
+# ----------------------------------------------------------------------------
+boundary_rules:
+
+  # --- A-01 structural redesign and contraction flags -----------------------
+  - rule_id: BR01
+    action: add_flag
+    description: >
+      binary flag marking the wholesale 2019 instrument redesign at cr19l:
+      the parents/religion/belief blocks were dropped and the 134-181 block
+      introduced. items unique to one side of this break cannot be pooled.
+    anomaly_ref: A-01
+    flag_name: "redesign_2019"
+    true_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: non_comparable
+      method: no_pool
+      rationale: "instrument redesign between cr18k and cr19l; dropped vs new blocks have no crosswalk"
+
+  - rule_id: BR02
+    action: add_period_flag
+    description: >
+      three structural phases by instrument size: phase 1 = full old
+      instrument (cr08a-cr18k), phase 2 = redesigned 84-variable instrument
+      (cr19l-cr20m), phase 3 = contracted 69-variable instrument (cr21n-cr25r,
+      open-text items dropped).
+    anomaly_ref: A-01
+    flag_name: "instrument_phase"
+    levels:
+      1: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+      2: [cr19l, cr20m]
+      3: [cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: partial
+      method: pool_with_flags
+      rationale: "items common to all phases are poolable when conditioned on the phase flag"
+
+  # --- A-02 three-era current-religion coding flag + suffix unification -----
+  - rule_id: BR10
+    action: add_era_flag
+    description: >
+      current-religion coding era: era 1 = cr08a-cr13f (013 scheme A),
+      era 2 = cr14g-cr18k (013 scheme B, codes 5-12 reassigned, Reformed
+      denominations removed), era 3 = cr19l-cr25r (144 scheme, 16 values).
+      raw codes are NOT comparable across eras; the HR10-HR12 value_recode
+      rules produce a harmonised code that is poolable when this flag is held.
+    anomaly_ref: A-02
+    flag_name: "religion_coding_era"
+    levels:
+      1: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f]
+      2: [cr14g, cr15h, cr16i, cr17j, cr18k]
+      3: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: partial
+      method: pool_with_flags
+      rationale: "raw 013/144 codes non-comparable; harmonised religion code poolable with the era flag and the documented Reformed-family fold"
+
+  - rule_id: BR11
+    action: note_only
+    description: >
+      superseded by DV01 (religion_current_harmonized = coalesce(013, 144)).
+      this was a crosswalk_rename written with rule-level from_suffix/to_suffix,
+      a shape the handler does not read, so it was a silent no-op; the era-3
+      suffix unification is now done explicitly by the DV01 coalesce.
+    anomaly_ref: A-02
+
+  # --- A-03 attendance / prayer frequency scale split ------------------------
+  - rule_id: BR20
+    action: split_variable
+    description: >
+      religious attendance (041) used an 8-point scale in cr08a-cr18k
+      (1 every day ... 5 special religious days, 6 less often, 7 never, 99 DK)
+      and a 6-point scale in cr19l-cr25r (1 ... 5 once or a few times a year,
+      6 never, -9 DK). old 5+6 collapse into new 5 and old 7 becomes new 6, so
+      pre/post are not the same scale. keep them as separate derived columns.
+    anomaly_ref: A-03
+    suffix: "041"
+    pre_name: "attendance_pre2019_8pt"
+    post_name: "attendance_post2019_6pt"
+    pre_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    post_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: non_comparable
+      method: no_pool
+      rationale: "response categories collapsed (old 5,6 -> new 5; old 7 -> new 6); not the same scale"
+
+  - rule_id: BR21
+    action: split_variable
+    description: >
+      prayer frequency (042) underwent the identical 8-point to 6-point change
+      as attendance; split into pre/post derived columns.
+    anomaly_ref: A-03
+    suffix: "042"
+    pre_name: "prayer_pre2019_8pt"
+    post_name: "prayer_post2019_6pt"
+    pre_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    post_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: non_comparable
+      method: no_pool
+      rationale: "same category collapse as attendance (041)"
+
+  # --- A-04 afterlife-belief scale split -------------------------------------
+  - rule_id: BR30
+    action: split_variable
+    description: >
+      afterlife belief (031) used a 4-point scale in cr08a-cr18k
+      (1 yes, 2 no, 3 maybe, 4 I dont know) and a 3-point scale in
+      cr19l-cr25r (1 yes, 2 no, 3 I don't know). the substantive "maybe"
+      category was merged with don't-know, so pre/post differ in meaning.
+    anomaly_ref: A-04
+    suffix: "031"
+    pre_name: "afterlife_pre2019_4pt"
+    post_name: "afterlife_post2019_3pt"
+    pre_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    post_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: non_comparable
+      method: no_pool
+      rationale: "the substantive 'maybe' category was folded into 'I don't know'; categories not equivalent"
+
+  # --- A-14 evaluation-item wording boundary (scale preserved) --------------
+  - rule_id: BR60
+    action: add_period_flag
+    description: >
+      evaluation items 109-113 changed question wording across the redesign
+      (e.g. "Did you find it difficult..." -> "Was it difficult..."), but the
+      5-point certainly-not / certainly-yes response scale is preserved.
+      pooling is acceptable with a wording-period flag.
+    anomaly_ref: A-14
+    flag_name: "eval_wording_period"
+    levels:
+      1: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+      2: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: partial
+      method: pool_with_flags
+      rationale: "wording changed, response scale unchanged; flag the boundary"
+
+  # --- A-01 / A-15 structural NA presence flags -----------------------------
+  # structural_na writes ONLY a logical presence-flag column
+  # from present_in_waves; it does not alter data columns. data absence in
+  # off-waves is handled by missing_variable_policy warn_and_create_na.
+
+  - rule_id: BR70
+    action: structural_na
+    description: >
+      parents-religion and current/past religion-membership block (001-029)
+      present cr08a-cr18k only; dropped at the 2019 redesign.
+    anomaly_ref: A-01
+    flag_name: "religion_membership_block_present"
+    suffixes: ["001","002","003","004","005","006","007","008","009","010",
+               "011","012","013","014","015","016","017","018","019","020",
+               "021","022","023","024","025","026","027","028","029"]
+    present_in_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+
+  - rule_id: BR71
+    action: structural_na
+    description: >
+      belief battery (032-040, 099-108) present cr08a-cr18k only; deleted at
+      the 2019 redesign.
+    anomaly_ref: A-01
+    flag_name: "belief_battery_present"
+    suffixes: ["032","033","034","035","036","037","038","039","040",
+               "099","100","101","102","103","104","105","106","107","108"]
+    present_in_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+
+  - rule_id: BR72
+    action: structural_na
+    description: >
+      nationality/birthplace items (043,044,053,057,060) present in
+      cr08a-cr10c ONLY (corrected from the audit narrative, which placed the
+      drop at cr19l). flag tracks their true presence window.
+    anomaly_ref: A-01
+    flag_name: "nationality_birthplace_present"
+    suffixes: ["043", "044", "053", "057", "060"]
+    present_in_waves: [cr08a, cr09b, cr10c]
+
+  - rule_id: BR73
+    action: structural_na
+    description: >
+      bridge variable 133 (former Dutch Reformed / Gereformeerd membership)
+      present cr14g-cr18k only; introduced when codes 5-6 left 013 and removed
+      at the 2019 redesign.
+    anomaly_ref: A-02
+    flag_name: "reformed_bridge_present"
+    suffixes: ["133"]
+    present_in_waves: [cr14g, cr15h, cr16i, cr17j, cr18k]
+
+  - rule_id: BR74
+    action: structural_na
+    description: >
+      stable post-2019 religion/ethnicity block (upbringing faith 134-136,
+      childhood attendance 142, current membership 143-145, afterlife imagery
+      152-160, religiosity/spirituality 162-163, Dutch identity 164, ethnic
+      group 165-179, and 181) introduced at cr19l and carried forward.
+    anomaly_ref: A-15
+    flag_name: "post2019_block_present"
+    suffixes: ["134","135","136","142","143","144","145",
+               "152","153","154","155","156","157","158","159","160",
+               "162","163","164",
+               "165","166","167","168","169","170","171","172","173","174",
+               "175","176","177","178","179","181"]
+    present_in_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+
+  - rule_id: BR75
+    action: structural_na
+    description: >
+      transient open-text / upbringing-detail block (137-141, 146-151, 161,
+      180) present in cr19l-cr20m only; removed at the cr21n contraction.
+    anomaly_ref: A-01
+    flag_name: "transient_2019_2020_block_present"
+    suffixes: ["137","138","139","140","141",
+               "146","147","148","149","150","151","161","180"]
+    present_in_waves: [cr19l, cr20m]
+
+  - rule_id: BR76
+    action: structural_na
+    description: >
+      open-text fields 088 and 091 present cr08a-cr20m; dropped at the cr21n
+      contraction.
+    anomaly_ref: A-01
+    flag_name: "opentext_088_091_present"
+    suffixes: ["088", "091"]
+    present_in_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k, cr19l, cr20m]
+
+  - rule_id: BR77
+    action: structural_na
+    description: >
+      grandparent birthplace items (121,124,127,130) fielded in cr09b ONLY;
+      one-off special module.
+    anomaly_ref: A-11
+    flag_name: "grandparent_birthplace_present"
+    suffixes: ["121", "124", "127", "130"]
+    present_in_waves: [cr09b]
+
+  - rule_id: BR78
+    action: structural_na
+    description: >
+      duration in seconds (120) present in every wave except the baseline
+      cr08a, where it was not yet recorded.
+    anomaly_ref: A-09
+    flag_name: "duration_present"
+    suffixes: ["120"]
+    present_in_waves: [cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k, cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+
+  - rule_id: BR79
+    action: structural_na
+    description: >
+      household identifier nohouse_encr present only in cr11d and cr12e.
+    anomaly_ref: A-10
+    flag_name: "nohouse_encr_present"
+    variables: ["nohouse_encr"]
+    present_in_waves: [cr11d, cr12e]
+
+  # --- A-12 fieldwork timing shift (period flag) ----------------------------
+  - rule_id: BR80
+    action: add_period_flag
+    description: >
+      fieldwork moved from January/February (cr08a-cr14g) to August/September
+      (cr15h onward), verified from the per-wave _m values. seasonality may
+      affect religious-attendance reports, so flag the fielding season.
+    anomaly_ref: A-12
+    flag_name: "fieldwork_season"
+    levels:
+      winter: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g]
+      summer: [cr15h, cr16i, cr17j, cr18k, cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    comparability:
+      status: partial
+      method: pool_with_flags
+      rationale: "possible seasonality in attendance/prayer; pool with the season flag as a covariate"
+
+# ----------------------------------------------------------------------------
+# drop / retain rules
+# ----------------------------------------------------------------------------
+drop_retain_rules:
+
+  - rule_id: DRR01
+    action: retain_if_present
+    description: >
+      keep the era-bounded substantive analysis blocks where fielded and NA
+      elsewhere: religion-membership block (001-029), belief battery
+      (032-040, 099-108), nationality/birthplace (043,044,053,057,060), the
+      Reformed bridge (133), and the post-2019 block (134-181). presence is
+      tracked by the structural_na flags BR70-BR79.
+    anomaly_ref: A-01
+    suffixes: ["001","002","003","004","005","006","007","008","009","010",
+               "011","012","013","014","015","016","017","018","019","020",
+               "021","022","023","024","025","026","027","028","029",
+               "030","031","032","033","034","035","036","037","038","039","040",
+               "041","042","043","044","053","057","060",
+               "099","100","101","102","103","104","105","106","107","108",
+               "133","134","135","136","142","143","144","145",
+               "152","153","154","155","156","157","158","159","160",
+               "162","163","164","165","166","167","168","169","170","171",
+               "172","173","174","175","176","177","178","179","181"]
+
+  - rule_id: DRR02
+    action: retain_if_present
+    description: >
+      household identifier nohouse_encr is kept where present (cr11d, cr12e)
+      and NA elsewhere; it is a structural id, not a survey item.
+    anomaly_ref: A-10
+    variables: ["nohouse_encr"]
+
+  - rule_id: DRR03
+    action: retain_as_metadata_only
+    description: >
+      grandparent birthplace items (121,124,127,130) were a one-off cr09b
+      module; retain as metadata, not as a pooled analysis variable.
+    anomaly_ref: A-11
+    suffixes: ["121", "124", "127", "130"]
+
+  - rule_id: DRR04
+    action: retain_as_metadata_only
+    description: >
+      free-text and admin fields are kept as metadata only under the numeric
+      labelled policy: open-text 088 and 091, the transient text block
+      (137-141, 146-151, 161, 180), and the interview start/end strings
+      (116-119). duration (120) is retained for paradata use.
+    anomaly_ref: A-13
+    suffixes: ["088","091","116","117","118","119","120",
+               "137","138","139","140","141",
+               "146","147","148","149","150","151","161","180"]
+
+# ----------------------------------------------------------------------------
+# derived variables
+# NOTE: the engine currently materialises derived_variables as all-NA columns
+# (source/dependencies/wave_values are not evaluated).
+# the full derivation logic is encoded below and marked TODO_REEXPRESS so it
+# can be wired up once engine support lands.
+# ----------------------------------------------------------------------------
+derived_variables:
+
+  - rule_id: DV01
+    name: "religion_current_harmonized"
+    anomaly_ref: A-02
+    description: >
+      single harmonised current-religion series spanning all eras, built by
+      coalescing the in-place-harmonised era-1/2 suffix 013 with the era-3
+      suffix 144 (HR10/HR11/HR12 recode the codes; eras are disjoint).
+    output_type: integer
+    method: coalesce
+    sources:
+      - waves: all
+        variables: ['013', '144']
+
+  - rule_id: DV02
+    name: "member_any"
+    anomaly_ref: A-15
+    description: >
+      harmonised religion-membership yes/no, coalescing era-1/2 suffix 012 with
+      era-3 suffix 143. wording shifted across the boundary (flagged by BR60).
+    output_type: integer
+    method: coalesce
+    sources:
+      - waves: all
+        variables: ['012', '143']
+
+  - rule_id: DV03a
+    name: "fieldwork_year"
+    anomaly_ref: A-12
+    description: calendar year of fieldwork, split from the engine-derived integer yyyymm fieldwork_ym.
+    output_type: integer
+    method: direct
+    sources:
+      - waves: all
+        variables: [fieldwork_ym]
+    transform: {op: int_divide, value: 100}
+
+  - rule_id: DV03b
+    name: "fieldwork_month"
+    anomaly_ref: A-12
+    description: calendar month of fieldwork (1-12), split from fieldwork_ym.
+    output_type: integer
+    method: direct
+    sources:
+      - waves: all
+        variables: [fieldwork_ym]
+    transform: {op: modulo, value: 100}
+
+# ----------------------------------------------------------------------------
+# validation checks
+# (the engine validator enforces only the severity enum today;
+#  these are written as substantive post-merge assertions for when the
+#  check executors land.)
+# ----------------------------------------------------------------------------
+validation_checks:
+
+  - check_id: VC01
+    description: "no duplicate person-wave rows (nomem_encr x wave_id unique)"
+    type: no_duplicate_ids
+    variables: ["nomem_encr", "wave_id"]
+    severity: error
+
+  - check_id: VC02
+    description: "person identifier non-missing in every wave"
+    type: not_missing
+    variables: ["nomem_encr"]
+    severity: error
+
+  - check_id: VC03
+    description: "religion_coding_era is one of 1, 2, 3 for every row"
+    type: value_in_set
+    variable: "religion_coding_era"
+    allowed_values: [1, 2, 3]
+    severity: error
+
+  - check_id: VC04
+    description: "no residual positive don't-know sentinels (99, 999) after HR01-HR02"
+    type: no_residual_sentinels
+    sentinel_values: [99, 999]
+    exclude_variables: ["s120", "fieldwork_ym", "wave_year"]
+    severity: error
+
+  - check_id: VC05
+    description: "no residual negative sentinel (-9) after HR03"
+    type: no_residual_sentinels
+    sentinel_values: [-9]
+    severity: error
+
+  - check_id: VC06
+    description: "harmonised current religion is in 1..13 or NA"
+    type: value_in_range
+    variable: "s013"
+    min: 1
+    max: 13
+    allow_na: true
+    severity: error
+
+  - check_id: VC07
+    description: "attendance pre/post split is disjoint (not both populated in one row)"
+    type: mutually_exclusive_na
+    variables: ["attendance_pre2019_8pt", "attendance_post2019_6pt"]
+    severity: warning
+
+  - check_id: VC08
+    description: "belief battery is structurally absent (all NA) in era 3"
+    type: structural_na_count
+    variables: ["s032", "s099"]
+    expected_na_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    severity: warning
+
+  - check_id: VC09
+    description: "share answering 'never' on attendance should not jump > 10pp across the redesign"
+    type: boundary_distribution
+    variable: "attendance_post2019_6pt"
+    wave_before: cr18k
+    wave_after: cr19l
+    threshold_max_shift: 0.10
+    severity: warning
+
+  - check_id: VC10
+    description: "fieldwork month is a plausible 1..12 value"
+    type: value_in_range
+    variable: "fieldwork_month"
+    min: 1
+    max: 12
+    allow_na: true
+    severity: info
+
+# ----------------------------------------------------------------------------
+# logging
+# ----------------------------------------------------------------------------
+logging:
+  log_file: "merge_log_cr.jsonl"
+  report_file: "merge_report_cr.txt"
+  log_format: "jsonl"
+  per_rule_fields:
+    - rule_id
+    - wave_id
+    - variable
+    - action
+    - rows_affected
+    - values_changed
+    - distinct_before
+    - distinct_after
+    - na_count_before
+    - na_count_after
+    - timestamp
+    - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+      - total_na_created
+      - total_values_recoded
+      - total_rows_dropped
+      - total_vars_dropped
+      - wave_row_counts
+      - per_variable_na_rates

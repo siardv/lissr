@@ -1,0 +1,181 @@
+---
+title: "Cross-Sectional Analysis with a Single Wave"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Cross-Sectional Analysis with a Single Wave}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## When to use this workflow
+
+A cross-sectional design treats one wave as a population snapshot. This is
+appropriate when you need a point-in-time estimate (prevalence, association)
+and do not require within-person change. Common examples include a Master's
+thesis using the most recent Health wave, or a methods paper demonstrating a
+new estimator on a single data release.
+
+Even for a single-wave analysis, lissr adds value: it automates
+authentication, lets you pick exactly the files you need, and gives you
+access to the merge engine's sentinel-code cleaning so you start from
+analysis-ready data instead of raw SPSS.
+
+## Step 1 — download one wave of one module
+
+```{r download-single}
+library(lissr)
+
+# authenticate (once per session)
+liss_login()
+
+# build the file inventory
+bp <- liss_blueprint()
+
+# filter to the latest Health wave, SPSS format
+latest_health <- bp |>
+  dplyr::filter(
+    module == "Health",
+    type   == "spss"
+  ) |>
+  dplyr::filter(wave == max(wave))
+
+latest_health
+#> # A tibble: 1 × 8
+#>   module module_id  wave wave_id type  name       file              path
+#>   <chr>      <int> <int>   <int> <chr> <chr>      <chr>             <chr>
+#> 1 Health        18    17    1054 spss  ch24q 1.0p ch24q_1_0p_EN.sav /down…
+
+# download just that one file
+liss_download(latest_health, .dir = "data/ch")
+```
+
+## Step 2 — read and clean the data
+
+You can read the file directly with `haven`, or you can leverage the
+merge engine to apply the recipe's sentinel-code recoding even for a
+single wave. The recipe knows which numeric codes are "don't know" vs
+"prefer not to say" vs genuine missing — cleaning you would otherwise
+do by hand with a codebook open.
+
+```{r clean-via-recipe}
+library(haven)
+library(dplyr)
+
+# option A: read raw and clean yourself
+raw <- haven::read_sav("data/ch/ch24q_1_0p_EN.sav")
+dim(raw)
+#> [1] 4892  271
+
+# option B: use the merge engine for a single wave
+# (this applies prefix stripping, sentinel recoding, and labelled policy)
+recipe <- liss_recipe("ch")
+
+# temporarily trim the recipe to just the wave you need
+recipe$wave_index <- purrr::keep(
+  recipe$wave_index,
+  ~ .x$id == "ch24q"
+)
+
+result <- merge_liss_module(recipe, data_dir = "data/ch", output_dir = "output")
+health <- result$data
+dim(health)
+#> [1] 4892  265
+```
+
+The merge engine's output has cleaner column names (no `ch24q` prefix),
+sentinel values already recoded to `NA`, and a `wave_id` / `wave_year`
+column appended.
+
+## Step 3 — attach background variables
+
+Most cross-sectional analyses need demographics: age, sex, education,
+income. These live in the Background Variables module (CA), not in the
+survey module itself.
+
+**Critical rule**: join on `nomem_encr` only. Never use `nohouse_encr` —
+household assignments change over time. Match the fieldwork month, not
+the calendar year.
+
+```{r attach-demographics}
+# download the background variables file for the same fieldwork period
+# (health wave 24q was fielded around November 2024)
+bg_files <- bp |>
+  dplyr::filter(
+    module == "Background Variables",
+    type   == "spss",
+    wave   == 202411  # YYYYMM matching fieldwork period
+  )
+
+liss_download(bg_files, .dir = "data/avars")
+
+avars <- haven::read_sav("data/avars/avars_202411_EN_1_0p.sav") |>
+  haven::zap_labels() |>
+  dplyr::select(
+    nomem_encr,
+    age       = leeftijd,
+    sex       = geslacht,
+    edu_level = oplcat,
+    hh_income = nettohh_f,
+    urban     = sted
+  )
+
+analysis_df <- health |>
+  dplyr::left_join(avars, by = "nomem_encr")
+
+nrow(analysis_df)
+#> [1] 4892
+```
+
+## Step 4 — run an analysis
+
+With the merged, cleaned data you can proceed to standard modelling. For
+example, estimating the association between education and self-rated
+health (suffix `s001` in the harmonised output), adjusting for age and
+sex:
+
+```{r model}
+analysis_df <- analysis_df |>
+  dplyr::mutate(
+    srh = factor(s001, levels = 1:5,
+                 labels = c("poor", "moderate", "good", "very good", "excellent")),
+    female = as.integer(sex == 2)
+  )
+
+fit <- MASS::polr(srh ~ edu_level + age + female, data = analysis_df)
+summary(fit)
+```
+
+## When *not* to use this approach
+
+If your research question involves change (did self-rated health improve
+after a policy?), or if you want to exploit the panel structure for
+causal identification (fixed effects, difference-in-differences), you
+should move to the longitudinal workflow described in
+[Longitudinal Panel Analysis](longitudinal-panel-analysis.html)
+*(or run `vignette("longitudinal-panel-analysis", package = "lissr")` in the console)*.
+A single wave cannot separate
+age, period, and cohort effects, and it provides no within-person
+variation to control for time-invariant confounders.
+
+## Checklist
+
+Before submitting results from a cross-sectional LISS analysis, verify:
+
+- [ ] You joined background variables on `nomem_encr` (not `nohouse_encr`).
+- [ ] The background variables file matches the fieldwork month, not the
+  calendar year.
+- [ ] Sentinel codes (-9 = don't know, -8 = prefer not to say, 999, etc.)
+  have been recoded to `NA` — the merge engine does this automatically,
+  but check if you loaded raw SPSS directly.
+- [ ] You report the wave identifier (e.g. ch24q) and the LISS data
+  version number in your methods section so results are reproducible.
+- [ ] If you selected a single wave from a module with instrument changes
+  (boundary rules), note that in your limitations.

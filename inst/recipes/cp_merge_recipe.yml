@@ -1,0 +1,747 @@
+# ========================================================================
+# LISS Panel Personality (CP) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: cp
+  module_label: Personality
+  recipe_version: "1.0.0"
+  created: '2026-02-09'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - cp08a
+  - cp09b
+  - cp10c
+  - cp11d
+  - cp12e
+  - cp13f
+  - cp14g
+  - cp15h
+  - cp17i
+  - cp18j
+  - cp19k
+  - cp20l
+  - cp21m
+  - cp22n
+  - cp23o
+  - cp24p
+  notes: >-
+    removed item 135 from V04 (present and populated in period B) and added
+    V14 period-B range check (1-7) on 135; restored the rename machinery as
+    live variable_rules (questionnaire_version from s195/s196/s197, cp13f
+    s208-s216 to _exp_ios_*, s_m to fieldwork_ym); DV08 per-wave value
+    crosswalks (cp10c reverse-coded) and cp11d196 split into DV09
+    video_experiment_participation; fixed dangling DV06/DV07 source references
+    and DV06 NA for cp08a-cp11d; added boundary rules A9 paradata
+    add_period_flag (A-09) and cp16 note_only (A-06); set DR01/DR02
+    anomaly_ref to A-05/A-04; marked A8 type_coerce stub TODO_REEXPRESS
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_numeric
+  missing_variable_policy: warn_and_create_na
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+wave_index:
+- id: cp08a
+  year: 2008
+  file_pattern: cp08a_1p_EN.csv
+  notes: ''
+  order: 1
+  label: Wave 1
+  n_vars_expected: 196
+  period: A
+  role_map: &id001
+    wave_order: wave_order
+    period: period
+    dk_unavailable: dk_unavailable
+    lotr_198_wording: lotr_198_wording
+    ios_experiment_wave: ios_experiment_wave
+    questionnaire_version: questionnaire_version
+- id: cp09b
+  year: 2009
+  file_pattern: cp09b_1_0p_EN.csv
+  notes: ''
+  order: 2
+  label: Wave 2
+  n_vars_expected: 197
+  period: A
+  role_map: *id001
+- id: cp10c
+  year: 2010
+  file_pattern: cp10c_1_0p_EN.csv
+  notes: ''
+  order: 3
+  label: Wave 3
+  n_vars_expected: 198
+  period: A
+  role_map: *id001
+- id: cp11d
+  year: 2011
+  file_pattern: cp11d_1_0p_EN.csv
+  notes: ''
+  order: 4
+  label: Wave 4
+  n_vars_expected: 198
+  period: A
+  role_map: *id001
+- id: cp12e
+  year: 2012
+  file_pattern: cp12e_1_0p_EN.csv
+  notes: ''
+  order: 5
+  label: Wave 5
+  n_vars_expected: 207
+  period: A
+  role_map: *id001
+- id: cp13f
+  year: 2013
+  file_pattern: cp13f_EN_1_0p.csv
+  notes: ''
+  order: 6
+  label: Wave 6
+  n_vars_expected: 215
+  period: A
+  role_map: *id001
+- id: cp14g
+  year: 2014
+  file_pattern: cp14g_EN_1_0p.csv
+  notes: ''
+  order: 7
+  label: Wave 7
+  n_vars_expected: 206
+  period: A
+  role_map: *id001
+- id: cp15h
+  year: 2015
+  file_pattern: cp15h_EN_1_0p.csv
+  notes: ''
+  order: 8
+  label: Wave 8
+  n_vars_expected: 207
+  period: A
+  role_map: *id001
+- id: cp17i
+  year: 2017
+  file_pattern: cp17i_EN_1_0p.csv
+  notes: ''
+  order: 9
+  label: Wave 9
+  n_vars_expected: 206
+  period: A
+  role_map: *id001
+- id: cp18j
+  year: 2018
+  file_pattern: cp18j_EN_1_0p.csv
+  notes: ''
+  order: 10
+  label: Wave 10
+  n_vars_expected: 207
+  period: A
+  role_map: *id001
+- id: cp19k
+  year: 2019
+  file_pattern: cp19k_EN_1_0p.csv
+  notes: ''
+  order: 11
+  label: Wave 11
+  n_vars_expected: 159
+  period: B
+  role_map: *id001
+- id: cp20l
+  year: 2020
+  file_pattern: cp20l_EN_1_0p.csv
+  notes: ''
+  order: 12
+  label: Wave 12
+  n_vars_expected: 159
+  period: B
+  role_map: *id001
+- id: cp21m
+  year: 2021
+  file_pattern: cp21m_EN_1_0p.csv
+  notes: ''
+  order: 13
+  label: Wave 13
+  n_vars_expected: 159
+  period: B
+  role_map: *id001
+- id: cp22n
+  year: 2022
+  file_pattern: cp22n_EN_1_0p.csv
+  notes: ''
+  order: 14
+  label: Wave 14
+  n_vars_expected: 159
+  period: B
+  role_map: *id001
+- id: cp23o
+  year: 2023
+  file_pattern: cp23o_EN_1_0p.csv
+  notes: ''
+  order: 15
+  label: Wave 15
+  n_vars_expected: 159
+  period: B
+  role_map: *id001
+- id: cp24p
+  year: 2024
+  file_pattern: cp24p_EN_1_0p.csv
+  notes: ''
+  order: 16
+  label: Wave 16
+  n_vars_expected: 159
+  period: B
+  role_map: *id001
+variable_rules:
+# REEXPRESSED_FROM: rename_map
+# mappings are written against post-strip names: the engine strips the wave
+# prefix and prepends 's' to names starting with a digit or underscore
+# (cp10c195 -> s195, cp08a_m -> s_m)
+- rule_id: VR01_qversion_rename_cp10c
+  anomaly_ref: A-07
+  description: rename routing variable s195 (cp10c195) to questionnaire_version; cp10c coding is 1=long, 2=short (reverse of later waves, see DV08 crosswalk)
+  action: rename
+  waves:
+  - cp10c
+  mapping:
+    s195: questionnaire_version
+  log: true
+- rule_id: VR02_qversion_rename_cp11d
+  anomaly_ref: A-07
+  description: rename s196 (cp11d196) to questionnaire_version; semantic caveat; cp11d196 records video-experiment participation (0/1), not a long/short version; values are surfaced separately via DV09
+  action: rename
+  waves:
+  - cp11d
+  mapping:
+    s196: questionnaire_version
+  log: true
+- rule_id: VR03_qversion_rename_late
+  anomaly_ref: A-07
+  description: rename routing variable s197 (cp12e197, cp15h197, cp18j197) to questionnaire_version; coding 1=short, 2=long
+  action: rename
+  waves:
+  - cp12e
+  - cp15h
+  - cp18j
+  mapping:
+    s197: questionnaire_version
+  log: true
+- rule_id: VR04_ios_experiment_rename
+  anomaly_ref: A-04
+  description: rename cp13f experiment block s208-s216 to the _exp_ios_* names expected by DR02 (sidecar isolation)
+  action: rename
+  waves:
+  - cp13f
+  mapping:
+    s208: _exp_ios_twice
+    s209: _exp_ios_version
+    s210: _exp_ios_start_pos
+    s211: _exp_ios_cont_people
+    s212: _exp_ios_cont_panel
+    s213: _exp_ios_disc_people
+    s214: _exp_ios_disc_panel
+    s215: _exp_ios_extra_people
+    s216: _exp_ios_extra_panel
+  log: true
+- rule_id: VR05_fieldwork_ym_rename
+  anomaly_ref: null
+  description: rename the fieldwork month column s_m (cpXXy_m, yyyymm integer) to fieldwork_ym in every wave
+  action: rename
+  waves: all
+  mapping:
+    s_m: fieldwork_ym
+  log: true
+harmonization_rules:
+- rule_id: A1_dk_999_to_na
+  anomaly_ref: A-01
+  description: recode 999 (don't know) to NA on 0–10 scale items
+  action: recode
+  waves:
+  - cp08a
+  - cp09b
+  - cp10c
+  - cp11d
+  - cp12e
+  - cp13f
+  - cp14g
+  - cp15h
+  - cp17i
+  - cp18j
+  items:
+  - '010'
+  - '011'
+  - 019
+  mapping:
+    999: .na
+  log: count recoded per item per wave
+- rule_id: A1_dk_neg9_to_na
+  anomaly_ref: A-01
+  description: recode -9 (don't know) to NA on 0–10 scale items
+  action: recode
+  waves:
+  - cp20l
+  - cp21m
+  - cp22n
+  - cp23o
+  - cp24p
+  items:
+  - '010'
+  - '011'
+  - 019
+  mapping:
+    -9: .na
+  log: count recoded per item per wave
+- rule_id: A1_dk_absent_flag
+  anomaly_ref: A-01
+  description: flag cp19k as dk-unavailable; no recode needed
+  action: flag_only
+  waves:
+  - cp19k
+  items:
+  - '010'
+  - '011'
+  - 019
+  flag_name: dk_unavailable
+  flag_value: true
+  log: record that DK was not offered; count of non-NA responses
+- rule_id: A8_coerce_double
+  anomaly_ref: A-08
+  description: cast all substantive items to double for type consistency
+  action: type_coerce
+  # TODO_REEXPRESS: type_coerce in harmonization_rules is an accepted no-op stub;
+  # real type_coerce lives in variable_rules and reads suffixes/variables (no
+  # all_numeric scoping yet); global labelled_policy to_numeric may already cover
+  # this cast
+  waves: all
+  items: all_numeric
+  target_type: double
+  log: record original type per item per wave
+boundary_rules:
+- rule_id: A9_paradata_anchor_periods
+  anomaly_ref: A-09
+  description: paradata items 184-188 carry three anchor-label regimes; 'definitely' becomes 'certainly' at cp13f and cp24p adds explicit labels for intermediate values 2, 3, 4
+  action: add_period_flag
+  items:
+  - 184-188
+  flag_name: paradata_anchor_regime
+  # TODO_REEXPRESS: periods/comparability payload shape pending engine support
+  periods:
+  - waves:
+    - cp08a
+    - cp09b
+    - cp10c
+    - cp11d
+    - cp12e
+    value: definitely
+  - waves:
+    - cp13f
+    - cp14g
+    - cp15h
+    - cp17i
+    - cp18j
+    - cp19k
+    - cp20l
+    - cp21m
+    - cp22n
+    - cp23o
+    value: certainly
+  - waves:
+    - cp24p
+    value: certainly_explicit_234
+  comparability:
+    status: partial
+    boundaries:
+    - cp12e/cp13f anchor wording shift (definitely to certainly)
+    - cp23o/cp24p explicit intermediate labels (2, 3, 4)
+    recommendation: test measurement invariance of items 184-188 at both boundaries before pooling across regimes
+  log: record assigned anchor regime per wave
+- rule_id: A6_cp16_absent
+  anomaly_ref: A-06
+  description: note only on cp16 (not fielded; the wave sequence jumps from cp15h 2015 to cp17i 2017, leaving a design gap in 2016)
+  action: note_only
+  reason: cp16 was never fielded; absence is by design and is reflected by its omission from wave_index
+  log: true
+drop_retain_rules:
+- rule_id: DR01
+  anomaly_ref: A-05
+  description: note only on nohouse_encr (household id absent after cp11d (anomaly A5); link from background vars)
+  action: note_only
+  variable: nohouse_encr
+  reason: household id absent after cp11d (anomaly A5); link from background vars
+  if_absent: warn_and_skip
+  log: true
+- rule_id: DR02
+  anomaly_ref: A-04
+  description: drop (IOS experiment variables (anomaly A4); stored in sidecar)
+  action: drop
+  variable_pattern: _exp_ios_.*
+  reason: IOS experiment variables (anomaly A4); stored in sidecar
+  if_absent: warn_and_skip
+  log: true
+- rule_id: DR03
+  anomaly_ref: null
+  description: retain on nomem_encr
+  action: retain
+  variable: nomem_encr
+  required: true
+  log: true
+- rule_id: DR04
+  anomaly_ref: null
+  description: retain on fieldwork_ym
+  action: retain
+  variable: fieldwork_ym
+  required: true
+  log: true
+- rule_id: DR05
+  anomaly_ref: null
+  description: note only on questionnaire_version
+  action: note_only
+  variable: questionnaire_version
+  required: false
+  if_absent: warn_and_create_na
+  log: true
+derived_variables:
+- var_name: wave_id
+  rule_id: DV01
+  anomaly_ref: null
+  description: canonical wave identifier string
+  type: character
+  source: injected from file identity
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_order
+  rule_id: DV02
+  anomaly_ref: null
+  description: integer sequence position (1–16)
+  method: direct
+  output_type: integer
+  wave_values:
+    cp08a: 1
+    cp09b: 2
+    cp10c: 3
+    cp11d: 4
+    cp12e: 5
+    cp13f: 6
+    cp14g: 7
+    cp15h: 8
+    cp17i: 9
+    cp18j: 10
+    cp19k: 11
+    cp20l: 12
+    cp21m: 13
+    cp22n: 14
+    cp23o: 15
+    cp24p: 16
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_year
+  rule_id: DV03
+  anomaly_ref: null
+  description: calendar year of data collection
+  type: integer
+  source: wave_index.year
+  if_absent: warn_and_create_na
+  log: true
+- var_name: period
+  rule_id: DV04
+  anomaly_ref: null
+  description: 'instrument period: A = full instrument (cp08a–cp18j), B = reduced (cp19k–cp24p)'
+  method: direct
+  output_type: character
+  wave_values:
+    cp08a: A
+    cp09b: A
+    cp10c: A
+    cp11d: A
+    cp12e: A
+    cp13f: A
+    cp14g: A
+    cp15h: A
+    cp17i: A
+    cp18j: A
+    cp19k: B
+    cp20l: B
+    cp21m: B
+    cp22n: B
+    cp23o: B
+    cp24p: B
+  if_absent: warn_and_create_na
+  log: true
+- var_name: dk_unavailable
+  rule_id: DV05
+  anomaly_ref: null
+  description: TRUE for cp19k on items 010/011/019 where DK was not offered
+  type: logical
+  source: rule A1_dk_absent_flag
+  if_absent: warn_and_create_na
+  log: true
+  default: false
+- var_name: lotr_198_wording
+  rule_id: DV06
+  anomaly_ref: null
+  description: '''usually'' for waves with LOT-R except cp19k (''normally''); NA for cp08a-cp11d where LOT-R was not administered'
+  type: character
+  output_type: character
+  source: per-wave constant via waves_override + default
+  if_absent: warn_and_create_na
+  log: true
+  default: usually
+  # .na denotes NA; waves not listed take default
+  waves_override:
+    cp08a: .na
+    cp09b: .na
+    cp10c: .na
+    cp11d: .na
+    cp19k: normally
+- var_name: ios_experiment_wave
+  rule_id: DV07
+  anomaly_ref: null
+  description: 1 for cp13f rows (item 194 potentially contaminated), 0 elsewhere
+  type: integer
+  output_type: integer
+  source: per-wave constant via waves_override + default
+  if_absent: warn_and_create_na
+  log: true
+  default: 0
+  waves_override:
+    cp13f: 1
+- var_name: video_experiment_participation
+  rule_id: DV09
+  anomaly_ref: null
+  description: 1 if a cp11d respondent received the video experiment (cp11d196 == 1), 0 if not, NA in all other waves
+  type: integer
+  output_type: integer
+  source: cp11d s196 (renamed to questionnaire_version by VR02; 0/1 participation, read here before DV08 recodes questionnaire_version)
+  if_absent: warn_and_create_na
+  log: true
+  sources:
+  - waves:
+    - cp11d
+    variable: questionnaire_version
+    method: direct
+- var_name: questionnaire_version
+  rule_id: DV08
+  anomaly_ref: null
+  description: 'harmonized version routing: ''short'', ''long'', or NA (cp10c reverse-coded 1=long/2=short; cp12e/cp15h/cp18j 1=short/2=long; cp11d not a version, overwritten to NA after DV09)'
+  type: character
+  output_type: character
+  source: per-wave string value_crosswalk over the renamed questionnaire_version (VR01/VR03)
+  if_absent: warn_and_create_na
+  log: true
+  sources:
+  - waves:
+    - cp10c
+    variable: questionnaire_version
+    method: direct
+    value_crosswalk:
+      1: long
+      2: short
+  - waves:
+    - cp12e
+    - cp15h
+    - cp18j
+    variable: questionnaire_version
+    method: direct
+    value_crosswalk:
+      1: short
+      2: long
+validation_checks:
+- check_id: V01_dk_range
+  anomaly_ref: A-01
+  description: no value of 999 or -9 should remain in items 010, 011, 019
+  type: value_absence
+  severity: error
+  items:
+  - '010'
+  - '011'
+  - 019
+  forbidden_values:
+  - 999
+  - -9
+- check_id: V02_dk_cp19k_na_rate
+  anomaly_ref: A-01
+  description: cp19k NA rate on items 010/011/019 should be near zero
+  type: na_rate
+  severity: warning
+  items:
+  - '010'
+  - '011'
+  - 019
+  waves:
+  - cp19k
+  threshold: 0.02
+  direction: below
+- check_id: V03_dk_mean_spike
+  anomaly_ref: A-01
+  description: mean of items 010/011/019 should not spike (999 contamination)
+  type: per_wave_mean
+  severity: error
+  items:
+  - '010'
+  - '011'
+  - 019
+  max_mean: 11
+- check_id: V04_structural_na_post_cp19k
+  anomaly_ref: A-02
+  description: dropped items must be 100% NA for cp19k–cp24p
+  type: na_rate
+  severity: error
+  items:
+  - 001-009
+  - 080-098
+  - 166-183
+  - '194'
+  waves:
+  - cp19k
+  - cp20l
+  - cp21m
+  - cp22n
+  - cp23o
+  - cp24p
+  threshold: 1.0
+  direction: above
+- check_id: V14_item135_period_b_range
+  anomaly_ref: A-02
+  description: item 135 (connectedness to other people) is retained in period B; values must be in 1-7 or NA
+  type: value_range
+  severity: error
+  items:
+  - '135'
+  waves:
+  - cp19k
+  - cp20l
+  - cp21m
+  - cp22n
+  - cp23o
+  - cp24p
+  min: 1
+  max: 7
+- check_id: V05_lotr_structural_na_pre_cp12e
+  anomaly_ref: A-10
+  description: LOT-R items must be 100% NA for cp08a–cp11d
+  type: na_rate
+  severity: error
+  items:
+  - 198-207
+  waves:
+  - cp08a
+  - cp09b
+  - cp10c
+  - cp11d
+  threshold: 1.0
+  direction: above
+- check_id: V06_unique_key
+  anomaly_ref: null
+  description: no duplicate (nomem_encr, wave_id) combinations
+  type: uniqueness
+  severity: error
+  column: nomem_encr
+  within: wave_id
+- check_id: V07_wave_count
+  anomaly_ref: null
+  description: no person appears in more than 16 waves
+  type: wave_count
+  severity: error
+  max_waves: 16
+- check_id: V08_bigfive_range
+  anomaly_ref: null
+  description: Big Five items (020–069) must be in 1–5 or NA
+  type: value_range
+  severity: error
+  items:
+  - 020-069
+  min: 1
+  max: 5
+- check_id: V09_rosenberg_range
+  anomaly_ref: null
+  description: Rosenberg self-esteem (070–079) must be in 1–7 or NA
+  type: value_range
+  severity: error
+  items:
+  - 070-079
+  min: 1
+  max: 7
+- check_id: V10_values_range
+  anomaly_ref: null
+  description: Schwartz/Rokeach values (099–134) must be in 1–7 or NA
+  type: value_range
+  severity: error
+  items:
+  - 099-134
+  min: 1
+  max: 7
+- check_id: V11_lotr_range
+  anomaly_ref: null
+  description: LOT-R items (198–207) must be in 1–5 or NA
+  type: value_range
+  severity: error
+  items:
+  - 198-207
+  min: 1
+  max: 5
+- check_id: V12_paradata_range
+  anomaly_ref: null
+  description: paradata items (184–188) must be in 1–5 or NA
+  type: value_range
+  severity: error
+  items:
+  - 184-188
+  min: 1
+  max: 5
+- check_id: V13_routing_skip_pattern
+  anomaly_ref: A-07
+  description: 'in waves with routing, short-version respondents should be ~100% NA on gated Big Five block 050–069
+
+    '
+  type: na_rate
+  severity: warning
+  items:
+  - 050-069
+  waves:
+  - cp10c
+  - cp12e
+  - cp15h
+  - cp18j
+  condition: questionnaire_version == 'short'
+  threshold: 0.95
+  direction: above
+logging:
+  log_file: cp_merge_log.jsonl
+  report_file: cp_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates

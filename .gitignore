@@ -1,0 +1,17 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rcheck/
+*.tar.gz
+.DS_Store
+inst/doc
+*.bak
+*.bak.*
+**/.DS_Store
+.Renviron
+*.sav
+*.dta
+*.por
+*.zsav
+*.Rproj

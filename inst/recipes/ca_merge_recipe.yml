@@ -1,0 +1,534 @@
+# ========================================================================
+# LISS Panel Assets (CA) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+#
+# Scope: content-level harmonization (code lists, wave ranges, suffix
+# memberships, label texts). Action names and payload shapes are stable;
+# payloads for stub/pending mechanisms are kept and marked `# TODO_REEXPRESS`.
+# Action vocabulary is restricted to engine-implemented actions.
+
+meta:
+  module: "ca"
+  module_label: "Assets"
+  schema_version: "1.0.0"
+  recipe_version: "1.0.0"
+  created: "2026-06-13"
+  source_spec: "cross-wave harmonization specification"
+  covered_waves: [ca08a, ca10b, ca12c, ca14d, ca16e, ca18f, ca20g, ca22h, ca24i, ca25j]
+  notes: >-
+    Sentinel handling: the large-positive DK/refuse recode covers BOTH the
+    10-digit (9999999999/9999999998) and 11-digit (99999999999/99999999998)
+    widths (confirmed against ca_value_labels.csv). A wave-scoped recode_to_na
+    covers the new-regime large-NEGATIVE amount sentinels
+    (-9999999999/-9999999998) on ca22h/ca24i/ca25j, the second half of the
+    A-01 sentinel-encoding reversal. The 999 categorical-DK recode covers the
+    full set carrying 999 in the value labels, scoped ca08a-ca24i (ca25j uses
+    -9). Native -9/-8 missing codes are left intact (no panel-wide recode);
+    ca20g large-negative values are handled by B03 (add_flag), not a blanket
+    recode.
+
+global:
+  id_variable: "nomem_encr"
+  wave_variable: "wave_id"
+  year_variable: "wave_year"
+  labelled_policy: "to_numeric"              # to_numeric | to_factor | keep_labelled
+  missing_variable_policy: "warn_and_create_na"  # error | warn_and_skip | warn_and_create_na
+  strip_label_whitespace: true
+
+  expected_presence:
+    critical:
+      - variable: "nomem_encr"
+        waves: "all"
+        on_absence: "error"
+      - variable: "fieldwork_ym"
+        waves: "all"
+        on_absence: "warn"
+    optional_note: >
+      fieldwork_ym is engine-derived from each wave's *_m column; it is retained
+      here (do not remove). nohouse_encr is intentionally NOT listed critical
+      (present only ca08a/ca10b; see drop_retain_rules / A-07).
+
+# wave_index: `year` is the REFERENCE year of the assets measured (audit reference
+# dates are 31 December of each year), not the fieldwork year. The fieldwork
+# window is preserved in `field_months`; `year` deliberately tracks the
+# reference year rather than the fieldwork year. ca24i/ca25j are one reference
+# year apart (2023 then 2024), breaking the otherwise biennial cadence.
+wave_index:
+  - id: "ca08a"
+    year: 2007
+    file_pattern: "ca08a_*"
+    field_months: "2008-06"
+    wave_number: 1
+  - id: "ca10b"
+    year: 2009
+    file_pattern: "ca10b_*"
+    field_months: "2010-06"
+    wave_number: 2
+  - id: "ca12c"
+    year: 2011
+    file_pattern: "ca12c_*"
+    field_months: "2012-06"
+    wave_number: 3
+  - id: "ca14d"
+    year: 2013
+    file_pattern: "ca14d_*"
+    field_months: "2014-10"
+    wave_number: 4
+  - id: "ca16e"
+    year: 2015
+    file_pattern: "ca16e_*"
+    field_months: "2016-06"
+    wave_number: 5
+  - id: "ca18f"
+    year: 2017
+    file_pattern: "ca18f_*"
+    field_months: "2018-10"
+    wave_number: 6
+  - id: "ca20g"
+    year: 2019
+    file_pattern: "ca20g_*"
+    field_months: "2020-09"
+    wave_number: 7
+  - id: "ca22h"
+    year: 2021
+    file_pattern: "ca22h_*"
+    field_months: "2022-09"
+    wave_number: 8
+  - id: "ca24i"
+    year: 2023
+    file_pattern: "ca24i_*"
+    field_months: "2024-09"
+    wave_number: 9
+  - id: "ca25j"
+    year: 2024
+    file_pattern: "ca25j_*"
+    field_months: "2025-07"
+    wave_number: 10
+
+# ── Variable rules ────────────────────────────────────────────────────────────
+variable_rules:
+
+  - rule_id: VR01_strip_prefix
+    action: strip_prefix
+    description: "remove wave prefix (e.g. ca08a) from all column names; engine prepends 's' to names beginning with a digit/underscore (004 -> s004)"
+    strip_regex: "^ca\\d{2}[a-z]"
+    anomaly_ref: null
+
+  - rule_id: VR02_ca08a_renumber
+    action: rename
+    description: "align ca08a pre-condensation suffixes to the post-ca10b numbering (004->078 banking, 029->079 director, 040->080 BV equity, 047->081 sole proprietorship)"
+    waves: [ca08a]
+    mapping:
+      "004": "078"
+      "029": "079"
+      "040": "080"
+      "047": "081"
+    anomaly_ref: "A-06"
+
+  - rule_id: VR03_coerce_amounts_numeric
+    action: type_coerce
+    description: "ensure continuous euro-amount variables are numeric (some waves store them as integer)"
+    target_type: numeric
+    suffixes: ["012","014","016","018","021","023","025","027","032","035",
+               "038","042","045","049","052","055","063","083","085",
+               "102","104","106","108","110","114","116","118","120",
+               "142","144","146","148","150"]
+    anomaly_ref: null
+
+  - rule_id: VR04_id_integer
+    action: safe_integer_cast
+    description: "cast encrypted respondent id to integer without overflow (plain as.integer would corrupt large encrypted ids)"
+    variables: ["nomem_encr"]
+    anomaly_ref: null
+
+# ── Harmonization rules ───────────────────────────────────────────────────────
+# Applied in order. Sentinel recodes run before any downstream use.
+harmonization_rules:
+
+  # A-01 sentinel-encoding reversal, old-regime side: large-POSITIVE DK/refuse
+  # codes on euro amounts. BOTH widths included: 11-digit (99999999999/8) appear
+  # on suffixes 012/016; 10-digit (9999999999/8) appear on the remaining amounts.
+  # Large integers are quoted to avoid R yaml int32 overflow; the engine parses
+  # them back to numeric.
+  - rule_id: H01_sentinel_largepos
+    action: recode_to_na
+    description: "recode large-positive DK/refuse sentinels (both 10- and 11-digit widths) to NA on euro-amount variables, old regime"
+    waves: [ca08a, ca10b, ca12c, ca14d, ca16e, ca18f, ca20g]
+    suffixes: ["012","014","016","018","021","023","025","027","032","035",
+               "038","042","045","049","052","055","063","083","085"]
+    codes: ["99999999999", "99999999998", "9999999999", "9999999998"]
+    anomaly_ref: "A-01"
+
+  # A-01 sentinel-encoding reversal, new-regime side: large-NEGATIVE DK/refuse
+  # codes documented on ca22h/ca24i/ca25j euro amounts.
+  - rule_id: H02_sentinel_largeneg
+    action: recode_to_na
+    description: "recode large-negative DK/refuse sentinels to NA on euro-amount variables, new regime (ca22h onward)"
+    waves: [ca22h, ca24i, ca25j]
+    suffixes: ["012","016","035","083","085","102","104","118","120"]
+    codes: ["-9999999999", "-9999999998"]
+    anomaly_ref: "A-01"
+
+  # A-01 categorical DK sentinel (999) on bracketed-category variables. Present
+  # ca08a-ca24i; ca25j switched to -9 (a native do-not-know sentinel, left intact per the -7 convention).
+  - rule_id: H03_sentinel_categorical
+    action: recode_to_na
+    description: "recode 999 'I don't know' to NA on bracketed-category variables (ca08a-ca24i)"
+    waves: [ca08a, ca10b, ca12c, ca14d, ca16e, ca18f, ca20g, ca22h, ca24i]
+    suffixes: ["013","015","017","019","022","024","026","028","033","036",
+               "039","043","046","050","053","056","064","084","086"]
+    codes: ["999"]
+    anomaly_ref: "A-01"
+
+  # A-04 debt-bracket expansion: ca25j split the old top bracket (15 = "EUR 25,000
+  # or more") into 16/17/18. Collapse back to 15 for backward comparability;
+  # the un-collapsed detail is preserved separately.
+  - rule_id: H04_debt_bracket_collapse
+    action: value_recode
+    description: "collapse ca25j debt brackets 16/17/18 into legacy top bracket 15 (variable 056); preserve un-collapsed detail"
+    waves: [ca25j]
+    variables: ["056"]
+    mapping:
+      "16": 15
+      "17": 15
+      "18": 15
+    preserve_original: true
+    original_suffix: "056_ca25j_detail"
+    anomaly_ref: "A-04"
+
+  # A-09 apostrophe encoding: ca08a uses U+2019 (right single quote) in
+  # "I don't know"; other waves use ASCII. Normalise to ASCII for programmatic
+  # label matching. (Under labelled_policy to_numeric the engine currently drops
+  # value labels, so this is a no-op until the scheduled engine label fix; the
+  # rule is retained so it activates once labels round-trip.)
+  - rule_id: H05_apostrophe_fix
+    action: fix_label
+    description: "normalise Unicode right-single-quote (U+2019) to ASCII apostrophe in value labels"
+    find: "’"
+    replace: "'"
+    anomaly_ref: "A-09"
+
+  # A-10 label casing: ca25j capitalises Yes/No; earlier waves use lowercase.
+  - rule_id: H06_yesno_lowercase
+    action: lowercase_labels
+    description: "lowercase ca25j Yes/No value labels to match earlier waves"
+    waves: [ca25j]
+    anomaly_ref: "A-10"
+
+  # A-10 position-003 retranslations in ca25j (cosmetic label differences).
+  - rule_id: H07_position003_retranslate
+    action: fix_label
+    description: "harmonise ca25j position-003 label retranslations to the canonical earlier-wave wording"
+    waves: [ca25j]
+    variables: ["003"]
+    replacements:
+      - {find: "Household head", replace: "head of household"}
+      - {find: "Wedded partner", replace: "married partner"}
+    anomaly_ref: "A-10"
+
+  # A-02 category bracket shift at value 11 (documentary; codes unchanged, only
+  # the euro boundary moved EUR 25,500 -> EUR 25,000). note_only short-circuits.
+  - rule_id: H08_bracket_shift_note
+    action: note_only
+    description: "value 11 bracket boundary shifted (EUR 25,500 -> EUR 25,000) on suffixes 015/017/024/026/028/064; codes unchanged so no recode, but cross-wave bracket means are not strictly comparable at the boundary"
+    anomaly_ref: "A-02"
+
+  # A-06 business/self-employment variable consolidation after ca10b: detailed
+  # items 029-053 condensed to 079-086 with no official crosswalk (documentary).
+  - rule_id: H09_business_consolidation_note
+    action: note_only
+    description: "detailed business/self-employment items (029-053) were condensed to indicators 079-086 after ca10b with no published crosswalk; treat detailed sub-measures as structurally NA from ca12c onward"
+    anomaly_ref: "A-06"
+
+  # A-08 cryptocurrency variable 088: introduced ca22h; label drifted in ca25j
+  # ("Cryptocurrency" -> "Shares in bitcoin or other crypto coins"). Documentary.
+  - rule_id: H10_crypto_note
+    action: note_only
+    description: "variable 088 (cryptocurrency) introduced ca22h and is structurally absent before; ca25j label drift may narrow scope - treat ca22h-ca25j as one series but flag the label change"
+    anomaly_ref: "A-08"
+
+# ── Boundary rules ────────────────────────────────────────────────────────────
+boundary_rules:
+
+  # Three instrument regimes across the panel.
+  - rule_id: B01_instrument_era
+    action: add_era_flag
+    description: "tag instrument era: 1 = detailed business items (ca08a-ca10b), 2 = condensed indicators (ca12c-ca24i), 3 = ca25j redesign"
+    flag_variable: instrument_era
+    eras:
+      "1": [ca08a, ca10b]
+      "2": [ca12c, ca14d, ca16e, ca18f, ca20g, ca22h, ca24i]
+      "3": [ca25j]
+    anomaly_ref: "A-03"
+
+  # ca25j questionnaire redesign: a structural break in comparability.
+  - rule_id: B02_ca25j_redesign
+    action: add_period_flag
+    description: "flag the ca25j questionnaire restructuring (14 items dropped, 69 new items 091-159, top-level decomposition of balances/insurance/investments/debt)"
+    flag_variable: ca25j_redesign
+    period_waves: [ca25j]
+    comparability:
+      status: "non_comparable"
+      method: "pool_with_flags"
+      rationale: "ca25j decomposed single asset questions into multiple sub-items; harmonised totals are reconstructed (see derived_variables) and must be pooled only with the redesign flag"
+    anomaly_ref: "A-03"
+
+  # ca20g undocumented large-negative sentinels in the DATA (not in ca20g value
+  # labels): flagged for mandatory manual review rather than auto-recoded, since
+  # their meaning at ca20g is unconfirmed.
+  - rule_id: B03_ca20g_largeneg_review
+    action: add_flag
+    description: "flag respondents whose ca20g euro-amount cells contain undocumented large-negative values (-9999999999/-9999999998); every hit MUST be reviewed manually before any recode - the ca20g codebook does not document these codes"
+    flag_variable: ca20g_largeneg_review
+    flag_true_waves: [ca20g]
+    target_suffixes: ["012","014","016","018","021","023","025","027","032","035",
+                      "038","042","045","049","052","055","063","083","085"]
+    review_required: true
+    anomaly_ref: "A-01"
+
+  # A-11 (supplementary, engine-detected): ca22h preloaded-answer programming
+  # fault elevates item nonresponse.
+  - rule_id: B04_ca22h_preload_flag
+    action: add_flag
+    description: "flag ca22h for the preloaded-answer programming error that elevates item nonresponse on carried-forward variables"
+    flag_variable: preload_failure
+    flag_true_waves: [ca22h]
+    anomaly_ref: "A-11"
+
+# ── Drop / retain rules ───────────────────────────────────────────────────────
+drop_retain_rules:
+
+  # A-07 household identifier: present only ca08a/ca10b. Retain as metadata for
+  # the two waves that have it (needed for household-level linkage); it is not an
+  # analysis variable and must not be carried as NA into later waves' analyses.
+  - rule_id: DR01_nohouse_metadata
+    action: retain_as_metadata_only
+    description: "retain nohouse_encr (encrypted household id) as metadata for ca08a/ca10b only; household-level aggregation for ca12c+ requires external linkage to the Background Variables household id (document the external file and vintage)"
+    variables: ["nohouse_encr"]
+    anomaly_ref: "A-07"
+
+  - rule_id: DR02_drop_attrition_076
+    action: drop
+    description: "drop attrition-management item 076 (ca10b only; not part of the asset panel)"
+    variables: ["076"]
+    anomaly_ref: null
+
+  - rule_id: DR03_drop_attrition_077
+    action: drop
+    description: "drop attrition-management item 077 (ca10b only; not part of the asset panel)"
+    variables: ["077"]
+    anomaly_ref: null
+
+# ── Derived variables ─────────────────────────────────────────────────────────
+# The package engine materialises derived_variables as all-NA columns today
+# (the derived-variable executor is pending). Full payloads are retained so the
+# executor can compute them once shipped.
+# TODO_REEXPRESS: recompute these once the derived-variable executor lands.
+derived_variables:
+
+  - rule_id: h_balance_total
+    name: h_balance_total
+    description: "harmonised banking/savings balance: pre-ca25j single amount 012; ca25j sum of decomposed 102+104"
+    domain: euro_amount
+    method: sum
+    sources:
+      default: ["012"]
+      ca25j: ["102", "104"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_insurance_total
+    name: h_insurance_total
+    description: "harmonised insurance value: pre-ca25j single amount 014; ca25j sum of decomposed 106+108"
+    domain: euro_amount
+    method: sum
+    sources:
+      default: ["014"]
+      ca25j: ["106", "108"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_investment_total
+    name: h_investment_total
+    description: "harmonised investment value: pre-ca25j single amount 016; ca25j sum of decomposed 110+114+116+118+120"
+    domain: euro_amount
+    method: sum
+    sources:
+      default: ["016"]
+      ca25j: ["110", "114", "116", "118", "120"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_debt_total
+    name: h_debt_total
+    description: "harmonised total debt amount: pre-ca25j single amount 063; ca25j sum of decomposed 142+144+146+148+150"
+    domain: euro_amount
+    method: sum
+    sources:
+      default: ["063"]
+      ca25j: ["142", "144", "146", "148", "150"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_has_banking
+    name: h_has_banking
+    description: "harmonised banking/savings possession: pre-ca25j indicator 078; ca25j max of 091/092"
+    domain: indicator
+    method: max
+    sources:
+      default: ["078"]
+      ca25j: ["091", "092"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_has_insurance
+    name: h_has_insurance
+    description: "harmonised insurance possession: pre-ca25j indicator 005; ca25j max of 093/094"
+    domain: indicator
+    method: max
+    sources:
+      default: ["005"]
+      ca25j: ["093", "094"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_has_investments
+    name: h_has_investments
+    description: "harmonised investment possession: pre-ca25j indicator 006; ca25j max of 095-100"
+    domain: indicator
+    method: max
+    sources:
+      default: ["006"]
+      ca25j: ["095", "096", "097", "098", "099", "100"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  - rule_id: h_has_mortgage
+    name: h_has_mortgage
+    description: "harmonised mortgage indicator: pre-ca25j indicator 020; ca25j direct map of 132"
+    domain: indicator
+    method: direct
+    sources:
+      default: ["020"]
+      ca25j: ["132"]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-03"
+
+  # A-05 credit-card split: 059 (any balance carried) ca08a-ca12c and 087
+  # (balance overdue) ca14d-ca25j measure different constructs; kept as two
+  # separate series, never merged. Documented here via descriptions.
+  - rule_id: h_creditcard_anybalance
+    name: h_creditcard_anybalance
+    description: "credit-card ANY-balance-carried indicator from 059 (ca08a-ca12c only); NOT equivalent to 087 - do not merge"
+    domain: indicator
+    method: direct
+    sources:
+      default: ["059"]
+    present_waves: [ca08a, ca10b, ca12c]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-05"
+
+  - rule_id: h_creditcard_overdue
+    name: h_creditcard_overdue
+    description: "credit-card OVERDUE-balance indicator from 087 (ca14d-ca25j only); NOT equivalent to 059 - do not merge"
+    domain: indicator
+    method: direct
+    sources:
+      default: ["087"]
+    present_waves: [ca14d, ca16e, ca18f, ca20g, ca22h, ca24i, ca25j]
+    na_rule: na_if_all_missing
+    anomaly_ref: "A-05"
+
+# ── Validation checks ─────────────────────────────────────────────────────────
+validation_checks:
+
+  - check_id: V01_sentinel_completeness
+    description: "no large-positive, large-negative, or 999 sentinels remain in amount or bracket variables after recoding"
+    type: sentinel_completeness
+    sentinels: ["99999999999", "99999999998", "9999999999", "9999999998",
+                "-9999999999", "-9999999998", "999"]
+    severity: error
+
+  - check_id: V02_boundary_distribution
+    description: "mean and missingness shifts across adjacent waves stay within threshold"
+    type: distribution_shift
+    boundaries:
+      - {before: ca08a, after: ca10b}
+      - {before: ca10b, after: ca12c}
+      - {before: ca12c, after: ca14d}
+      - {before: ca18f, after: ca20g}
+      - {before: ca20g, after: ca22h}
+      - {before: ca24i, after: ca25j}
+    mean_shift_threshold_sd: 0.5
+    missingness_shift_threshold_pp: 5.0
+    severity: warning
+
+  - check_id: V03_skip_logic_missingness
+    description: "amount/bracket is NA when its possession indicator is 0 or NA (skip logic)"
+    type: conditional_missingness
+    pairs:
+      - {indicator_suffix: "078", amount_suffixes: ["012", "013"], waves_exclude: [ca25j]}
+      - {indicator_suffix: "005", amount_suffixes: ["014", "015"], waves_exclude: [ca25j]}
+      - {indicator_suffix: "006", amount_suffixes: ["016", "017"], waves_exclude: [ca25j]}
+    severity: warning
+
+  - check_id: V04_no_duplicate_keys
+    description: "exactly one row per (nomem_encr, wave_id)"
+    type: unique_key
+    key_columns: [nomem_encr, wave_id]
+    severity: error
+
+  - check_id: V05_row_counts
+    description: "merged row count per wave matches the source file"
+    type: row_count_match
+    severity: error
+
+  - check_id: V06_creditcard_split
+    description: "059 and 087 are not merged; each is non-missing only in its own wave span"
+    type: prevalence_check
+    variables:
+      - {name: h_creditcard_anybalance, waves_expected_nonmissing: [ca08a, ca10b, ca12c]}
+      - {name: h_creditcard_overdue, waves_expected_nonmissing: [ca14d, ca16e, ca18f, ca20g, ca22h, ca24i, ca25j]}
+    severity: warning
+    anomaly_ref: "A-05"
+
+  - check_id: V07_preload_nonresponse
+    description: "item nonresponse on preloaded variables in ca22h vs adjacent waves"
+    type: nonresponse_comparison
+    suffixes: ["079", "030", "080", "041", "081", "048", "054"]
+    wave_test: ca22h
+    wave_controls: [ca20g, ca24i]
+    threshold_pp: 5.0
+    severity: warning
+    anomaly_ref: "A-11"
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+logging:
+  log_file: "merge_log.jsonl"
+  report_file: "merge_report.txt"
+  log_format: "jsonl"
+  per_rule_fields:
+    - rule_id
+    - wave_id
+    - variable
+    - action
+    - rows_affected
+    - values_changed
+    - distinct_before
+    - distinct_after
+    - na_count_before
+    - na_count_after
+    - timestamp
+    - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+      - total_na_created
+      - total_values_recoded
+      - total_rows_dropped
+      - total_vars_dropped
+      - wave_row_counts
+      - per_variable_na_rates

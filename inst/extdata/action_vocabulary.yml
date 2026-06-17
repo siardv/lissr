@@ -1,0 +1,79 @@
+# canonical action vocabulary
+# single source of truth loaded by liss_merge_engine.R (validate_recipe) and
+# validate_recipe_cli.R, and from which the CANONICAL_SCHEMA.md vocabulary tables
+# are generated. ending the doc-versus-engine divergence.
+#
+# a validator builds VALID_ACTIONS[[section]] as every action whose `sections`
+# list contains that section. `status` is informational for the validator (all
+# listed actions validate); it drives executor behavior and the schema-doc table.
+#
+# status values:
+#   implemented   working executor that transforms data
+#   stub          validates but is log-and-skip today; needs an executor or recipe relocation
+#   copy_only     partial: copies a source column today, real derivation pending
+#   note_no_op    intentionally documentary; correct as a no-op
+#   deprecated    accepted for back-compat; folds into another action or placement; do not use in new recipes
+#   pending_spec  in the vocabulary, no payload ruling this cycle
+#   new           newly added action
+
+actions:
+  # ---- variable_rules ----
+  - {name: strip_prefix,              sections: [variable_rules], status: implemented}
+  - {name: type_coerce,               sections: [variable_rules, harmonization_rules], status: implemented, deprecated_in: [harmonization_rules], notes: "reads suffixes/variables/variable; not executed in harmonization placement"}
+  - {name: coerce_type,               sections: [variable_rules], status: implemented}
+  - {name: coerce_numeric,            sections: [variable_rules], status: implemented}
+  - {name: rename,                    sections: [variable_rules], status: implemented, notes: "moves in place; copy mode needed for cd h_* columns"}
+  - {name: rename_to_suffix,          sections: [variable_rules], status: implemented}
+  - {name: set_label,                 sections: [variable_rules], status: implemented}
+  - {name: apply_labelled_policy,     sections: [variable_rules], status: implemented}
+  - {name: strip_value_labels,        sections: [variable_rules], status: implemented}
+  - {name: strip_labels_coerce_numeric, sections: [variable_rules], status: implemented}
+  - {name: ensure_column,             sections: [variable_rules], status: implemented}
+  - {name: use_global_policy,         sections: [variable_rules], status: implemented}
+  - {name: identity,                  sections: [variable_rules], status: implemented}
+  - {name: safe_integer_cast,         sections: [variable_rules, boundary_rules], status: implemented}
+  - {name: derive_fieldwork_month,    sections: [variable_rules, harmonization_rules], status: copy_only, notes: "canonical fieldwork_ym = integer yyyymm derived after rules"}
+  - {name: parse_time,                sections: [variable_rules, harmonization_rules], status: copy_only}
+
+  # ---- harmonization_rules ----
+  - {name: recode_to_na,              sections: [harmonization_rules], status: implemented}
+  - {name: recode_sentinels_to_na,    sections: [harmonization_rules], status: implemented}
+  - {name: na_recode,                 sections: [harmonization_rules], status: implemented}
+  - {name: recode,                    sections: [harmonization_rules], status: implemented}
+  - {name: value_recode,              sections: [harmonization_rules], status: implemented}
+  - {name: fix_label,                 sections: [harmonization_rules, boundary_rules], status: implemented, notes: "keys label_find/label_replace; old_fragment/new_fragment are legacy aliases; inert until label round-trip"}
+  - {name: strip_question_stem,       sections: [harmonization_rules], status: implemented, notes: "label-only; inert under to_numeric"}
+  - {name: lowercase_labels,          sections: [harmonization_rules], status: implemented, notes: "label-only; inert under to_numeric"}
+  - {name: normalize_labels,          sections: [harmonization_rules], status: implemented, notes: "label-only; inert under to_numeric"}
+  - {name: flag_only,                 sections: [harmonization_rules, drop_retain_rules], status: implemented}
+  - {name: flag_absence,              sections: [harmonization_rules, drop_retain_rules], status: implemented}
+  - {name: subtract,                  sections: [harmonization_rules], status: deprecated, notes: "folds into transform op:subtract; one offset mechanism"}
+  - {name: crosswalk,                 sections: [harmonization_rules], status: stub, notes: "executor + coverage check at error severity; unmapped -> NA"}
+  - {name: conditional_label_swap,    sections: [harmonization_rules], status: stub, notes: "label-only executor"}
+  - {name: label_to_string,           sections: [harmonization_rules], status: stub, notes: "needs value-labels input; unmapped policy = crosswalk"}
+  - {name: derive_combined_party,     sections: [harmonization_rules, boundary_rules], status: stub, notes: "runs after label_to_string"}
+  - {name: extend_categories,         sections: [harmonization_rules], status: note_no_op}
+  - {name: transform,                 sections: [harmonization_rules], status: new, notes: "per-wave offset; op subtract/add/identity"}
+
+  # ---- boundary_rules ----
+  - {name: add_era_flag,              sections: [boundary_rules], status: implemented}
+  - {name: add_flag,                  sections: [boundary_rules], status: implemented}
+  - {name: add_period_flag,           sections: [boundary_rules], status: implemented}
+  - {name: split_variable,            sections: [boundary_rules], status: implemented}
+  - {name: structural_na,             sections: [boundary_rules], status: implemented, notes: "presence-flag column only; preferred re-expression for retain_where_present"}
+  - {name: filter_rows,               sections: [boundary_rules], status: implemented}
+  - {name: drop_outside,              sections: [boundary_rules, drop_retain_rules], status: implemented}
+  - {name: crosswalk_rename,          sections: [boundary_rules], status: implemented, notes: "runs before derived_variables"}
+  - {name: structural_note,           sections: [boundary_rules], status: note_no_op}
+  - {name: stack_aux_files,           sections: [boundary_rules], status: pending_spec, notes: "two modes (sidecar, aux-file); no ruling this cycle"}
+  - {name: retain_where_present,      sections: [boundary_rules], status: stub, notes: "presence-windowed NA fill; re-express as structural_na + stacking NA-fill"}
+  - {name: retain_but_flag,           sections: [boundary_rules, drop_retain_rules], status: stub, notes: "executor undefined; pending"}
+
+  # ---- drop_retain_rules ----
+  - {name: drop,                      sections: [drop_retain_rules], status: implemented}
+  - {name: retain,                    sections: [drop_retain_rules], status: implemented}
+  - {name: retain_if_present,         sections: [drop_retain_rules], status: implemented}
+  - {name: retain_as_metadata_only,   sections: [drop_retain_rules], status: implemented}
+
+  # ---- all sections ----
+  - {name: note_only,                 sections: [variable_rules, harmonization_rules, boundary_rules, drop_retain_rules], status: note_no_op}

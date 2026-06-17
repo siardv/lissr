@@ -1,0 +1,1115 @@
+# ========================================================================
+# LISS Panel Work and Schooling (CW) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: cw
+  module_label: Work and Schooling
+  recipe_version: "1.0.0"
+  created: '2026-02-10'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+  notes: >-
+    HR02 education crosswalk completed for the upper codes (scheme-1 19-27
+    mapped into scheme-2/3 numbering 20-28; scheme-2 identity 20-28; scheme-3
+    19->51 plus identity 20-28) with coverage check V11 added; BR01 overbroad
+    pattern replaced by the exact decomposition of the 93 drops (79 stable
+    drops enumerated; q211/q255 reintroduced in cw25r; q005 plus
+    q040/q042-q047/ q049/q050/q052/q053 absent in cw19l only; q028 absent from
+    cw20m and q029 from cw21n) and the redundant additional_dropped list
+    removed; BR02 span corrected to q549-q609 with cw19l-only
+    q556/q573/q574/q575 carved out; the cw16i-only q540-q548 expenditure block
+    and the q610-q613 introductions documented as note_only rules; BR03
+    phantom ids q619-q628 and q680 noted; fieldwork months for cw22o-cw25r
+    corrected to April; anomaly_ref bookkeeping fixed (V09 -> A-12, HR01 and
+    V08 -> null); VR03 extended with q359 and q362; VR05 description trimmed
+    to what coerce_type performs; structural check V12 asserts the cw19l
+    education gap. Scope note: A-10 and A-11 carry no rules by design (they
+    require codebook documentation, not merge transforms). Action names and
+    payload shapes retained; the HR02 crosswalk payload is marked
+    TODO_REEXPRESS pending the crosswalk executor and unmapped-value policy.
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_numeric
+  missing_variable_policy: warn_and_create_na
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+  taxonomy_refs:
+    edu_scheme:
+      source: taxonomies/cw_edu_scheme.yml
+      note: externalize edu_scheme into versioned reference file
+wave_index:
+- id: cw11d
+  year: 2011
+  file_pattern: cw11d_*
+  notes: ''
+  month: 4
+  label: April 2011
+  edu_scheme: 1
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: &id001
+    edu_harmonized: edu_harmonized
+    edu_scheme_version: edu_scheme_version
+    training_module_available: training_module_available
+    pension_module_available: pension_module_available
+    post_restructuring_module_available: post_restructuring_module_available
+- id: cw12e
+  year: 2012
+  file_pattern: cw12e_*
+  notes: ''
+  month: 4
+  label: April 2012
+  edu_scheme: 1
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw13f
+  year: 2013
+  file_pattern: cw13f_*
+  notes: ''
+  month: 4
+  label: April 2013
+  edu_scheme: 1
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw14g
+  year: 2014
+  file_pattern: cw14g_*
+  notes: ''
+  month: 4
+  label: April 2014
+  edu_scheme: 1
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw15h
+  year: 2015
+  file_pattern: cw15h_*
+  notes: ''
+  month: 4
+  label: April 2015
+  edu_scheme: 2
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw16i
+  year: 2016
+  file_pattern: cw16i_*
+  notes: ''
+  month: 4
+  label: April 2016
+  edu_scheme: 2
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw17j
+  year: 2017
+  file_pattern: cw17j_*
+  notes: ''
+  month: 4
+  label: April 2017
+  edu_scheme: 2
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw18k
+  year: 2018
+  file_pattern: cw18k_*
+  notes: ''
+  month: 4
+  label: April 2018
+  edu_scheme: 2
+  questionnaire_era: full_training
+  capitalization: lowercase
+  role_map: *id001
+- id: cw19l
+  year: 2019
+  file_pattern: cw19l_*
+  notes: q005 absent from this wave; edu_harmonized is structurally all-NA for
+    2019 although edu_scheme 2 is assigned (asserted by V12_cw19l_edu_gap)
+  month: 4
+  label: April 2019
+  edu_scheme: 2
+  questionnaire_era: post_restructuring
+  capitalization: lowercase
+  role_map: *id001
+- id: cw20m
+  year: 2020
+  file_pattern: cw20m_*
+  notes: ''
+  month: 4
+  label: April 2020
+  edu_scheme: 2
+  questionnaire_era: post_restructuring
+  capitalization: titlecase
+  role_map: *id001
+- id: cw21n
+  year: 2021
+  file_pattern: cw21n_*
+  notes: ''
+  month: 4
+  label: April 2021
+  edu_scheme: 2
+  questionnaire_era: post_restructuring
+  capitalization: titlecase
+  role_map: *id001
+- id: cw22o
+  year: 2022
+  file_pattern: cw22o_*
+  notes: ''
+  month: 4
+  label: April 2022
+  edu_scheme: 2
+  questionnaire_era: post_restructuring
+  capitalization: titlecase
+  role_map: *id001
+- id: cw23p
+  year: 2023
+  file_pattern: cw23p_*
+  notes: ''
+  month: 4
+  label: April 2023
+  edu_scheme: 2
+  questionnaire_era: post_restructuring
+  capitalization: lowercase
+  role_map: *id001
+- id: cw24q
+  year: 2024
+  file_pattern: cw24q_*
+  notes: ''
+  month: 4
+  label: April 2024
+  edu_scheme: 3
+  questionnaire_era: post_restructuring
+  capitalization: lowercase
+  role_map: *id001
+- id: cw25r
+  year: 2025
+  file_pattern: cw25r_*
+  notes: ''
+  month: 4
+  label: April 2025
+  edu_scheme: 3
+  questionnaire_era: post_restructuring
+  capitalization: lowercase
+  role_map: *id001
+variable_rules:
+- rule_id: VR01_strip_prefix
+  anomaly_ref: null
+  description: strip wave prefix (e.g. cw11d005 -> q005) to create canonical names
+  action: rename
+  pattern: ^cw\d{2}[a-z]
+  replacement: q
+  applies_to: all_variables
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VR02_q112_to_character
+  anomaly_ref: A-03
+  description: force disability diagnosis to character in all waves where present
+  action: coerce_type
+  variables:
+  - q112
+  target_type: character
+  waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  - cw19l
+  - cw20m
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR03_q323_force_numeric
+  anomaly_ref: A-02
+  description: strip haven labels from wage variable; force numeric (q359 and
+    q362 share the same labelled-numeric drift from cw20m onward)
+  action: strip_labels_coerce_numeric
+  variables:
+  - q323
+  - q359
+  - q362
+  waves: all
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR04_paradata_timestamps
+  anomaly_ref: A-09
+  description: parse q502/q504 to HH:MM:SS character
+  action: parse_time
+  variables:
+  - q502
+  - q504
+  target_format: '%H:%M:%S'
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VR05_employment_binary
+  anomaly_ref: A-04
+  description: verify q088-q102 are 0/1 integer
+  action: coerce_type
+  variables:
+  - q088
+  - q089
+  - q090
+  - q091
+  - q092
+  - q093
+  - q094
+  - q095
+  - q096
+  - q097
+  - q098
+  - q099
+  - q100
+  - q101
+  - q102
+  target_type: integer
+  waves: all
+  if_absent: warn_and_create_na
+  log: true
+harmonization_rules:
+- rule_id: HR01_sentinel_recode
+  anomaly_ref: null
+  description: recode -9 (don't know) and -8 (prefer not to say) to NA
+  action: recode_to_na
+  applies_to: all_numeric
+  sentinel_values:
+  - -9
+  - -8
+  create_flag_column: true
+  flag_suffix: _dk_na
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HR02_edu_harmonize
+  anomaly_ref: A-01
+  description: harmonize q005 across three coding schemes
+  action: crosswalk  # TODO_REEXPRESS: validator-accepted but log-and-skip stub today; executor and unmapped-value policy land with engine support
+  variables:
+  - q005
+  scheme_column: edu_scheme
+  output_variable: edu_harmonized
+  output_scheme_flag: edu_scheme_version
+  crosswalk:
+    scheme_1:
+      1: 1
+      2: 2
+      3: 3
+      4: 4
+      5: 5
+      6: 6
+      7: 7
+      8: 8
+      9: 9
+      10: 10
+      11: 11
+      12: 12
+      13: 13
+      14: 14
+      15: 15
+      16: 16
+      17: 50
+      18: 51
+      # scheme-1 upper codes are offset by one against schemes 2/3
+      # (scheme-1 19 = HBO, scheme-2/3 19 = MBO-plus); map them into
+      # the scheme-2/3 numbering as the canonical space
+      19: 20
+      20: 21
+      21: 22
+      22: 23
+      23: 24
+      24: 25
+      25: 26
+      26: 27
+      27: 28
+    scheme_2:
+      1: 1
+      2: 2
+      3: 3
+      4: 4
+      5: 5
+      6: 6
+      7: 7
+      8: 8
+      9: 9
+      10: 10
+      11: 11
+      12: 12
+      13: 13
+      14: 14
+      15: 15
+      16: 16
+      17: 52
+      18: 53
+      19: 51
+      # identity for the upper codes 20-28
+      20: 20
+      21: 21
+      22: 22
+      23: 23
+      24: 24
+      25: 25
+      26: 26
+      27: 27
+      28: 28
+    scheme_3:
+      1: 1
+      2: 2
+      3: 3
+      4: 4
+      5: 5
+      6: 6
+      7: 7
+      8: 8
+      9: 9
+      10: 10
+      11: 11
+      12: 12
+      13: 13
+      14: 14
+      15: 15
+      16: 16
+      17: 54
+      18: 55
+      # cw24q/cw25r retain code 19 as MBO-plus; map to 51 like scheme_2
+      19: 51
+      # identity for the upper codes 20-28
+      20: 20
+      21: 21
+      22: 22
+      23: 23
+      24: 24
+      25: 25
+      26: 26
+      27: 27
+      28: 28
+      29: 56
+      30: 57
+  conservative_pooling:
+    description: for cross-scheme analysis, collapse MBO subtypes to a single bin
+    mbo_any_codes:
+    - 50
+    - 51
+    - 52
+    - 53
+    - 54
+    - 55
+    - 56
+    - 57
+    pooled_value: 99
+    pooled_label: MBO (any track, cross-scheme)
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: HR03_pension_dates
+  anomaly_ref: A-07
+  description: recode constrained categorical pension dates back to year
+  action: value_recode
+  variables:
+  - q149
+  - q153
+  - q157
+  - q161
+  - q165
+  - q169
+  - q173
+  - q177
+  - q181
+  - q185
+  wave_specific:
+    cw25r:
+      recode_map:
+        1: 2023
+        2: 2024
+  target_type: numeric
+  valid_range:
+  - 1990
+  - 2030
+  waves: all
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: HR04_label_case
+  anomaly_ref: A-08
+  description: normalize all value labels to lowercase
+  action: normalize_labels
+  transform: tolower
+  waves: all
+  log: true
+boundary_rules:
+- rule_id: BR01_training_module_drop
+  anomaly_ref: A-05
+  description: 93 variables dropped at 18k|19l; insert structural NA for post-restructuring waves
+  action: structural_na
+  # corrected decomposition of the 93 variables dropped at 18k|19l.
+  # the former pattern q0(0[4-9]|[1-7][0-9]|8[0-7]) swept in 37 variables
+  # that are present in the "absent" waves (q011-q027 exist in all 15 waves;
+  # see the carve-outs below) and missed 34 genuine drops outside q0xx;
+  # the former additional_dropped list was fully nested inside the pattern
+  # and added nothing, so it is removed.
+  dropped_variables:
+  # 79 stable drops, absent cw19l through cw25r
+  - q004
+  - q007
+  - q010
+  - q030
+  - q032
+  - q034
+  - q036
+  - q037
+  - q038
+  - q039
+  - q041
+  - q048
+  - q051
+  - q054
+  - q055
+  - q056
+  - q057
+  - q058
+  - q059
+  - q060
+  - q061
+  - q062
+  - q063
+  - q064
+  - q065
+  - q066
+  - q067
+  - q068
+  - q069
+  - q070
+  - q071
+  - q072
+  - q073
+  - q074
+  - q075
+  - q076
+  - q077
+  - q078
+  - q079
+  - q080
+  - q081
+  - q082
+  - q083
+  - q084
+  - q085
+  - q086
+  - q087
+  - q132
+  - q137
+  - q312
+  - q317
+  - q365
+  - q371
+  - q372
+  - q373
+  - q374
+  - q375
+  - q376
+  - q377
+  - q378
+  - q379
+  - q380
+  - q381
+  - q382
+  - q383
+  - q384
+  - q385
+  - q455
+  - q456
+  - q457
+  - q458
+  - q515
+  - q517
+  - q518
+  - q519
+  - q520
+  - q521
+  - q527
+  - q531
+  reintroduced_in_cw25r:
+    variables:
+    - q211
+    - q255
+    absent_from_waves:
+    - cw19l
+    - cw20m
+    - cw21n
+    - cw22o
+    - cw23p
+    - cw24q
+    note: pension fund checklist items; the same items return in cw25r with
+      year references updated to 2023/2024
+  absent_cw19l_only:
+    variables:
+    - q005
+    - q040
+    - q042
+    - q043
+    - q044
+    - q045
+    - q046
+    - q047
+    - q049
+    - q050
+    - q052
+    - q053
+    absent_from_waves:
+    - cw19l
+  later_drops_outside_the_93:
+    q028:
+      absent_from_waves:
+      - cw20m
+      - cw21n
+      - cw22o
+      - cw23p
+      - cw24q
+      - cw25r
+    q029:
+      absent_from_waves:
+      - cw21n
+      - cw22o
+      - cw23p
+      - cw24q
+      - cw25r
+  present_in_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  absent_from_waves:
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+  flag_column: training_module_available
+  flag_true_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 93 variables dropped at 18k|19l; insert structural NA for post-restructuring waves
+- rule_id: BR02_new_block_549
+  anomaly_ref: A-05
+  description: new q549-q609 block; insert structural NA for pre-restructuring waves
+  action: structural_na
+  # corrected span: the post-restructuring block runs q549-q609 (60 variables);
+  # the former pattern q5[4-8][0-9]|q5[5-8][0-3] resolved to q540-q589, which
+  # falsely claimed the cw16i-only q540-q548 expenditure block (see
+  # BR05_cw16i_expenditure_block) and missed q590-q609 entirely
+  new_variables_pattern: q5(49|[5-9][0-9])|q60[0-9]
+  # the pattern spans 61 ids; q571 exists in no wave, so the observed block
+  # holds 60 variables. harmless while the engine matches observed columns only
+  nonexistent_ids_matched_by_pattern:
+  - q571
+  cw19l_only_variables:
+    variables:
+    - q556
+    - q573
+    - q574
+    - q575
+    present_in_waves:
+    - cw19l
+    note: ephemeral items fielded in cw19l only; carved out of the block-wide
+      presence profile below
+  present_in_waves:
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+  absent_from_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  flag_column: post_restructuring_module_available
+  flag_true_waves:
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: new q549-q609 block; insert structural NA for pre-restructuring waves
+- rule_id: BR03_pension_module
+  anomaly_ref: A-06
+  description: 59 pension variables new in wave 25r; structural NA elsewhere
+  action: structural_na
+  # the pattern resolves to q614-q683 (70 ids); eleven of these exist in no
+  # wave (q619-q628 and q680). harmless while the engine matches observed
+  # columns only; do not instantiate columns from the pattern
+  new_variables_pattern: q6(1[4-9]|[2-7][0-9]|8[0-3])
+  nonexistent_ids_matched_by_pattern:
+  - q619
+  - q620
+  - q621
+  - q622
+  - q623
+  - q624
+  - q625
+  - q626
+  - q627
+  - q628
+  - q680
+  present_in_waves:
+  - cw25r
+  absent_from_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  flag_column: pension_module_available
+  flag_true_waves:
+  - cw25r
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: 59 pension variables new in wave 25r; structural NA elsewhere
+- rule_id: BR04_q112_drop
+  anomaly_ref: A-03
+  description: q112 absent from wave 21n onward; insert structural NA
+  action: structural_na
+  variables:
+  - q112
+  present_in_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  - cw19l
+  - cw20m
+  absent_from_waves:
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: q112 absent from wave 21n onward; insert structural NA
+- rule_id: BR05_cw16i_expenditure_block
+  anomaly_ref: null
+  description: q540-q548 is a one-off personal consumption expenditure block
+    fielded in cw16i only; it is unrelated to the 18k|19l restructuring and is
+    excluded from BR02's corrected pattern. no transform required; recorded so
+    the presence contract is complete.
+  action: note_only
+  variables:
+  - q540
+  - q541
+  - q542
+  - q543
+  - q544
+  - q545
+  - q546
+  - q547
+  - q548
+  present_in_waves:
+  - cw16i
+  log: true
+- rule_id: BR06_q610_q613_introductions
+  anomaly_ref: null
+  description: 'q610 and q611 first appear in cw20m; q612 and q613 first appear
+    in cw23p. additive introductions with no predecessor variables; no
+    transform required, recorded so the boundary documentation is complete.'
+  action: note_only
+  introductions:
+    q610:
+      present_from: cw20m
+    q611:
+      present_from: cw20m
+    q612:
+      present_from: cw23p
+    q613:
+      present_from: cw23p
+  log: true
+drop_retain_rules:
+- rule_id: DR01_keep_core
+  anomaly_ref: null
+  description: always retain panel identifiers
+  action: retain
+  variables:
+  - nomem_encr
+  # nohouse_encr exists in cw11d only; retained as a join key there and NA in
+  # the other 14 waves
+  - nohouse_encr
+  reason: panel join keys
+  log: true
+- rule_id: DR02_keep_paradata
+  anomaly_ref: null
+  description: retain survey paradata for quality checks
+  action: retain
+  variables:
+  - q496
+  - q497
+  - q498
+  - q499
+  - q500
+  - q501
+  - q502
+  - q503
+  - q504
+  - q505
+  reason: paradata (duration, timestamps, completion)
+  log: true
+- rule_id: DR03_drop_month
+  anomaly_ref: null
+  description: drop wave-month variable (redundant with wave_id)
+  action: drop
+  variables_pattern: ^q_m$
+  reason: month of interview captured in wave_id metadata
+  log: true
+derived_variables:
+- var_name: wave_id
+  rule_id: wave_id
+  anomaly_ref: null
+  description: wave identifier added as a column
+  type: character
+  source: wave file name
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_year
+  rule_id: wave_year
+  anomaly_ref: null
+  description: survey year from wave index
+  type: integer
+  source: wave_index.year
+  if_absent: warn_and_create_na
+  log: true
+- var_name: edu_harmonized
+  rule_id: edu_harmonized
+  anomaly_ref: null
+  description: harmonized education level via HR02 crosswalk
+  type: integer
+  source:
+  - q005
+  - edu_scheme_version
+  if_absent: warn_and_create_na
+  log: true
+  rule_ref: HR02_edu_harmonize
+- var_name: edu_scheme_version
+  rule_id: edu_scheme_version
+  anomaly_ref: null
+  description: education coding scheme active in this wave (1, 2, or 3)
+  type: integer
+  source: wave_index.edu_scheme
+  if_absent: warn_and_create_na
+  log: true
+- var_name: training_module_available
+  rule_id: training_module_available
+  anomaly_ref: null
+  description: 'boolean flag: training module variables present'
+  type: logical
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+  rule_ref: BR01_training_module_drop
+- var_name: pension_module_available
+  rule_id: pension_module_available
+  anomaly_ref: null
+  description: 'boolean flag: pension module variables present'
+  type: logical
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+  rule_ref: BR03_pension_module
+- var_name: post_restructuring_module_available
+  rule_id: post_restructuring_module_available
+  anomaly_ref: null
+  description: 'boolean flag: post-2019 replacement block present'
+  type: logical
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+  rule_ref: BR02_new_block_549
+validation_checks:
+- check_id: V01_edu_scheme_integrity
+  anomaly_ref: A-01
+  description: no scheme-3-only codes (29, 30) appear before wave 24q
+  type: value_absence
+  severity: error
+  variable: edu_harmonized
+  forbidden_values:
+  - 56
+  - 57
+  in_waves:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+- check_id: V02_wage_numeric
+  anomaly_ref: A-02
+  description: q323 contains only numeric >= 0 or sentinel/NA
+  type: range_check
+  severity: error
+  variable: q323
+  valid_range:
+  - 0
+  - 1000000
+  allow_na: true
+  allow_sentinel: true
+  sentinel_values:
+  - -9
+  - -8
+- check_id: V03_q112_structure
+  anomaly_ref: A-03
+  description: q112 is character in 11d-20m and all-NA in 21n-25r
+  type: structural_absence
+  severity: error
+  variable: q112
+  must_be_na_in:
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+- check_id: V04_employment_binary
+  anomaly_ref: A-04
+  description: q088-q102 contain only 0, 1, or NA
+  type: value_set
+  severity: error
+  variables:
+  - q088
+  - q089
+  - q090
+  - q091
+  - q092
+  - q093
+  - q094
+  - q095
+  - q096
+  - q097
+  - q098
+  - q099
+  - q100
+  - q101
+  - q102
+  allowed_values:
+  - 0
+  - 1
+  allow_na: true
+- check_id: V05_training_module_absent
+  anomaly_ref: A-05
+  description: training variables all-NA in post-restructuring waves
+  type: structural_absence
+  severity: error
+  variables:
+  - q036
+  - q037
+  - q038
+  - q039
+  - q041
+  - q051
+  - q060
+  - q070
+  - q080
+  - q087
+  must_be_na_in:
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+  - cw25r
+- check_id: V06_pension_module_absent
+  anomaly_ref: A-06
+  description: pension module variables all-NA before 25r
+  type: structural_absence
+  severity: error
+  variables:
+  - q614
+  - q615
+  - q629
+  - q650
+  - q673
+  - q683
+  must_be_na_in:
+  - cw11d
+  - cw12e
+  - cw13f
+  - cw14g
+  - cw15h
+  - cw16i
+  - cw17j
+  - cw18k
+  - cw19l
+  - cw20m
+  - cw21n
+  - cw22o
+  - cw23p
+  - cw24q
+- check_id: V07_pension_dates_numeric
+  anomaly_ref: A-07
+  description: pension date variables are plausible years after harmonization
+  type: range_check
+  severity: warning
+  variables:
+  - q149
+  - q153
+  - q157
+  - q161
+  - q165
+  - q169
+  - q173
+  - q177
+  - q181
+  - q185
+  valid_range:
+  - 1990
+  - 2030
+  allow_na: true
+- check_id: V08_no_sentinels
+  anomaly_ref: null
+  description: no -9 or -8 remain in any numeric column after recoding
+  type: sentinel_absence
+  severity: error
+  sentinel_values:
+  - -9
+  - -8
+  applies_to: all_numeric
+- check_id: V09_panel_overlap
+  anomaly_ref: A-12
+  description: panel respondent overlap matrix is plausible
+  type: panel_overlap
+  severity: warning
+  id_variable: nomem_encr
+  min_retention_pct: 20
+  max_retention_pct: 100
+- check_id: V10_row_count
+  anomaly_ref: null
+  description: merged dataset row count equals sum of wave row counts
+  type: row_count_sum
+  severity: error
+- check_id: V11_edu_crosswalk_coverage
+  anomaly_ref: A-01
+  description: 'crosswalk coverage: every non-missing q005 value has a
+    crosswalk entry, i.e. the edu_harmonized NA count equals the q005 NA count
+    within every wave'
+  type: na_parity
+  severity: error
+  variable: edu_harmonized
+  reference_variable: q005
+  group_by: wave_id
+- check_id: V12_cw19l_edu_gap
+  anomaly_ref: A-01
+  description: edu_harmonized is all-NA in cw19l (q005 is absent from that
+    wave; converts the silent one-wave gap in the headline harmonized variable
+    into an asserted expectation)
+  type: structural_absence
+  severity: error
+  variable: edu_harmonized
+  must_be_na_in:
+  - cw19l
+logging:
+  log_file: cw_merge_log.jsonl
+  report_file: cw_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates
