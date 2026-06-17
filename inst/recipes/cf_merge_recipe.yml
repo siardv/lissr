@@ -1,0 +1,1075 @@
+# ========================================================================
+# LISS Panel Family and Household (CF) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: cf
+  module_label: Family and Household
+  recipe_version: "1.0.0"
+  created: '2026-02-10'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - cf08a
+  - cf09b
+  - cf10c
+  - cf11d
+  - cf12e
+  - cf13f
+  - cf14g
+  - cf15h
+  - cf16i
+  - cf17j
+  - cf18k
+  - cf19l
+  - cf20m
+  - cf21n
+  - cf22o
+  - cf23p
+  - cf24q
+  notes: >-
+    validated against cf_variables.csv / cf_value_labels.csv and the 17 wave
+    CSVs: HARM-003 denomination mapping and description corrected (code 7 =
+    Islamic added at cf11d, pushing I don't know to 8); HARM-001 narrowed to
+    -9 (-1 occurs in no label or data); added scoped -8 recode (HARM-004) and
+    positive-DK recode_to_na rules (HARM-005/006/007) for the 999/9999/99999
+    sentinel regimes; BOUND-001 re-expressed from the retain_where_present
+    stub to structural_na (MR-01); added cf14g->cf15h renumbering crosswalks
+    (BOUND-007/008/009/010, with a partial-comparability contract on
+    contact-frequency items) and the 432->526 crosswalk (BOUND-011); added
+    VAR-005 type_coerce for the 523/525 free-text companions; DROP-006 absence
+    list corrected to 251/339/381/382/384/387; VAL-006 rewritten around the
+    real code-7 meaning flip; documentary note_only entries added for 225-237
+    vs 504-521 and for 522-525 / 535 / 554-556. role_map,
+    expected_presence.fieldwork_ym, and VAR-002/003/004 are unchanged.
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_factor
+  missing_variable_policy: warn_and_skip
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+wave_index:
+- id: cf08a
+  year: 2008
+  file_pattern: cf08a_*p*.csv
+  notes: ''
+  var_prefix: cf08a
+  role_map: &id001
+    care_play_applicable: care_play_applicable
+    care_school_applicable: care_school_applicable
+    care_problems_applicable: care_problems_applicable
+    care_outings_applicable: care_outings_applicable
+    gender_respondent_binary: gender_respondent_binary
+    gender_partner_binary: gender_partner_binary
+- id: cf09b
+  year: 2009
+  file_pattern: cf09b_*p*.csv
+  notes: ''
+  var_prefix: cf09b
+  role_map: *id001
+- id: cf10c
+  year: 2010
+  file_pattern: cf10c_*p*.csv
+  notes: ''
+  var_prefix: cf10c
+  role_map: *id001
+- id: cf11d
+  year: 2011
+  file_pattern: cf11d_*p*.csv
+  notes: ''
+  var_prefix: cf11d
+  role_map: *id001
+- id: cf12e
+  year: 2012
+  file_pattern: cf12e_*p*.csv
+  notes: ''
+  var_prefix: cf12e
+  role_map: *id001
+- id: cf13f
+  year: 2013
+  file_pattern: cf13f_*p*.csv
+  notes: ''
+  var_prefix: cf13f
+  role_map: *id001
+- id: cf14g
+  year: 2014
+  file_pattern: cf14g_*p*.csv
+  notes: ''
+  var_prefix: cf14g
+  role_map: *id001
+- id: cf15h
+  year: 2015
+  file_pattern: cf15h_*p*.csv
+  notes: ''
+  var_prefix: cf15h
+  role_map: *id001
+- id: cf16i
+  year: 2016
+  file_pattern: cf16i_*p*.csv
+  notes: ''
+  var_prefix: cf16i
+  role_map: *id001
+- id: cf17j
+  year: 2017
+  file_pattern: cf17j_*p*.csv
+  notes: ''
+  var_prefix: cf17j
+  role_map: *id001
+- id: cf18k
+  year: 2018
+  file_pattern: cf18k_*p*.csv
+  notes: ''
+  var_prefix: cf18k
+  role_map: *id001
+- id: cf19l
+  year: 2019
+  file_pattern: cf19l_*p*.csv
+  notes: ''
+  var_prefix: cf19l
+  role_map: *id001
+- id: cf20m
+  year: 2020
+  file_pattern: cf20m_*p*.csv
+  notes: ''
+  var_prefix: cf20m
+  role_map: *id001
+- id: cf21n
+  year: 2021
+  file_pattern: cf21n_*p*.csv
+  notes: ''
+  var_prefix: cf21n
+  role_map: *id001
+- id: cf22o
+  year: 2022
+  file_pattern: cf22o_*p*.csv
+  notes: ''
+  var_prefix: cf22o
+  role_map: *id001
+- id: cf23p
+  year: 2023
+  file_pattern: cf23p_*p*.csv
+  notes: ''
+  var_prefix: cf23p
+  role_map: *id001
+- id: cf24q
+  year: 2024
+  file_pattern: cf24q_*p*.csv
+  notes: ''
+  var_prefix: cf24q
+  role_map: *id001
+variable_rules:
+- rule_id: VAR-001
+  anomaly_ref: null
+  description: strip wave-specific prefix to create generic suffix names
+  action: strip_prefix
+  exceptions:
+  - nomem_encr
+  - nohouse_encr
+  log: true
+- rule_id: VAR-002
+  anomaly_ref: null
+  description: coerce fieldwork-month column to integer
+  action: type_coerce
+  target_suffixes:
+  - _m
+  target_type: integer
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VAR-003
+  anomaly_ref: A-08
+  description: coerce evaluation items to integer (type inconsistency in cf11d)
+  action: type_coerce
+  target_suffixes:
+  - '388'
+  - '389'
+  - '390'
+  - '391'
+  - '392'
+  target_type: integer
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VAR-004
+  anomaly_ref: A-08
+  description: coerce completion time to numeric (format widens from F8 to F10 at cf20m)
+  action: type_coerce
+  target_suffixes:
+  - '397'
+  target_type: numeric
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VAR-005
+  anomaly_ref: A-08
+  description: coerce the free-text "- other, namely" companions 523 and 525 to character.
+    they are A-format (string) in the codebook for every wave they appear (cf19l+), but waves
+    where the column is entirely empty otherwise infer as logical/numeric on CSV read and would
+    break the stack. uses the 'suffixes' key so the engine reads the scope.
+  action: type_coerce
+  suffixes:
+  - '523'
+  - '525'
+  target_type: character
+  if_absent: warn_and_skip
+  log: true
+harmonization_rules:
+- rule_id: HARM-001
+  anomaly_ref: null
+  description: recode LISS standard missing code -9 (not asked / don't know) to NA across
+    all numeric columns. -1 is excluded because it occurs in no value label and no
+    sampled data for this module.
+  action: na_recode
+  codes:
+  - -9
+  target: all_numeric
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HARM-002
+  anomaly_ref: A-02
+  description: 'standardise evaluation-scale labels across three translation eras: cf08a-cf13f ''definitely'', cf14g-cf21n
+    ''certainly'', cf22o+ dropped ''=''. all assumed comparable (translation artefact, not instrument change).
+
+    '
+  action: value_recode
+  target_suffixes:
+  - '388'
+  - '389'
+  - '390'
+  - '391'
+  - '392'
+  waves: all
+  mapping:
+    1: strongly_disagree
+    2: disagree
+    3: neither
+    4: agree
+    5: strongly_agree
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HARM-003
+  anomaly_ref: A-10
+  description: 'harmonise school denomination (new numbering 434-448) to its 8-category scheme.
+    code 7 (Islamic) was added at cf11d, which pushed "I don''t know" from code 7 to code 8.
+    labels follow the cf11d+ codebook. the old numbering 282-296 (cf08a-cf10c) is a 7-category
+    scheme where code 7 means "I don''t know"; it is documented separately (DROP-004, NOTE-001-style
+    note below, VAL-006) and is NOT pooled with this block on raw codes.
+
+    '
+  action: value_recode
+  target_suffixes:
+  - '434'
+  - '435'
+  - '436'
+  - '437'
+  - '438'
+  - '439'
+  - '440'
+  - '441'
+  - '442'
+  - '443'
+  - '444'
+  - '445'
+  - '446'
+  - '447'
+  - '448'
+  waves: all
+  mapping:
+    1: public
+    2: Roman Catholic
+    3: Christian Protestant
+    4: Christian Ecumenical
+    5: Neutral or General Special
+    6: other including cooperative
+    7: Islamic
+    8: I don't know
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HARM-004
+  anomaly_ref: A-09
+  description: recode -8 (prefer not to say) to NA. occurs only on suffix 535 (sexual
+    preference), introduced at cf22o; scoped na_recode mirroring HARM-001's payload shape.
+  action: na_recode
+  codes:
+  - -8
+  target: all_numeric
+  waves:
+  - cf22o
+  - cf23p
+  - cf24q
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HARM-005
+  anomaly_ref: A-09
+  description: recode positive don't-know sentinel 999 to NA on the categorical items that
+    carry it (SC-01 regime). 999 = "I don't know" on suffixes 166/180/181 in all waves.
+  action: recode_to_na
+  codes:
+  - 999
+  target_suffixes:
+  - '166'
+  - '180'
+  - '181'
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HARM-006
+  anomaly_ref: A-09
+  description: recode positive don't-know sentinel 9999 to NA (SC-01 regime, cf11d+). affects
+    the monetary/count items 005/008/009/012 and childcare-cost items 251/339/381/382/384/387.
+    251 etc. are absent from cf12e (handled by if_absent).
+  action: recode_to_na
+  codes:
+  - 9999
+  target_suffixes:
+  - '005'
+  - '008'
+  - '009'
+  - '012'
+  - '251'
+  - '339'
+  - '381'
+  - '382'
+  - '384'
+  - '387'
+  waves:
+  - cf11d
+  - cf12e
+  - cf13f
+  - cf14g
+  - cf15h
+  - cf16i
+  - cf17j
+  - cf18k
+  - cf19l
+  - cf20m
+  - cf21n
+  - cf22o
+  - cf23p
+  - cf24q
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HARM-007
+  anomaly_ref: A-09
+  description: recode positive don't-know sentinel 99999 to NA (SC-01 regime, early waves
+    cf08a-cf10c) on the same items that switch to 9999 from cf11d. note 008's 99999 label is
+    only attested in cf09b/cf10c (Dutch "Ik weet het niet"); rule is defensive across cf08a-cf10c.
+  action: recode_to_na
+  codes:
+  - 99999
+  target_suffixes:
+  - '005'
+  - '008'
+  - '009'
+  - '012'
+  - '251'
+  - '339'
+  - '381'
+  - '382'
+  - '384'
+  - '387'
+  waves:
+  - cf08a
+  - cf09b
+  - cf10c
+  if_absent: warn_and_skip
+  log: true
+boundary_rules:
+- rule_id: BOUND-001
+  anomaly_ref: A-01
+  # REEXPRESSED_FROM: retain_where_present
+  description: nohouse_encr (household identifier) present only cf08a-cf10c and discontinued
+    from cf11d. emit a presence flag and let the column fall to structural NA after the
+    boundary (MR-01). the raw nohouse_encr column still stacks as NA post-cf10c, so VAL-004
+    continues to hold.
+  action: structural_na
+  variable: nohouse_encr
+  present_in_waves:
+  - cf08a
+  - cf09b
+  - cf10c
+  flag_true_waves:
+  - cf08a
+  - cf09b
+  - cf10c
+  flag_column: cf_household_present
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-002
+  anomaly_ref: A-03
+  description: 'respondent gender: suffix 003 (cf08a-cf21n) -> 536 (cf22o+)'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '003'
+    new_suffix: '536'
+    boundary_after: cf21n
+    harmonized_name: gender_respondent
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-003
+  anomaly_ref: A-03
+  description: 'partner gender: suffix 032 -> 537 at cf22o'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '032'
+    new_suffix: '537'
+    boundary_after: cf21n
+    harmonized_name: gender_partner
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-004
+  anomaly_ref: A-03
+  description: 'child gender x15: 068-082 -> 538-552 at cf22o'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: 068
+    new_suffix: '538'
+    boundary_after: cf21n
+    harmonized_name: gender_child_01
+  - old_suffix: 069
+    new_suffix: '539'
+    boundary_after: cf21n
+    harmonized_name: gender_child_02
+  - old_suffix: '070'
+    new_suffix: '540'
+    boundary_after: cf21n
+    harmonized_name: gender_child_03
+  - old_suffix: '071'
+    new_suffix: '541'
+    boundary_after: cf21n
+    harmonized_name: gender_child_04
+  - old_suffix: '072'
+    new_suffix: '542'
+    boundary_after: cf21n
+    harmonized_name: gender_child_05
+  - old_suffix: '073'
+    new_suffix: '543'
+    boundary_after: cf21n
+    harmonized_name: gender_child_06
+  - old_suffix: '074'
+    new_suffix: '544'
+    boundary_after: cf21n
+    harmonized_name: gender_child_07
+  - old_suffix: '075'
+    new_suffix: '545'
+    boundary_after: cf21n
+    harmonized_name: gender_child_08
+  - old_suffix: '076'
+    new_suffix: '546'
+    boundary_after: cf21n
+    harmonized_name: gender_child_09
+  - old_suffix: '077'
+    new_suffix: '547'
+    boundary_after: cf21n
+    harmonized_name: gender_child_10
+  - old_suffix: 078
+    new_suffix: '548'
+    boundary_after: cf21n
+    harmonized_name: gender_child_11
+  - old_suffix: 079
+    new_suffix: '549'
+    boundary_after: cf21n
+    harmonized_name: gender_child_12
+  - old_suffix: 080
+    new_suffix: '550'
+    boundary_after: cf21n
+    harmonized_name: gender_child_13
+  - old_suffix: 081
+    new_suffix: '551'
+    boundary_after: cf21n
+    harmonized_name: gender_child_14
+  - old_suffix: 082
+    new_suffix: '552'
+    boundary_after: cf21n
+    harmonized_name: gender_child_15
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-005
+  anomaly_ref: A-04
+  description: 'partner country: 027 (cf08a-cf22o, 8 cats) -> 553 (cf23p+, 7 cats). code 99 (''other country'') in cf23p+
+    collapses old western/non-western -> NA.
+
+    '
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '027'
+    new_suffix: '553'
+    boundary_after: cf22o
+    harmonized_name: partner_country_birth
+  post_recode:
+    waves_affected:
+    - cf23p
+    - cf24q
+    recode:
+      99: null
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-006
+  anomaly_ref: A-05
+  description: 'care items: 198-201, 208-211 (cf08a-cf19l) -> 527-534 (cf20m+). new code 6 = not applicable added at cf20m.
+
+    '
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '198'
+    new_suffix: '527'
+    boundary_after: cf19l
+    harmonized_name: care_play
+  - old_suffix: '199'
+    new_suffix: '528'
+    boundary_after: cf19l
+    harmonized_name: care_school
+  - old_suffix: '200'
+    new_suffix: '529'
+    boundary_after: cf19l
+    harmonized_name: care_problems
+  - old_suffix: '201'
+    new_suffix: '530'
+    boundary_after: cf19l
+    harmonized_name: care_outings
+  - old_suffix: '208'
+    new_suffix: '531'
+    boundary_after: cf19l
+    harmonized_name: care_play_partner
+  - old_suffix: '209'
+    new_suffix: '532'
+    boundary_after: cf19l
+    harmonized_name: care_school_partner
+  - old_suffix: '210'
+    new_suffix: '533'
+    boundary_after: cf19l
+    harmonized_name: care_problems_partner
+  - old_suffix: '211'
+    new_suffix: '534'
+    boundary_after: cf19l
+    harmonized_name: care_outings_partner
+  post_recode:
+    waves_affected:
+    - cf16i
+    recode:
+      6: 1
+      7: 2
+      8: 3
+      9: 4
+      10: 5
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-007
+  anomaly_ref: A-11
+  description: 'cf14g->cf15h renumbering (verbatim question text): parents'' birth period and
+    postal-code-known items. boundary after cf14g.'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '006'
+    new_suffix: '449'
+    boundary_after: cf14g
+    harmonized_name: father_birth_period
+  - old_suffix: '010'
+    new_suffix: '450'
+    boundary_after: cf14g
+    harmonized_name: mother_birth_period
+  - old_suffix: '017'
+    new_suffix: '451'
+    boundary_after: cf14g
+    harmonized_name: parents_postal_code_known
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-008
+  anomaly_ref: A-11
+  description: 'cf14g->cf15h renumbering (verbatim): household work division block
+    187-192 -> 483-488 (preparing food, laundry/ironing, house cleaning, odd jobs,
+    financial administration, grocery shopping). boundary after cf14g.'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '187'
+    new_suffix: '483'
+    boundary_after: cf14g
+    harmonized_name: housework_preparing_food
+  - old_suffix: '188'
+    new_suffix: '484'
+    boundary_after: cf14g
+    harmonized_name: housework_laundry_ironing
+  - old_suffix: '189'
+    new_suffix: '485'
+    boundary_after: cf14g
+    harmonized_name: housework_house_cleaning
+  - old_suffix: '190'
+    new_suffix: '486'
+    boundary_after: cf14g
+    harmonized_name: housework_odd_jobs
+  - old_suffix: '191'
+    new_suffix: '487'
+    boundary_after: cf14g
+    harmonized_name: housework_financial_admin
+  - old_suffix: '192'
+    new_suffix: '488'
+    boundary_after: cf14g
+    harmonized_name: housework_grocery_shopping
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-009
+  anomaly_ref: A-11
+  description: 'cf14g->cf15h renumbering (same construct): child''s school block
+    267-281 -> 489-503 (child 1..15 school). boundary after cf14g.'
+  action: crosswalk_rename
+  crosswalk:
+  - {old_suffix: '267', new_suffix: '489', boundary_after: cf14g, harmonized_name: child_01_school}
+  - {old_suffix: '268', new_suffix: '490', boundary_after: cf14g, harmonized_name: child_02_school}
+  - {old_suffix: '269', new_suffix: '491', boundary_after: cf14g, harmonized_name: child_03_school}
+  - {old_suffix: '270', new_suffix: '492', boundary_after: cf14g, harmonized_name: child_04_school}
+  - {old_suffix: '271', new_suffix: '493', boundary_after: cf14g, harmonized_name: child_05_school}
+  - {old_suffix: '272', new_suffix: '494', boundary_after: cf14g, harmonized_name: child_06_school}
+  - {old_suffix: '273', new_suffix: '495', boundary_after: cf14g, harmonized_name: child_07_school}
+  - {old_suffix: '274', new_suffix: '496', boundary_after: cf14g, harmonized_name: child_08_school}
+  - {old_suffix: '275', new_suffix: '497', boundary_after: cf14g, harmonized_name: child_09_school}
+  - {old_suffix: '276', new_suffix: '498', boundary_after: cf14g, harmonized_name: child_10_school}
+  - {old_suffix: '277', new_suffix: '499', boundary_after: cf14g, harmonized_name: child_11_school}
+  - {old_suffix: '278', new_suffix: '500', boundary_after: cf14g, harmonized_name: child_12_school}
+  - {old_suffix: '279', new_suffix: '501', boundary_after: cf14g, harmonized_name: child_13_school}
+  - {old_suffix: '280', new_suffix: '502', boundary_after: cf14g, harmonized_name: child_14_school}
+  - {old_suffix: '281', new_suffix: '503', boundary_after: cf14g, harmonized_name: child_15_school}
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-010
+  anomaly_ref: A-11
+  description: 'cf14g->cf15h renumbering of contact-frequency items 021 -> 452 (father),
+    023 -> 453 (mother). wording was extended at cf15h with "social media, skype or whatsapp",
+    so the series is bridged but flagged as only partially comparable (RD-02).'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '021'
+    new_suffix: '452'
+    boundary_after: cf14g
+    harmonized_name: contact_father_freq
+  - old_suffix: '023'
+    new_suffix: '453'
+    boundary_after: cf14g
+    harmonized_name: contact_mother_freq
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: response scale preserved but question wording extended at cf15h with additional
+      contact channels (social media, skype, whatsapp).
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: BOUND-011
+  anomaly_ref: A-12
+  description: 'cf19l->cf20m renumbering (verbatim question text "How would you generally
+    describe the relationship with your family?"): 432 -> 526. boundary after cf19l.'
+  action: crosswalk_rename
+  crosswalk:
+  - old_suffix: '432'
+    new_suffix: '526'
+    boundary_after: cf19l
+    harmonized_name: family_relationship_description
+  if_absent: warn_and_create_na
+  log: true
+drop_retain_rules:
+- rule_id: DROP-001
+  anomaly_ref: A-07
+  description: partner desirability — cf08a one-time module
+  action: drop_outside
+  suffixes_range:
+  - '167'
+  - '179'
+  retain_in:
+  - cf08a
+  reason: one-time module; not longitudinally comparable
+  if_absent: warn_and_skip
+  log: true
+- rule_id: DROP-002
+  anomaly_ref: A-07
+  description: video experiment flag — cf11d only
+  action: drop_outside
+  suffixes:
+  - '433'
+  retain_in:
+  - cf11d
+  reason: one-time experimental flag
+  if_absent: warn_and_skip
+  log: true
+- rule_id: DROP-003
+  anomaly_ref: A-07
+  description: housework hours + attitudes — biennial odd-wave rotation
+  action: drop_outside
+  suffixes_range:
+  - '414'
+  - '431'
+  retain_in:
+  - cf09b
+  - cf11d
+  - cf13f
+  reason: biennial rotating module
+  if_absent: warn_and_skip
+  log: true
+- rule_id: DROP-004
+  anomaly_ref: A-07
+  description: school denomination old numbering — early waves only
+  action: drop_outside
+  suffixes_range:
+  - '282'
+  - '296'
+  retain_in:
+  - cf08a
+  - cf09b
+  - cf10c
+  reason: discontinued after cf10c
+  if_absent: warn_and_skip
+  log: true
+- rule_id: DROP-005
+  anomaly_ref: A-05
+  description: flag ambiguous statement variables 409-413 (identical metadata labels)
+  action: flag_only
+  suffixes:
+  - '409'
+  - '410'
+  - '411'
+  - '412'
+  - '413'
+  waves_present:
+  - cf09b
+  - cf11d
+  - cf13f
+  reason: identical metadata labels; truncated value labels in 413
+  log: true
+- rule_id: DROP-006
+  anomaly_ref: A-07
+  description: 'childcare cost variables irregularly absent from cf12e. 383/385/386
+    are in fact present in cf12e; the genuine absences are 251/339/381/382/384/387.'
+  action: flag_absence
+  suffixes:
+  - '251'
+  - '339'
+  - '381'
+  - '382'
+  - '384'
+  - '387'
+  absent_in:
+  - cf12e
+  reason: irregular absence; possibly abbreviated questionnaire
+  log: true
+- rule_id: DROP-007
+  anomaly_ref: A-13
+  description: 'documentary: child behaviour battery 225-237 (cf08a-cf14g) is a DISTINCT
+    instrument from the parent-child relationship battery 504-521 (cf15h+). despite their
+    complementary wave windows they are not the same construct and are intentionally NOT
+    bridged; they remain separate columns after stacking.'
+  action: note_only
+  suffixes:
+  - '225'
+  - '237'
+  reason: distinct instrument; deliberate segmentation, not a renumbering
+  log: true
+- rule_id: DROP-008
+  anomaly_ref: A-13
+  description: 'documentary: parent-child relationship battery 504-521 (cf15h+) is the
+    counterpart to DROP-007. introduced at cf15h, it is a distinct instrument from the
+    discontinued 225-237 battery and is retained as its own column block.'
+  action: note_only
+  suffixes:
+  - '504'
+  - '521'
+  reason: distinct instrument introduced at cf15h; not pooled with 225-237
+  log: true
+- rule_id: NOTE-001
+  anomaly_ref: A-14
+  description: 'documentary: "Who do you consider to be your father/mother?" items 522-525
+    were introduced at cf19l. 522/524 are categorical; 523/525 are the free-text "- other,
+    namely" companions (coerced to character by VAR-005). no harmonization beyond that.'
+  action: note_only
+  suffixes:
+  - '522'
+  - '523'
+  - '524'
+  - '525'
+  reason: late-introduced block (cf19l+); no cross-wave recode needed
+  log: true
+- rule_id: NOTE-002
+  anomaly_ref: A-14
+  description: 'documentary: sexual-preference item 535 was introduced at cf22o. its -8
+    ("prefer not to say") and -9 ("I don''t know") sentinels are handled by HARM-004 and
+    HARM-001 respectively.'
+  action: note_only
+  suffixes:
+  - '535'
+  reason: late-introduced item (cf22o+); sentinels handled by HARM-001/HARM-004
+  log: true
+- rule_id: NOTE-003
+  anomaly_ref: A-14
+  description: 'documentary: items 554-556 (where parents / father / mother live) appear only
+    in cf24q. -9 sentinels are covered by HARM-001. retained as wave-specific columns; no
+    cross-wave pooling.'
+  action: note_only
+  suffixes:
+  - '554'
+  - '555'
+  - '556'
+  reason: single-wave block (cf24q only)
+  log: true
+derived_variables:
+- var_name: care_play_applicable
+  rule_id: DV-001
+  anomaly_ref: A-05
+  description: 'presence flag: 1 if the partner-comparison was asked (care_play non-NA), else 0 (routed out / no partner)'
+  output_type: integer
+  method: presence
+  sources:
+    - waves: all
+      variables: [care_play]
+  if_absent: warn_and_create_na
+  log: true
+- var_name: care_school_applicable
+  rule_id: DV-002
+  anomaly_ref: A-05
+  description: 'presence flag: 1 if care_school non-NA, else 0'
+  output_type: integer
+  method: presence
+  sources:
+    - waves: all
+      variables: [care_school]
+  if_absent: warn_and_create_na
+  log: true
+- var_name: care_problems_applicable
+  rule_id: DV-003
+  anomaly_ref: A-05
+  description: 'presence flag: 1 if care_problems non-NA, else 0'
+  output_type: integer
+  method: presence
+  sources:
+    - waves: all
+      variables: [care_problems]
+  if_absent: warn_and_create_na
+  log: true
+- var_name: care_outings_applicable
+  rule_id: DV-004
+  anomaly_ref: A-05
+  description: 'presence flag: 1 if care_outings non-NA, else 0'
+  output_type: integer
+  method: presence
+  sources:
+    - waves: all
+      variables: [care_outings]
+  if_absent: warn_and_create_na
+  log: true
+- var_name: gender_respondent_binary
+  rule_id: DV-005
+  anomaly_ref: A-03
+  description: 2-category gender; code 3 (other) mapped to NA
+  output_type: integer
+  method: direct
+  sources:
+    - waves: all
+      variables: [gender_respondent]
+  value_crosswalk: {1: 1, 2: 2}
+  if_absent: warn_and_create_na
+  log: true
+- var_name: gender_partner_binary
+  rule_id: DV-006
+  anomaly_ref: A-03
+  description: 2-category partner gender; code 3 -> NA
+  output_type: integer
+  method: direct
+  sources:
+    - waves: all
+      variables: [gender_partner]
+  value_crosswalk: {1: 1, 2: 2}
+  if_absent: warn_and_create_na
+  log: true
+validation_checks:
+- check_id: VAL-001
+  anomaly_ref: A-03
+  description: 'gender codes: max 2 before cf22o; codes {1,2,3} after'
+  type: distribution_check
+  severity: error
+  variable: gender_respondent
+  waves_before:
+  - cf08a
+  - cf09b
+  - cf10c
+  - cf11d
+  - cf12e
+  - cf13f
+  - cf14g
+  - cf15h
+  - cf16i
+  - cf17j
+  - cf18k
+  - cf19l
+  - cf20m
+  - cf21n
+  waves_after:
+  - cf22o
+  - cf23p
+  - cf24q
+  expect_before_max: 2
+  expect_after_codes:
+  - 1
+  - 2
+  - 3
+- check_id: VAL-002
+  anomaly_ref: A-04
+  description: 'partner country: codes 1-8 before cf23p; 1-6 + NA after'
+  type: distribution_check
+  severity: error
+  variable: partner_country_birth
+  waves_before:
+  - cf08a
+  - cf09b
+  - cf10c
+  - cf11d
+  - cf12e
+  - cf13f
+  - cf14g
+  - cf15h
+  - cf16i
+  - cf17j
+  - cf18k
+  - cf19l
+  - cf20m
+  - cf21n
+  - cf22o
+  waves_after:
+  - cf23p
+  - cf24q
+  expect_before_max: 8
+  expect_after_max: 6
+- check_id: VAL-003
+  anomaly_ref: A-05
+  description: 'care scale: codes 1-5 before cf20m; 1-6 after'
+  type: distribution_check
+  severity: warning
+  variable: care_play
+  waves_before:
+  - cf08a
+  - cf09b
+  - cf10c
+  - cf11d
+  - cf12e
+  - cf13f
+  - cf14g
+  - cf15h
+  - cf16i
+  - cf17j
+  - cf18k
+  - cf19l
+  waves_after:
+  - cf20m
+  - cf21n
+  - cf22o
+  - cf23p
+  - cf24q
+  expect_before_max: 5
+  expect_after_codes:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+- check_id: VAL-004
+  anomaly_ref: A-01
+  description: nohouse_encr must be all-NA from cf11d onward
+  type: missingness_check
+  severity: error
+  variable: nohouse_encr
+  waves:
+  - cf11d
+  - cf12e
+  - cf13f
+  - cf14g
+  - cf15h
+  - cf16i
+  - cf17j
+  - cf18k
+  - cf19l
+  - cf20m
+  - cf21n
+  - cf22o
+  - cf23p
+  - cf24q
+  expect: all_na
+- check_id: VAL-005
+  anomaly_ref: A-07
+  description: housework vars non-missing only in rotating waves
+  type: missingness_check
+  severity: warning
+  variable: '414'
+  waves_expected_present:
+  - cf09b
+  - cf11d
+  - cf13f
+  expect_elsewhere: all_na
+- check_id: VAL-006
+  anomaly_ref: A-10
+  description: 'school denomination old block (282-296) tops out at code 7 ("I don''t know"),
+    so code 8 must be absent in cf08a-cf10c. cross-era hazard documented: code 7 = "I don''t
+    know" in the old block but "Islamic" in the new block (434-448), so the two numbering
+    schemes are not directly poolable on raw codes (see HARM-003, DROP-004).'
+  type: value_absence_check
+  severity: error
+  variable: '282'
+  waves:
+  - cf08a
+  - cf09b
+  - cf10c
+  forbidden_values:
+  - 8
+- check_id: VAL-007
+  anomaly_ref: A-03
+  description: gender stability across cf21n/cf22o boundary
+  type: panel_consistency
+  severity: warning
+  id_var: nomem_encr
+  wave_a: cf21n
+  wave_b: cf22o
+  var_a: gender_respondent
+  var_b: gender_respondent
+  max_discrepancy_pct: 2.0
+- check_id: VAL-008
+  anomaly_ref: A-04
+  description: partner country stability across cf22o/cf23p
+  type: panel_consistency
+  severity: warning
+  id_var: nomem_encr
+  wave_a: cf22o
+  wave_b: cf23p
+  var_a: partner_country_birth
+  var_b: partner_country_birth
+  max_discrepancy_pct: 5.0
+logging:
+  log_file: cf_merge_log.jsonl
+  report_file: cf_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates

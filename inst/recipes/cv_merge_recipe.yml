@@ -1,0 +1,1130 @@
+# ========================================================================
+# LISS Panel Politics and Values (CV) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: cv
+  module_label: Politics and Values
+  recipe_version: "1.0.0"
+  created: '2026-02-10'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  - cv20l
+  - cv21m
+  - cv22n
+  - cv23o
+  - cv24p
+  - cv25q
+  notes: >-
+    Year 2015 (cv15) is structurally absent. cv16h spans Dec 2015-Jan 2016.
+    Wave ordering follows calendar time, not letter sequence.
+
+    validation-driven corrections: (1) HR01 99-recode restricted to true DK
+    suffixes (008, 053, 102-105 for cv08a-cv19k; 012 only cv08a-cv11d);
+    999-recode now excludes suffix 243 in cv17i-cv19k where 999 = not
+    eligible. (2) VC01 rescoped to exclude percent-chance battery suffixes.
+    (3) HR02 -9 blanket carves out suffix 243 (eligibility, cv20l-cv25q) and
+    part-participation variables _m1-_m3, 160, 242 (cv23o onward); replacement
+    sentinels pending global convention. (4) cv17i vote_hypo_suffix corrected
+    209 -> 244; VR02 mapping extended. (5) VR05 waves_present now includes
+    cv11d. (6) HR06 set_to_dk list refreshed (drop 005, add 166, 167); remains
+    note_only pending drop_after executor. (7) BR05 pools native merged label
+    GroenLinks (green party)-PvdA (labor party). (8) VR06 experimental source
+    documented as coalesce(maandnr, maandnr_lang). (9) DV03 var_name filled
+    (completed_parts); _mN == -9 counts as not completed. (10) DV05
+    description documents vote_hypo codes 1/2 as would-not-vote /
+    not-eligible. (11) DV06-DV09 marked TODO_REEXPRESS (duplicates of
+    BR01-BR03/VR06 flags).
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_numeric
+  missing_variable_policy: warn_and_create_na
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+  taxonomy_refs:
+    dk_scheme:
+      source: taxonomies/cv_dk_scheme.yml
+      note: externalize dk_scheme into versioned reference file
+    party_scheme:
+      source: taxonomies/cv_party_scheme.yml
+      note: externalize party_scheme into versioned reference file
+wave_index:
+- id: cv08a
+  year: 2008
+  file_pattern: cv08a_*
+  notes: ''
+  era: 1
+  file_version: '1.1'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 1
+  vote_actual_suffix: '054'
+  vote_hypo_suffix: 058
+  has_nohouse: true
+  role_map: &id001
+    wave: wave
+    era: era
+    vote_actual_party: vote_actual_party
+    vote_hypo_party: vote_hypo_party
+    post_stem_reversal: post_stem_reversal
+    participation_wording_version: participation_wording_version
+    news_battery_era: news_battery_era
+    fieldwork_month: fieldwork_month
+- id: cv09b
+  year: 2009
+  file_pattern: cv09b_*
+  notes: ''
+  era: 1
+  file_version: '2.1'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 1
+  vote_actual_suffix: '054'
+  vote_hypo_suffix: 058
+  has_nohouse: true
+  flags:
+  - version_anomaly
+  - float_type_anomaly
+  role_map: *id001
+- id: cv10c
+  year: 2010
+  file_pattern: cv10c_*
+  notes: ''
+  era: 1
+  file_version: '1.0'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 1
+  vote_actual_suffix: '054'
+  vote_hypo_suffix: 058
+  has_nohouse: true
+  role_map: *id001
+- id: cv11d
+  year: 2011
+  file_pattern: cv11d_*
+  notes: ''
+  era: 2
+  file_version: '1.0'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 1
+  vote_actual_suffix: '169'
+  vote_hypo_suffix: '171'
+  has_nohouse: true
+  role_map: *id001
+- id: cv12e
+  year: 2012
+  file_pattern: cv12e_*
+  notes: ''
+  era: 2
+  file_version: '1.0'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 1
+  vote_actual_suffix: '169'
+  vote_hypo_suffix: '171'
+  has_nohouse: true
+  role_map: *id001
+- id: cv13f
+  year: 2013
+  file_pattern: cv13f_*
+  notes: ''
+  era: 3
+  file_version: '1.0'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 2
+  vote_actual_suffix: '207'
+  vote_hypo_suffix: '209'
+  has_nohouse: false
+  role_map: *id001
+- id: cv14g
+  year: 2014
+  file_pattern: cv14g_*
+  notes: ''
+  era: 3
+  file_version: '1.0'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 2
+  vote_actual_suffix: '207'
+  vote_hypo_suffix: '209'
+  has_nohouse: false
+  role_map: *id001
+- id: cv16h
+  year: 2016
+  file_pattern: cv16h_*
+  notes: ''
+  era: 3
+  file_version: '1.0'
+  admin_structure: experimental
+  dk_scheme: high_positive
+  party_scheme: 2
+  vote_actual_suffix: '207'
+  vote_hypo_suffix: '209'
+  has_nohouse: false
+  flags:
+  - experimental_wave
+  - gap_after_cv14g
+  role_map: *id001
+- id: cv17i
+  year: 2017
+  file_pattern: cv17i_*
+  notes: ''
+  era: 3
+  file_version: '1.0'
+  admin_structure: single_part
+  dk_scheme: high_positive
+  party_scheme: 2
+  vote_actual_suffix: '207'
+  vote_hypo_suffix: '244'  # cv17i244 carries the hypothetical-vote item, not 209
+  has_nohouse: false
+  flags:
+  - prob_battery_introduced
+  - has_total_column
+  role_map: *id001
+- id: cv18j
+  year: 2018
+  file_pattern: cv18j_*
+  notes: ''
+  era: 4
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: high_positive
+  party_scheme: 3
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  role_map: *id001
+- id: cv19k
+  year: 2019
+  file_pattern: cv19k_*
+  notes: ''
+  era: 4
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: high_positive
+  party_scheme: 3
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  role_map: *id001
+- id: cv20l
+  year: 2020
+  file_pattern: cv20l_*
+  notes: ''
+  era: 4
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 3
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  flags:
+  - dk_recode_break
+  - stem_reversal
+  - participation_reword
+  role_map: *id001
+- id: cv21m
+  year: 2021
+  file_pattern: cv21m_*
+  notes: ''
+  era: 4
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 3
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  role_map: *id001
+- id: cv22n
+  year: 2022
+  file_pattern: cv22n_*
+  notes: ''
+  era: 4
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 3
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  flags:
+  - new_parties_volt_ja21_bbb_bij1
+  - crossref_error_245
+  role_map: *id001
+- id: cv23o
+  year: 2023
+  file_pattern: cv23o_*
+  notes: ''
+  era: 4
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 3
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  flags:
+  - age_type_change
+  - news_social_media_added
+  role_map: *id001
+- id: cv24p
+  year: 2024
+  file_pattern: cv24p_*
+  notes: ''
+  era: 5
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 4
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  flags:
+  - gl_pvda_merger
+  - nsc_added
+  - age_screener_339
+  role_map: *id001
+- id: cv25q
+  year: 2025
+  file_pattern: cv25q_*
+  notes: ''
+  era: 5
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 4
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  flags:
+  - news_stem_broadened
+  role_map: *id001
+variable_rules:
+- rule_id: VR01_vote_actual
+  anomaly_ref: A-04
+  description: rename wave-specific actual-vote suffix to harmonized name
+  action: rename
+  mapping:
+    '054': vote_actual
+    '169': vote_actual
+    '207': vote_actual
+    '307': vote_actual
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR02_vote_hypo
+  anomaly_ref: A-04
+  description: rename wave-specific hypothetical-vote suffix to harmonized name
+  action: rename
+  mapping:
+    058: vote_hypo
+    '171': vote_hypo
+    '209': vote_hypo
+    '244': vote_hypo  # cv17i hypothetical vote lives on 244
+    '308': vote_hypo
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR03_nohouse
+  anomaly_ref: A-10
+  description: nohouse_encr present only in cv08a–cv12e
+  action: ensure_column
+  target: nohouse_encr
+  waves_present:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR04_total_col
+  anomaly_ref: A-17
+  description: rename or drop the non-prefixed Total column in cv17i
+  action: rename
+  wave: cv17i
+  from: Total
+  to: cv17i_Total
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VR05_vote_confidence
+  anomaly_ref: A-20
+  description: suffixes 060–064 present only in cv08a–cv11d (dropped at cv12e)
+  action: ensure_column
+  targets:
+  - '060'
+  - '061'
+  - '062'
+  - '063'
+  - '064'
+  waves_present:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d  # 060-064 still fielded in cv11d; drop occurs at cv12e
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR06_fieldwork_month
+  anomaly_ref: A-11
+  description: harmonise fieldwork month variable across admin structures
+  action: derive_fieldwork_month
+  sources:
+    single_part: _m
+    # cv16h splits fieldwork month across maandnr and maandnr_lang by
+    # questionnaire arm; correct source is coalesce of the two. executable
+    # coalesce support in derive_fieldwork_month is pending engine-side; the
+    # current implementation copies the named source as character only.
+    experimental: coalesce(maandnr, maandnr_lang)
+    three_part: _m1
+  target: fieldwork_month
+  if_absent: warn_and_skip
+  log: true
+- rule_id: VR07_cv09b_types
+  anomaly_ref: A-14
+  description: attempt integer cast for cv09b float columns after NA recoding
+  action: safe_integer_cast
+  wave: cv09b
+  log: true
+- rule_id: VR08_age_type
+  anomaly_ref: A-16
+  description: 'suffix 160 (age): coerce to numeric; structural -9 ("did not participate") is retained here and retargeted to -7 by HR00 per the -7 convention'
+  action: coerce_numeric
+  suffix: '160'
+  log: true
+harmonization_rules:
+- rule_id: HR00_age160_structural_na7
+  anomaly_ref: A-16
+  description: 'suffix 160 (age): structural -9 ("did not participate") -> -7 per the -7 convention (raw -9 retained by VR08)'
+  action: value_recode
+  suffixes: ['160']
+  from_value: -9
+  to_value: -7
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HR01_dk_high_positive
+  anomaly_ref: A-01
+  description: recode high-positive DK code 99 to NA_DK on true DK items only
+  action: recode_to_na
+  waves:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  # scope narrowed from all_numeric. 99 is a legitimate substantive
+  # value on the 0-100 percent-chance batteries; blanket recoding destroyed
+  # valid data there. 99 = don't know only on the suffixes below (verified
+  # against cv_value_labels.csv). suffix scoping mirrors the type_coerce
+  # suffixes/variables grammar; bare suffixes resolve to stripped names (s008).
+  suffixes:
+  - '008'
+  - '053'
+  - '102'
+  - '103'
+  - '104'
+  - '105'
+  recode:
+    99: .dk
+  sentinel_label: NA_DK
+  log: true
+- rule_id: HR01b_dk_99_suffix012
+  anomaly_ref: A-01
+  description: suffix 012 carries 99 = don't know only through cv11d
+  action: recode_to_na
+  # new rule. from cv12e onward 012 no longer uses 99 as DK, so the
+  # recode must stop at cv11d for this suffix.
+  waves:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  suffixes:
+  - '012'
+  recode:
+    99: .dk
+  sentinel_label: NA_DK
+  log: true
+- rule_id: HR01c_dk_999
+  anomaly_ref: A-01
+  description: recode high-positive DK code 999 to NA_DK across numeric columns
+  action: recode_to_na
+  waves:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  scope: all_numeric
+  # on suffix 243 in cv17i-cv19k, 999 means 'I am not eligible to
+  # vote', not DK; excluded here pending the eligibility sentinel decision
+  # exclude semantics: each block skips cells
+  # where suffix AND wave both match. engine support for exclude is
+  # unverified from the recipe side; if unsupported, 243 needs manual
+  # post-hoc repair.
+  exclude:
+  - suffixes:
+    - '243'
+    waves:
+    - cv17i
+    - cv18j
+    - cv19k
+  recode:
+    999: .dk
+  sentinel_label: NA_DK
+  log: true
+- rule_id: HR02_dk_negative
+  anomaly_ref: A-01
+  description: recode negative DK code to NA_DK
+  action: recode_to_na
+  waves:
+  - cv20l
+  - cv21m
+  - cv22n
+  - cv23o
+  - cv24p
+  - cv25q
+  scope: all_numeric
+  # -9 is polysemous in the negative-code era. carve-outs below keep
+  # the blanket recode away from cells where -9 is structural, not DK:
+  #   suffix 243 (cv20l-cv25q): -9 = 'I am not eligible to vote'
+  #   _m1/_m2/_m3, 160, 242 (cv23o onward): -9 = 'did not participate in
+  #   this part' under the multi-part design
+  # replacement sentinel values for these structural codes are TODO pending
+  # the module-global sentinel convention (proposes -7 for structural NA).
+  # until then the raw -9 stays in place on
+  # the excluded cells and will surface in VC01 as informative hits.
+  # exclude semantics: each block skips cells where suffix AND wave both
+  # match; grammar mirrors type_coerce suffixes/variables lists. engine
+  # support unverified from the recipe side.
+  exclude:
+  - suffixes:
+    - '243'
+    waves:
+    - cv20l
+    - cv21m
+    - cv22n
+    - cv23o
+    - cv24p
+    - cv25q
+  - suffixes:
+    - _m1
+    - _m2
+    - _m3
+    - '160'
+    - '242'
+    waves:
+    - cv23o
+    - cv24p
+    - cv25q
+  recode:
+    -9: .dk
+  sentinel_label: NA_DK
+  log: true
+- rule_id: HR03_ref_high_positive
+  anomaly_ref: A-02
+  description: recode high-positive refusal code to NA_REF
+  action: recode_to_na
+  waves:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  scope: all_numeric
+  recode:
+    998: .ref
+  sentinel_label: NA_REF
+  log: true
+- rule_id: HR04_ref_negative
+  anomaly_ref: A-02
+  description: recode negative refusal code to NA_REF
+  action: recode_to_na
+  waves:
+  - cv20l
+  - cv21m
+  - cv22n
+  - cv23o
+  - cv24p
+  - cv25q
+  scope: all_numeric
+  recode:
+    -8: .ref
+  sentinel_label: NA_REF
+  log: true
+- rule_id: HR05_party_crosswalk
+  anomaly_ref: A-03
+  description: 'derive party_name from numeric party codes using value_labels.csv. applied per (wave, variable-suffix) pair.
+
+    '
+  action: label_to_string
+  source_file: cv_value_labels.csv
+  key_columns:
+  - file
+  - variable
+  value_column: value_labels_value
+  label_column: value_labels_label
+  target_variables:
+  - vote_actual
+  - vote_hypo
+  derived_suffix: _party
+  if_absent: warn_and_skip
+  log: true
+- rule_id: HR06_standalone_dk_fold
+  anomaly_ref: A-01
+  description: 'in pre-cv20l waves, when suffix 007=1 (news DK) or suffix 074=1 (participation DK), set related block items
+    to NA_DK, then drop the standalone indicators.
+
+    '
+  action: note_only  # TODO_REEXPRESS: payload is dead code under note_only;
+  # no implemented executor covers conditional fold + drop_after, so this
+  # stays documentary until the engine grows one. do not silently re-express
+  # into recode/drop: the fold is conditional on the indicator value.
+  waves:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  actions:
+  - condition: 007 == 1
+    # 005 leaves the battery after cv10c; 166 and 167 join
+    # at cv11d. item presence is wave-dependent; an eventual executor should
+    # skip absent items (if_absent: warn_and_skip).
+    set_to_dk:
+    - '002'
+    - '003'
+    - '004'
+    - '006'
+    - '166'
+    - '167'
+  - condition: 074 == 1
+    set_to_dk:
+    - '065'
+    - '066'
+    - '067'
+    - 068
+    - 069
+    - '070'
+    - '071'
+    - '072'
+    - '073'
+  drop_after:
+  - '007'
+  - '074'
+  if_absent: warn_and_skip
+  log: true
+boundary_rules:
+- rule_id: BR01_stem_reversal
+  anomaly_ref: A-05
+  description: flag post-cv20l observations for stem reversal on suffix 001
+  action: add_flag
+  boundary: cv19k -> cv20l
+  target: '001'
+  flag_variable: post_stem_reversal
+  flag_value_pre: 0
+  flag_value_post: 1
+  waves_pre:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  waves_post:
+  - cv20l
+  - cv21m
+  - cv22n
+  - cv23o
+  - cv24p
+  - cv25q
+  log: true
+  comparability:
+    status: comparable
+    method: pool_ok
+    rationale: no known comparability issue
+- rule_id: BR02_participation_reword
+  anomaly_ref: A-06
+  description: flag wording version for participation items 065, 073
+  action: add_flag
+  boundary: cv19k -> cv20l
+  targets:
+  - '065'
+  - '073'
+  flag_variable: participation_wording_version
+  flag_value_pre: 1
+  flag_value_post: 2
+  waves_pre:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  waves_post:
+  - cv20l
+  - cv21m
+  - cv22n
+  - cv23o
+  - cv24p
+  - cv25q
+  log: true
+  comparability:
+    status: comparable
+    method: pool_ok
+    rationale: no known comparability issue
+- rule_id: BR03_news_era
+  anomaly_ref: A-07
+  description: assign news_battery_era indicator
+  action: add_era_flag
+  flag_variable: news_battery_era
+  assignments:
+    A:
+    - cv08a
+    - cv09b
+    - cv10c
+    - cv11d
+    - cv12e
+    B:
+    - cv13f
+    - cv14g
+    - cv16h
+    - cv17i
+    - cv18j
+    - cv19k
+    - cv20l
+    - cv21m
+    C:
+    - cv22n
+    - cv23o
+    D:
+    - cv24p
+    - cv25q
+  log: true
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: assign news_battery_era indicator
+- rule_id: BR04_cv16h_filter
+  anomaly_ref: A-08
+  description: 'for cv16h, retain only groep in {0,1,2} (normal-length administration). exclude groups 3–6 (3-part and 10-part
+    experimental conditions).
+
+    '
+  action: filter_rows
+  wave: cv16h
+  variable: groep
+  keep_values:
+  - 0
+  - 1
+  - 2
+  log: true
+- rule_id: BR05_gl_pvda_combined
+  anomaly_ref: A-18
+  description: 'for trend analysis, derive vote_gl_pvda_combined by pooling GroenLinks and PvdA voters in pre-cv24p waves.
+
+    '
+  action: derive_combined_party
+  party_names_to_pool:
+  - GroenLinks (green party)
+  - PvdA (labor party)
+  - GroenLinks
+  - PvdA
+  # cv24p/cv25q field the merged ticket as a single native option;
+  # without it the derived series breaks exactly at the boundary it exists
+  # to bridge. exact label as printed in cv_value_labels.csv (code 20 on 307).
+  - GroenLinks (green party)-PvdA (labor party)
+  combined_label: GroenLinks-PvdA (combined)
+  target_variable: vote_gl_pvda_combined
+  source_variable: vote_actual_party
+  log: true
+- rule_id: BR06_confidence_wording
+  anomaly_ref: A-19
+  description: flag minor wording shift in confidence items from cv22n+
+  action: add_flag
+  flag_variable: confidence_wording_version
+  flag_value_pre: 1
+  flag_value_post: 2
+  waves_pre:
+  - cv08a
+  - cv09b
+  - cv10c
+  - cv11d
+  - cv12e
+  - cv13f
+  - cv14g
+  - cv16h
+  - cv17i
+  - cv18j
+  - cv19k
+  - cv20l
+  - cv21m
+  waves_post:
+  - cv22n
+  - cv23o
+  - cv24p
+  - cv25q
+  log: true
+  comparability:
+    status: comparable
+    method: pool_ok
+    rationale: no known comparability issue
+drop_retain_rules:
+- rule_id: DR01_drop_timing_vars
+  anomaly_ref: null
+  description: drop cv16h experimental timing variables from harmonized file
+  action: drop
+  wave: cv16h
+  pattern: ^(maandnr|DatumB|TijdB|DatumE|TijdE)
+  reason: administrative experiment metadata, not substantive
+  log: true
+- rule_id: DR02_drop_total
+  anomaly_ref: null
+  description: drop validation Total column after rename
+  action: drop
+  wave: cv17i
+  variables:
+  - cv17i_Total
+  reason: computed validation artifact (A12)
+  log: true
+- rule_id: DR03_retain_core_ids
+  anomaly_ref: null
+  description: always retain identifier and key structural variables
+  action: retain
+  variables:
+  - nomem_encr
+  - wave
+  - fieldwork_month
+  - era
+  log: false
+derived_variables:
+- name: wave
+  rule_id: DV01_wave
+  anomaly_ref: null
+  description: per-wave constant equal to the wave id, resolves the all-NA wave column that collapsed VC09 grouping (engine injects only wave_id and wave_year)
+  method: direct
+  output_type: character
+  wave_values:
+    cv08a: cv08a
+    cv09b: cv09b
+    cv10c: cv10c
+    cv11d: cv11d
+    cv12e: cv12e
+    cv13f: cv13f
+    cv14g: cv14g
+    cv16h: cv16h
+    cv17i: cv17i
+    cv18j: cv18j
+    cv19k: cv19k
+    cv20l: cv20l
+    cv21m: cv21m
+    cv22n: cv22n
+    cv23o: cv23o
+    cv24p: cv24p
+    cv25q: cv25q
+  if_absent: warn_and_create_na
+  log: false
+- name: era
+  rule_id: DV02_era
+  anomaly_ref: null
+  description: add era from wave_index
+  type: character
+  source: wave_index
+  if_absent: warn_and_create_na
+  log: false
+- name: completed_parts  # named for the indicator family,
+  # concrete columns listed under targets
+  rule_id: DV03_completed_parts
+  anomaly_ref: A-11
+  description: derive part-completion indicators for three-part waves
+  type: character
+  source: 'for three_part waves: completed_partN = 1 if _mN is non-missing AND
+    _mN != -9, else 0 (-9 on _mN means did not participate in this part, cv23o
+    onward; see HR02 carve-out). for single_part and experimental waves:
+    all set to 1.
+
+    '
+  if_absent: warn_and_create_na
+  log: true
+  targets:
+  - completed_part1
+  - completed_part2
+  - completed_part3
+- name: vote_actual_party
+  rule_id: DV04_party_name_actual
+  anomaly_ref: A-03
+  description: party_name derived from vote_actual via value-label crosswalk
+  type: character
+  source:
+  - vote_actual
+  - wave
+  if_absent: warn_and_create_na
+  log: true
+- name: vote_hypo_party
+  rule_id: DV05_party_name_hypo
+  anomaly_ref: A-03
+  description: 'party_name derived from vote_hypo via value-label crosswalk.
+    doc note: on the harmonized vote_hypo item, codes 1 and 2 are
+    response options, not parties: 1 = would not vote, 2 = not eligible to
+    vote. the crosswalk must carry their labels through as-is and downstream
+    party analyses must filter them out rather than treat them as parties.
+
+    '
+  type: character
+  source:
+  - vote_hypo
+  - wave
+  if_absent: warn_and_create_na
+  log: true
+- name: post_stem_reversal
+  rule_id: DV06_post_stem_reversal  # TODO_REEXPRESS: duplicate of BR01 flag;
+  # engine materializes derived_variables as all-NA columns and never
+  # evaluates sources, so this either shadows or collides with BR01 output.
+  # fold into BR01 or delete once derived_variables gains an executor.
+  anomaly_ref: A-05
+  description: ''
+  type: character
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+- name: participation_wording_version
+  rule_id: DV07_participation_wording  # TODO_REEXPRESS: duplicate of BR02 flag;
+  # same shadowing risk as DV06
+  anomaly_ref: A-06
+  description: ''
+  type: character
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+- name: news_battery_era
+  rule_id: DV08_news_battery_era  # TODO_REEXPRESS: duplicate of BR03 flag;
+  # same shadowing risk as DV06
+  anomaly_ref: A-07
+  description: ''
+  type: character
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+- name: fieldwork_month
+  rule_id: DV09_fieldwork_month  # TODO_REEXPRESS: duplicate of VR06 target;
+  # the warn_and_create_na pre-creation here is exactly the mechanism that
+  # suppresses VR06/auto-derivation downstream. engine-side
+  # fix scheduled; do not delete from recipe until then.
+  anomaly_ref: A-11
+  description: ''
+  type: character
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+validation_checks:
+- check_id: VC01_no_raw_dk
+  anomaly_ref: §3.1
+  description: no 99, 999, or −9 remains in valid substantive range
+  type: assert_absent_values
+  severity: error
+  scope: all_numeric
+  # percent-chance batteries excluded; they are 0-100 scales where 99
+  # is a legitimate substantive value, so a blanket forbid false-fails there.
+  # suffix union compiled from cv_variables.csv across cv17i-cv25q (not every
+  # suffix exists in every wave). 243 also retains structural 999/-9
+  # eligibility codes post HR01c/HR02 carve-outs. cv17i_Total is the renamed
+  # cv17i Total column (VR04). residual -9 on _m1-_m3, 160, 242 in cv23o+
+  # (HR02 carve-outs) is NOT excluded here and will surface as informative
+  # hits until the structural sentinel convention lands.
+  exclude_suffixes:
+  - '243'
+  - '245'
+  - '246'
+  - '247'
+  - '248'
+  - '249'
+  - '250'
+  - '251'
+  - '252'
+  - '253'
+  - '254'
+  - '255'
+  - '256'
+  - '257'
+  - '258'
+  - '259'
+  - '260'
+  - '261'
+  - '262'
+  - '263'
+  - '304'
+  - '321'
+  - '322'
+  - '323'
+  - '324'
+  - '340'
+  - '341'
+  exclude_variables:
+  - cv17i_Total
+  forbidden_values:
+  - 99
+  - 999
+  - -9
+- check_id: VC02_no_raw_ref
+  anomaly_ref: §3.1
+  description: no 998 or −8 remains in valid substantive range
+  type: assert_absent_values
+  severity: error
+  scope: all_numeric
+  forbidden_values:
+  - 998
+  - -8
+- check_id: VC03_party_name_populated
+  anomaly_ref: §3.2
+  description: vote_actual_party is a string (not raw integer) wherever vote_actual is non-NA
+  type: assert_type
+  severity: error
+  variable: vote_actual_party
+  expected_type: character
+- check_id: VC04_party_bijectivity
+  anomaly_ref: §3.2
+  description: code→party mapping is one-to-one within each (wave, suffix)
+  type: assert_bijective
+  severity: error
+  group_by:
+  - wave
+  key: vote_actual
+  value: vote_actual_party
+- check_id: VC05_satisfaction_boundary
+  anomaly_ref: §3.3
+  description: compare suffix 001 distribution in cv19k vs cv20l
+  type: compare_distributions
+  severity: warning
+  variable: '001'
+  wave_a: cv19k
+  wave_b: cv20l
+  test: ks_test
+- check_id: VC06_dk_rate_boundary
+  anomaly_ref: §3.3
+  description: compare DK rates across the cv19k→cv20l boundary
+  type: compare_dk_rates
+  severity: warning
+  waves_pre:
+  - cv18j
+  - cv19k
+  waves_post:
+  - cv20l
+  - cv21m
+- check_id: VC07_part_completion_alignment
+  anomaly_ref: §3.4
+  description: 'in three-part waves, missingness on part-2 items should concentrate among respondents with completed_part2
+    == 0
+
+    '
+  type: assert_missingness_alignment
+  severity: warning
+  part: 2
+- check_id: VC08_cv16h_filter_count
+  anomaly_ref: §3.4
+  description: cv16h row count matches expected subsample after group filter
+  type: assert_row_count_range
+  severity: warning
+  wave: cv16h
+  min_rows: 1
+- check_id: VC09_unique_person_wave
+  anomaly_ref: §3.5
+  description: each nomem_encr appears at most once per wave
+  type: assert_unique
+  severity: error
+  group_by:
+  - wave
+  key: nomem_encr
+- check_id: VC10_sample_trace
+  anomaly_ref: §3.6
+  description: random sample of 50 obs spanning all boundaries for manual audit
+  type: sample_for_audit
+  severity: info
+  n: 50
+  stratify_by: wave
+  output: audit_sample.csv
+logging:
+  log_file: cv_merge_log.jsonl
+  report_file: cv_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates

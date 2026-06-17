@@ -1,0 +1,1227 @@
+# ========================================================================
+# LISS Panel Health (CH) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: ch
+  module_label: Health
+  recipe_version: "1.0.0"
+  created: '2026-02-10'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  notes: >-
+    V06 re-expressed note_only -> fix_label for the ch08b Dutch 'variabele'
+    labels, suffixes corrected to 001-003 and waves to [ch08b] (A-12); CHK05
+    waves_allowed extended to [ch22o, ch23p, ch24q] at error severity,
+    confirmed against codebook_ch22o_EN_1_0 (gender preload lists 1 male, 2
+    female, 3 other), and H03's premise amended to match; B06 crosswalk_rename
+    bridges ch08b suffix 244 into the 261 series (NM-01 pattern); B07-B11
+    structural_na presence flags document late introductions 263-264 (ch13g),
+    265-267 (ch15h), 268 (ch19l), 269-271 (ch20m, A-15) and 272-277 (ch24q,
+    A-16); B12 add_period_flag covers the suffix 020 rewording at ch24q
+    (A-18); V14/V15 document undocumented discontinuations (122/124 end at
+    ch18k; 019 ends at ch20m); suffixes 245-249 added to V10 and CHK02;
+    V09/V10 availability claims corrected (059, 123, 204, 205 start at ch08b;
+    261 starts at ch09c); V08 extended to ch07a's full 52-suffix absence set;
+    H02 ranges extended with 143-144, 265 and 267 plus a suffix 112
+    tail-variant note; B04/B05 boundary fields filled. note_only payloads
+    marked TODO_REEXPRESS pending engine support.
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_numeric
+  missing_variable_policy: warn_and_create_na
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+wave_index:
+- id: ch07a
+  year: 2007
+  file_pattern: ch07a_*
+  notes: baseline; missing suffixes 001-003, 006-010; unique suffix 241
+  role_map: &id001
+    wave_has_work_capacity: wave_has_work_capacity
+    wave_has_insurance: wave_has_insurance
+    wave_has_ecig: wave_has_ecig
+    missing_reason_matrix: missing_reason_matrix
+    ecig_count_per_day: '266'
+    ecig_ml_per_day: '266'
+    extra_questions_flag: '262'
+    health_insurer_id: '262'
+- id: ch08b
+  year: 2008
+  file_pattern: ch08b_*
+  notes: full schema template; Dutch label contamination; 255/259 swap
+  role_map: *id001
+- id: ch09c
+  year: 2009
+  file_pattern: ch09c_*
+  notes: leading-space block begins; suffix 231 metadata error
+  role_map: *id001
+- id: ch10d
+  year: 2010
+  file_pattern: ch10d_*
+  notes: leading-space block
+  role_map: *id001
+- id: ch11e
+  year: 2011
+  file_pattern: ch11e_*
+  notes: last wave with nohouse_encr; suffix 262 = participation flag
+  role_map: *id001
+- id: ch12f
+  year: 2012
+  file_pattern: ch12f_*
+  notes: suffix 228 label reverts; last wave with suffix 236
+  role_map: *id001
+- id: ch13g
+  year: 2013
+  file_pattern: ch13g_*
+  notes: last wave with work capacity module; leading-space block ends
+  role_map: *id001
+- id: ch15h
+  year: 2015
+  file_pattern: ch15h_*
+  notes: work capacity dropped; e-cigarette items introduced (265-266-267)
+  role_map: *id001
+- id: ch16i
+  year: 2016
+  file_pattern: ch16i_*
+  notes: stable
+  role_map: *id001
+- id: ch17j
+  year: 2017
+  file_pattern: ch17j_*
+  notes: stable; last wave before chronic-condition scope changes
+  role_map: *id001
+- id: ch18k
+  year: 2018
+  file_pattern: ch18k_*
+  notes: cancer/Alzheimer scope expansion; last e-cig count wave; last insurance wave
+  role_map: *id001
+- id: ch19l
+  year: 2019
+  file_pattern: ch19l_*
+  notes: CRITICAL — insurance dropped, e-cig unit break, label reformulation
+  role_map: *id001
+- id: ch20m
+  year: 2020
+  file_pattern: ch20m_*
+  notes: COVID-19 item; laughing gas items; XTC scope expansion
+  role_map: *id001
+- id: ch21n
+  year: 2021
+  file_pattern: ch21n_*
+  notes: stable post-ch19l structure
+  role_map: *id001
+- id: ch22o
+  year: 2022
+  file_pattern: ch22o_*
+  notes: stable
+  role_map: *id001
+- id: ch23p
+  year: 2023
+  file_pattern: ch23p_*
+  notes: stroke/arthritis scope expansion
+  role_map: *id001
+- id: ch24q
+  year: 2024
+  file_pattern: ch24q_*
+  notes: menopause module; gender category 3; suffix 020 wording change
+  role_map: *id001
+variable_rules:
+- rule_id: G01
+  anomaly_ref: A-10
+  description: strip leading/trailing whitespace from all haven value labels
+  action: strip_value_labels
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: G02
+  anomaly_ref: null
+  description: standardise column names to suffix-only form (e.g. ch08b004 -> s004)
+  action: rename_to_suffix
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: G03
+  anomaly_ref: A-20
+  description: coerce all haven_labelled columns according to labelled_policy
+  action: apply_labelled_policy
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+- rule_id: V01
+  anomaly_ref: A-20
+  description: force gender and employment preloads to plain integer
+  action: type_coerce
+  waves: all
+  suffixes:
+  - '001'
+  - '003'
+  target_type: integer
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: V02
+  anomaly_ref: A-20
+  description: coerce start/end times to character HH:MM:SS
+  action: type_coerce
+  waves: all
+  suffixes:
+  - '256'
+  - '258'
+  target_type: character
+  if_absent: warn_and_create_na
+  log: true
+  coerce_from_hms: true
+- rule_id: V03
+  anomaly_ref: A-20
+  description: coerce cigarette count to integer regardless of SPSS format
+  action: type_coerce
+  waves: all
+  suffixes:
+  - '130'
+  target_type: integer
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: V04
+  anomaly_ref: A-03
+  description: correct metadata label to 'no specialist' in all waves
+  action: set_label
+  waves: all
+  suffixes:
+  - '228'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  set_label: no specialist
+- rule_id: V05
+  anomaly_ref: A-14
+  description: correct ch09c231 label from literal 'ch09c232' to proper text
+  action: set_label
+  waves:
+  - ch09c
+  suffixes:
+  - '231'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  set_label: Did you undergo an operation during this hospitalization?
+- rule_id: V07
+  anomaly_ref: A-12
+  description: replace Dutch label with English equivalent
+  action: set_label
+  waves:
+  - ch11e
+  - ch13g
+  suffixes:
+  - 059
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  set_label: working with noise
+- rule_id: V08
+  anomaly_ref: A-01
+  description: ch07a lacks 52 suffixes first fielded in ch08b or later (preloads 001-003, life expectancy 006-010, items 059 and 100-124, insurance items 204-205 and 244-249, questionnaire evaluation and paradata 250-259)
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves:
+  - ch07a
+  suffixes:
+  - '001'
+  - '002'
+  - '003'
+  - '006'
+  - '007'
+  - 008
+  - 009
+  - '010'
+  - '059'
+  - '100'
+  - '101'
+  - '102'
+  - '103'
+  - '104'
+  - '105'
+  - '106'
+  - '107'
+  - '108'
+  - '109'
+  - '110'
+  - '111'
+  - '112'
+  - '113'
+  - '114'
+  - '115'
+  - '116'
+  - '117'
+  - '118'
+  - '119'
+  - '120'
+  - '121'
+  - '122'
+  - '123'
+  - '124'
+  - '204'
+  - '205'
+  - '244'
+  - '245'
+  - '246'
+  - '247'
+  - '248'
+  - '249'
+  - '250'
+  - '251'
+  - '252'
+  - '253'
+  - '254'
+  - '255'
+  - '256'
+  - '257'
+  - '258'
+  - '259'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: not_fielded_in_wave
+  notes: "covers the full ch07a absence set; 244 is bridged to canonical suffix 261 by B06; the later-period removals of 046-069/123 and of the insurance module remain documented by V09/V10"
+- rule_id: V09
+  anomaly_ref: A-04
+  description: work capacity module present only in ch07a-ch13g
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '046'
+  - '047'
+  - 048
+  - 049
+  - '050'
+  - '051'
+  - '052'
+  - '053'
+  - '054'
+  - '055'
+  - '056'
+  - '057'
+  - 058
+  - 059
+  - '060'
+  - '061'
+  - '062'
+  - '063'
+  - '064'
+  - '065'
+  - '066'
+  - '067'
+  - 068
+  - 069
+  - '123'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: module_removed
+  waves_available:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  waves_absent:
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  notes: "availability: suffixes 059 and 123 are first fielded in ch08b and are absent from ch07a; their ch07a absence is covered by V08"
+- rule_id: V10
+  anomaly_ref: A-05
+  description: insurance module present through ch18k, absent from ch19l onward
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '185'
+  - '186'
+  - '187'
+  - '188'
+  - '189'
+  - '190'
+  - '191'
+  - '192'
+  - '193'
+  - '194'
+  - '195'
+  - '196'
+  - '197'
+  - '198'
+  - '199'
+  - '200'
+  - '201'
+  - '202'
+  - '203'
+  - '204'
+  - '205'
+  - '237'
+  - '238'
+  - '245'
+  - '246'
+  - '247'
+  - '248'
+  - '249'
+  - '261'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: module_removed
+  waves_available:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  waves_absent:
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  notes: "availability: 204, 205 and the premium payer items 245-249 are first fielded in ch08b; 261 is first fielded in ch09c (ch08b carries the identical item as suffix 244, bridged by B06); all are absent from ch07a, covered by V08"
+- rule_id: V11
+  anomaly_ref: A-05
+  description: insurer name present through ch12f only
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '236'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: variable_removed
+  waves_available:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  waves_absent:
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+- rule_id: V12
+  anomaly_ref: A-05
+  description: own-risk deductible present only in ch07a-ch08b
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '240'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: variable_removed
+  waves_available:
+  - ch07a
+  - ch08b
+  waves_absent:
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+- rule_id: V13
+  anomaly_ref: A-05
+  description: monthly insurance premium unique to ch07a
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '241'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: variable_removed
+  waves_available:
+  - ch07a
+  waves_absent:
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+- rule_id: V14
+  anomaly_ref: null
+  description: items 122 (partner work change due to health) and 124 (health problems temporary) discontinued after ch18k, undocumented removal
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '122'
+  - '124'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: variable_removed
+  waves_available:
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  waves_absent:
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  notes: "also absent from ch07a, where the items were not yet fielded (covered by V08); the items vanish at ch19l together with the surrounding health-and-work block"
+- rule_id: V15
+  anomaly_ref: null
+  description: suffix 019 (open description of health complaint) discontinued after ch20m, undocumented removal
+  action: note_only  # TODO_REEXPRESS: payload below is inert under note_only
+  waves: all
+  suffixes:
+  - '019'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  missing_reason: variable_removed
+  waves_available:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  waves_absent:
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+harmonization_rules:
+- rule_id: H01
+  anomaly_ref: A-11
+  description: swap labels for suffixes 255 and 259 in ch08b if data confirms swap
+  action: conditional_label_swap
+  waves:
+  - ch08b
+  if_absent: warn_and_skip
+  log: true
+  suffix_a: '255'
+  suffix_b: '259'
+  label_a_correct: Starting date of the questionnaire
+  label_b_correct: Duration in seconds
+  condition: check data — if s255 contains date strings, swap labels only
+  fallback: swap_labels_only
+- rule_id: H02
+  anomaly_ref: A-08
+  description: normalise ch19l variable labels — strip embedded question stems
+  action: strip_question_stem
+  waves:
+  - ch19l
+  if_absent: warn_and_skip
+  log: true
+  suffixes_affected:
+  - range:
+    - '070'
+    - 098
+  - range:
+    - '127'
+    - '129'
+  - range:
+    - '136'
+    - '142'
+  - range:
+    - '145'
+    - '158'
+  - range:
+    - '159'
+    - '168'
+  - range:
+    - '169'
+    - '184'
+  - range:
+    - '206'
+    - '228'
+  - range:
+    - '143'
+    - '144'
+  - range:
+    - '265'
+    - '265'
+  - range:
+    - '267'
+    - '267'
+  notes: "ch19l also embeds question stems on 143-144 (other alcoholic drink), 265 (e-cigarettes) and 267 (dental hygienist); suffix 112 carries a tail-wording variant ('... so that you can continue working?') that stem stripping does not normalize and is left for manual review"
+- rule_id: H03
+  anomaly_ref: A-17
+  description: harmonise gender coding, category 3 ('other') defined from ch22o onward; schema extended for all waves
+  action: extend_categories
+  waves: all
+  if_absent: warn_and_skip
+  log: true
+  suffix: '001'
+  categories:
+    1: male
+    2: female
+    3: other
+  notes: "category 3 'other' is defined in the value-label metadata from ch22o and confirmed in codebook_ch22o_EN_1_0; A-17's ch24q-only claim is superseded (see CHK05)"
+# V06 relocated from variable_rules: fix_label is a harmonization_rules action (engine + schema vocab); payload preserved verbatim
+- rule_id: V06
+  anomaly_ref: A-12
+  description: replace Dutch 'variabele' with 'variable' in ch08b labels (suffixes 001-003)
+  action: fix_label  # REEXPRESSED_FROM: note_only
+  waves:
+  - ch08b
+  suffixes:
+  - '001'
+  - '002'
+  - '003'
+  target_type: null
+  if_absent: warn_and_create_na
+  log: true
+  label_find: variabele
+  label_replace: variable
+  notes: "corrected labels per A-12: '001' -> 'preloaded variable: gender', '002' -> 'preloaded variable: age', '003' -> 'preloaded variable: job'; 'variabele' occurs only in ch08b and only on these three suffixes"
+boundary_rules:
+- rule_id: B01
+  anomaly_ref: A-07
+  description: e-cigarette unit break — split suffix 266 into two derived variables
+  action: split_variable
+  boundary: ch18k_to_ch19l
+  log: true
+  suffix: '266'
+  output_vars:
+  - name: ecig_count_per_day
+    source_suffix: '266'
+    waves:
+    - ch15h
+    - ch16i
+    - ch17j
+    - ch18k
+    unit: count
+  - name: ecig_ml_per_day
+    source_suffix: '266'
+    waves:
+    - ch19l
+    - ch20m
+    - ch21n
+    - ch22o
+    - ch23p
+    - ch24q
+    unit: milliliters
+  pooling_allowed: false
+  comparability:
+    status: non_comparable
+    method: no_pool
+    rationale: e-cigarette unit break — split suffix 266 into two derived variables
+- rule_id: B02
+  anomaly_ref: A-09
+  description: cancer item scope change — create era indicator
+  action: add_era_flag
+  boundary: ch17j_to_ch18k
+  log: true
+  suffix: 089
+  flag_name: cancer_definition_era
+  eras:
+    broad:
+    - ch07a
+    - ch08b
+    - ch09c
+    - ch10d
+    - ch11e
+    - ch12f
+    - ch13g
+    - ch15h
+    - ch16i
+    - ch17j
+    narrow_excl_skin:
+    - ch18k
+    - ch19l
+    - ch20m
+    - ch21n
+    - ch22o
+    - ch23p
+    - ch24q
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: cancer item scope change — create era indicator
+- rule_id: B03
+  anomaly_ref: A-09
+  description: Alzheimer item scope change — create era indicator
+  action: add_era_flag
+  boundary: ch17j_to_ch18k
+  log: true
+  suffix: 095
+  flag_name: alzheimer_definition_era
+  eras:
+    strict:
+    - ch07a
+    - ch08b
+    - ch09c
+    - ch10d
+    - ch11e
+    - ch12f
+    - ch13g
+    - ch15h
+    - ch16i
+    - ch17j
+    expanded_memory:
+    - ch18k
+    - ch19l
+    - ch20m
+    - ch21n
+    - ch22o
+    - ch23p
+    - ch24q
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: Alzheimer item scope change — create era indicator
+- rule_id: B04
+  anomaly_ref: A-13
+  description: suffix 262 dual meaning — split into two variables
+  action: split_variable
+  boundary: ch11e_to_ch13g
+  log: true
+  suffix: '262'
+  output_vars:
+  - name: extra_questions_flag
+    source_suffix: '262'
+    waves:
+    - ch11e
+  - name: health_insurer_id
+    source_suffix: '262'
+    waves:
+    - ch13g
+    - ch15h
+    - ch16i
+    - ch17j
+    - ch18k
+  comparability:
+    status: non_comparable
+    method: no_pool
+    rationale: suffix 262 dual meaning — split into two variables
+- rule_id: B05
+  anomaly_ref: A-06
+  description: nohouse_encr present only in ch07a-ch11e
+  action: structural_note
+  boundary: ch11e_to_ch12f
+  log: true
+  variable: nohouse_encr
+  waves_present:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  waves_absent_from: ch12f
+  guidance: source from LISS Background Variables for ch12f onward
+- rule_id: B06
+  anomaly_ref: null
+  description: suffix renumbering at the ch08b/ch09c boundary, ch08b suffix 244 carries the premium-period item renumbered to 261 from ch09c onward (NM-01 pattern)
+  action: crosswalk_rename
+  boundary: ch08b_to_ch09c
+  log: true
+  waves:
+  - ch08b
+  crosswalk:
+  - from: '244'
+    to: '261'
+  notes: "ch08b244 and ch09c-ch18k 261 carry the identical question text modulo the survey year ('Per what period did you pay premiums for the health insurance in YYYY?'); renaming unifies the series under canonical suffix 261 so the ch08b data is not stranded under 244"
+- rule_id: B07
+  anomaly_ref: null
+  description: health care allowance items 263-264 introduced at ch13g, undocumented introduction
+  action: structural_na
+  boundary: ch12f_to_ch13g
+  log: true
+  suffixes:
+  - '263'
+  - '264'
+  present_in_waves:
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  flag_column: ch_hca_items_present
+  notes: "structurally NA in ch07a-ch12f; presence flag only, the engine writes no data columns; feeds missing-reason documentation for DV06"
+- rule_id: B08
+  anomaly_ref: A-07
+  description: e-cigarette items 265-266 and dental hygienist item 267 introduced at ch15h
+  action: structural_na
+  boundary: ch13g_to_ch15h
+  log: true
+  suffixes:
+  - '265'
+  - '266'
+  - '267'
+  present_in_waves:
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  flag_column: ch_ecig_dental_items_present
+  notes: "structurally NA in ch07a-ch13g; presence flag only; the 266 count/milliliter unit break within this window is handled by B01"
+- rule_id: B09
+  anomaly_ref: null
+  description: years-not-working item 268 introduced at ch19l, undocumented introduction
+  action: structural_na
+  boundary: ch18k_to_ch19l
+  log: true
+  suffixes:
+  - '268'
+  present_in_waves:
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  flag_column: ch_years_not_working_present
+  notes: "structurally NA in ch07a-ch18k; presence flag only"
+- rule_id: B10
+  anomaly_ref: A-15
+  description: COVID-19 item 269 and laughing gas items 270-271 introduced at ch20m
+  action: structural_na
+  boundary: ch19l_to_ch20m
+  log: true
+  suffixes:
+  - '269'
+  - '270'
+  - '271'
+  present_in_waves:
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  flag_column: ch_covid_n2o_items_present
+  notes: "structurally NA before ch20m; presence flag only; the 270/271 prevalence-versus-frequency distinction is an A-15 ambiguity assumed from the substance-item pattern"
+- rule_id: B11
+  anomaly_ref: A-16
+  description: menopause module 272-277 introduced at ch24q
+  action: structural_na
+  boundary: ch23p_to_ch24q
+  log: true
+  suffixes:
+  - '272'
+  - '273'
+  - '274'
+  - '275'
+  - '276'
+  - '277'
+  present_in_waves:
+  - ch24q
+  flag_column: ch_menopause_module_present
+  notes: "structurally NA before ch24q; presence flag only; complements CHK09 which asserts the all-NA pattern"
+- rule_id: B12
+  anomaly_ref: A-18
+  description: suffix 020 question rewording at ch24q, period indicator for comparability
+  action: add_period_flag
+  boundary: ch23p_to_ch24q
+  log: true
+  suffix: '020'
+  flag_name: s020_wording_period
+  periods:
+    original_wording:
+    - ch07a
+    - ch08b
+    - ch09c
+    - ch10d
+    - ch11e
+    - ch12f
+    - ch13g
+    - ch15h
+    - ch16i
+    - ch17j
+    - ch18k
+    - ch19l
+    - ch20m
+    - ch21n
+    - ch22o
+    - ch23p
+    reworded_with_examples:
+    - ch24q
+  comparability:
+    status: partial
+    method: pool_with_flags
+    rationale: ch24q rewords the daily-activities hindrance item and adds concrete activity examples; response-scale equivalence is unresolved, so pool only with the period flag
+drop_retain_rules:
+- rule_id: D01
+  anomaly_ref: null
+  description: drop raw wave-month variable after extracting year
+  action: drop
+  columns:
+  - wave_month_raw
+  reason: replaced by derived wave_year
+  log: true
+- rule_id: D02
+  anomaly_ref: null
+  description: drop the stray empty h_ column; a crosswalk_rename entry with no resolvable suffix (recipe uses from/to keys, the executor reads old_suffix/new_suffix) creates it all-NA
+  action: drop
+  columns:
+  - h_
+  reason: all-NA artifact of a no-suffix crosswalk_rename
+  log: true
+- rule_id: R01
+  description: always retain merge key and paradata
+  action: retain
+  columns:
+  - nomem_encr
+  - wave_id
+  - wave_year
+  - wave_month
+  log: true
+derived_variables:
+- var_name: wave_id
+  rule_id: DV01
+  anomaly_ref: null
+  description: categorical wave identifier extracted from file name
+  type: character
+  source: file_name_prefix
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_year
+  rule_id: DV02
+  anomaly_ref: null
+  description: survey year parsed from wave_id
+  type: integer
+  source: wave_index lookup on wave_id
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_has_work_capacity
+  rule_id: DV03
+  anomaly_ref: A-04
+  description: flag for whether work capacity module was fielded
+  type: logical
+  source: wave_id %in% c('ch07a','ch08b','ch09c','ch10d','ch11e','ch12f','ch13g')
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_has_insurance
+  rule_id: DV04
+  anomaly_ref: A-05
+  description: flag for whether insurance module was present
+  type: logical
+  source: wave_id %in% waves through ch18k
+  if_absent: warn_and_create_na
+  log: true
+- var_name: wave_has_ecig
+  rule_id: DV05
+  anomaly_ref: A-07
+  description: flag for whether e-cigarette items were fielded
+  type: logical
+  source: wave_id %in% waves from ch15h onward
+  if_absent: warn_and_create_na
+  log: true
+- var_name: missing_reason_matrix
+  rule_id: DV06
+  anomaly_ref: null
+  description: per-variable-per-wave reason code for structural NA
+  type: stored as attribute on merged data frame
+  source: ''
+  if_absent: warn_and_create_na
+  log: true
+  reason_codes:
+    not_fielded_in_wave: variable not part of instrument in this wave
+    module_removed: entire module dropped from instrument
+    variable_removed: single variable discontinued
+    wave_not_in_release: wave absent from data release (ch14)
+validation_checks:
+- check_id: CHK01
+  anomaly_ref: A-04
+  description: work capacity items must be 100% NA in ch15h+
+  type: structural_missingness
+  severity: error
+  suffixes:
+  - '046'
+  - '047'
+  - 048
+  - 049
+  - '050'
+  - '051'
+  - '052'
+  - '053'
+  - '054'
+  - '055'
+  - '056'
+  - '057'
+  - 058
+  - 059
+  - '060'
+  - '061'
+  - '062'
+  - '063'
+  - '064'
+  - '065'
+  - '066'
+  - '067'
+  - 068
+  - 069
+  - '123'
+  waves_must_be_all_na:
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+- check_id: CHK02
+  anomaly_ref: A-05
+  description: insurance items must be 100% NA in ch19l+
+  type: structural_missingness
+  severity: error
+  suffixes:
+  - '185'
+  - '186'
+  - '187'
+  - '188'
+  - '189'
+  - '190'
+  - '191'
+  - '192'
+  - '193'
+  - '194'
+  - '195'
+  - '196'
+  - '197'
+  - '198'
+  - '199'
+  - '200'
+  - '201'
+  - '202'
+  - '203'
+  - '204'
+  - '205'
+  - '237'
+  - '238'
+  - '245'
+  - '246'
+  - '247'
+  - '248'
+  - '249'
+  - '261'
+  waves_must_be_all_na:
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+- check_id: CHK03
+  anomaly_ref: A-03
+  description: suffix 228 endorsement rate should not jump >10pp at ch11e->ch12f
+  type: distribution_continuity
+  severity: warning
+  suffix: '228'
+  boundary_waves:
+  - ch11e
+  - ch12f
+  max_shift_pp: 10
+- check_id: CHK04
+  anomaly_ref: A-13
+  description: extra_questions_flag must be non-NA only in ch11e
+  type: structural_missingness
+  severity: error
+  derived_var: extra_questions_flag
+  waves_may_have_data:
+  - ch11e
+- check_id: CHK05
+  anomaly_ref: A-17
+  description: gender category 3 ('other') may appear only from ch22o onward
+  type: value_restriction
+  severity: error
+  suffix: '001'
+  value: 3
+  waves_allowed:
+  - ch22o
+  - ch23p
+  - ch24q
+  notes: "confirmed against codebook_ch22o_EN_1_0 (the gender preload lists 1 male, 2 female, 3 other) and the ch22o/ch23p value-label metadata; A-17's ch24q-only premise is superseded; severity retained at error given the codebook confirmation"
+- check_id: CHK06
+  anomaly_ref: null
+  description: nomem_encr must be unique within each wave
+  type: uniqueness
+  severity: error
+  column: nomem_encr
+  within: wave_id
+- check_id: CHK07
+  anomaly_ref: A-07
+  description: ecig_count_per_day must be NA outside ch15h-ch18k
+  type: structural_missingness
+  severity: error
+  derived_var: ecig_count_per_day
+  waves_may_have_data:
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+- check_id: CHK08
+  anomaly_ref: A-09
+  description: cancer endorsement rate check around ch17j/ch18k boundary
+  type: distribution_continuity
+  severity: warning
+  suffix: 089
+  boundary_waves:
+  - ch17j
+  - ch18k
+  max_shift_pp: 8
+- check_id: CHK09
+  anomaly_ref: A-16
+  description: menopause items must be 100% NA before ch24q
+  type: structural_missingness
+  severity: error
+  suffixes:
+  - '272'
+  - '273'
+  - '274'
+  - '275'
+  - '276'
+  - '277'
+  waves_must_be_all_na:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+- check_id: CHK10
+  anomaly_ref: A-02
+  description: no rows should carry wave_id 'ch14'
+  type: value_absence
+  severity: error
+  column: wave_id
+  forbidden_values:
+  - ch14
+logging:
+  log_file: ch_merge_log.jsonl
+  report_file: ch_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates

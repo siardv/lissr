@@ -1,0 +1,50 @@
+Package: lissr
+Title: View, Download, and Merge LISS Panel Data
+Version: 1.0.0
+Authors@R: person("Siard", "van den Bosch", email = "siardvandenbosch@me.com", role = c("aut", "cre", "cph"))
+Description: Programmatic access to the LISS Data Archive
+    (<https://www.lissdata.nl/>). Authenticate with two-factor
+    verification, browse available modules and waves, interactively
+    select and download data files, and merge longitudinal waves using
+    recipe-driven YAML specifications conforming to a canonical schema
+    (v1.0.0). Credentials are stored securely via the system keyring.
+License: MIT + file LICENSE
+URL: https://github.com/siardv/lissr
+BugReports: https://github.com/siardv/lissr/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 4.1.0)
+Imports:
+    cli,
+    dplyr,
+    haven,
+    httr,
+    jsonlite,
+    magrittr,
+    purrr (>= 1.0.0),
+    readr,
+    rvest,
+    stats,
+    stringr,
+    tibble,
+    tidyr,
+    tools,
+    utils,
+    xml2,
+    yaml
+Suggests:
+    askpass,
+    fixest,
+    keyring,
+    lme4,
+    MASS,
+    rlang,
+    svDialogs,
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    withr
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0

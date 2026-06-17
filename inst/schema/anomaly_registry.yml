@@ -1,0 +1,187 @@
+# ============================================================================
+# anomaly_registry.yml — reusable anomaly archetypes for LISS panel merge
+# ============================================================================
+# maps archetype codes to canonical handling templates.
+# recipes reference archetypes by code; the engine resolves parameters.
+#
+# archetype naming convention:
+#   WS-NN  whitespace / label formatting issues
+#   SC-NN  sentinel code regimes
+#   TD-NN  type drift (column type changes across waves)
+#   MR-NN  module removal / instrument discontinuation
+#   LB-NN  label errors (typos, language, missing translations)
+#   RD-NN  instrument redesign (question wording, response scale)
+#   NM-NN  naming convention changes
+
+archetypes:
+
+  # ── whitespace ──────────────────────────────────────────────────────────
+  WS-01:
+    name: label_whitespace
+    template: strip_value_labels
+    description: >
+      trailing or leading whitespace in haven value label strings.
+      common in early LISS waves (2007-2012).
+    section: variable_rules
+    parameters: {}
+    modules_affected: [ch, cv, cd, cf, cw, cp, cs, ci]
+
+  # ── sentinel code regimes ───────────────────────────────────────────────
+  SC-01:
+    name: sentinel_positive_dk
+    template: recode_to_na
+    description: >
+      early waves use large positive codes for DK/refusal:
+      999 (DK on categoricals), 9999999998 (prefer not to say),
+      9999999999 (DK on monetary amounts).
+    section: harmonization_rules
+    parameters:
+      codes: [999, 9999999998, 9999999999]
+    modules_affected: [ci, cv]
+
+  SC-02:
+    name: sentinel_negative_dk
+    template: recode_to_na
+    description: >
+      later waves (typically 2019+) use negative codes:
+      -9 (don't know), -8 (prefer not to say).
+    section: harmonization_rules
+    parameters:
+      codes: [-9, -8]
+    modules_affected: [ci, cv, cs, cw, cp]
+
+  SC-03:
+    name: sentinel_mixed_regime
+    template: recode_to_na
+    description: >
+      module uses both positive and negative sentinels across wave ranges.
+      requires wave-specific recode blocks.
+    section: harmonization_rules
+    parameters:
+      early_codes: [999, 9999999998, 9999999999]
+      late_codes: [-9, -8]
+    modules_affected: [ci, cv]
+
+  # ── type drift ──────────────────────────────────────────────────────────
+  TD-01:
+    name: hms_to_character_drift
+    template: type_coerce
+    description: >
+      interview timestamp variables stored as hms in some waves,
+      character in others. coerce all to character for consistency.
+    section: variable_rules
+    parameters:
+      target_type: character
+    modules_affected: [ci]
+
+  TD-02:
+    name: numeric_label_drift
+    template: type_coerce
+    description: >
+      variables stored as haven_labelled in some waves, plain numeric
+      in others. coerce to numeric after extracting labels.
+    section: variable_rules
+    parameters:
+      target_type: numeric
+    modules_affected: [ch, cd, cf, ci]
+
+  # ── module removal / discontinuation ────────────────────────────────────
+  MR-01:
+    name: module_discontinued
+    template: structural_na
+    description: >
+      entire sub-module removed from questionnaire at a specific wave
+      boundary. all affected variables become structural NA from the
+      discontinuation wave onward.
+    section: boundary_rules
+    parameters:
+      flag_column: "{module}_{submodule}_present"
+    modules_affected: [ch, cs, ci]
+
+  MR-02:
+    name: module_introduced_late
+    template: structural_na
+    description: >
+      sub-module or question block introduced after the first wave.
+      affected variables are structural NA for earlier waves.
+    section: boundary_rules
+    parameters:
+      flag_column: "{module}_{submodule}_present"
+    modules_affected: [ch, cd, cs]
+
+  # ── label errors ────────────────────────────────────────────────────────
+  LB-01:
+    name: label_typo
+    template: fix_label
+    description: >
+      typographical error in variable label text.
+      replace specific fragment with corrected text.
+    section: harmonization_rules
+    parameters:
+      old_fragment: ""
+      new_fragment: ""
+    modules_affected: [ch, ci, cv]
+
+  LB-02:
+    name: label_language_mix
+    template: fix_label
+    description: >
+      Dutch label text in English-language file, or vice versa.
+      replace with correct language equivalent.
+    section: harmonization_rules
+    parameters:
+      old_fragment: ""
+      new_fragment: ""
+    modules_affected: [ch, cd]
+
+  LB-03:
+    name: label_cross_reference
+    template: fix_label
+    description: >
+      label contains variable name from another wave (e.g. 'ch09c232')
+      instead of descriptive text. replace with proper content.
+    section: harmonization_rules
+    parameters:
+      old_fragment: ""
+      new_fragment: ""
+    modules_affected: [ch]
+
+  # ── instrument redesign ─────────────────────────────────────────────────
+  RD-01:
+    name: response_scale_change
+    template: split_variable
+    description: >
+      response scale changed at a boundary (e.g. numeric open entry
+      to categorical with code 99='never'). pre/post versions are
+      non-comparable; create separate derived variables.
+    section: boundary_rules
+    parameters:
+      comparability:
+        status: non_comparable
+        method: no_pool
+    modules_affected: [cs, ch, cv]
+
+  RD-02:
+    name: question_wording_change
+    template: add_period_flag
+    description: >
+      question wording or stem changed but response scale preserved.
+      pooling may be acceptable with caveats; flag the boundary.
+    section: boundary_rules
+    parameters:
+      comparability:
+        status: partial
+        method: pool_with_flags
+    modules_affected: [cv, cs, cw]
+
+  # ── naming convention changes ───────────────────────────────────────────
+  NM-01:
+    name: suffix_renumbering
+    template: crosswalk_rename
+    description: >
+      variable suffixes renumbered across a wave boundary.
+      old suffix -> new suffix mapping required for harmonized name.
+    section: boundary_rules
+    parameters:
+      crosswalk: []
+    modules_affected: [cs, cd, ci]

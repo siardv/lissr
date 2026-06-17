@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "lissr: View, Download, and Merge LISS Panel Data"
+authors:
+  - family-names: "Bosch"
+    name-particle: "van den"
+    given-names: "Siard"
+    email: "siardvandenbosch@me.com"
+license: MIT
+version: "1.0.0"
+date-released: "2026-06-17"
+repository-code: "https://github.com/siardv/lissr"
+url: "https://siardv.github.io/lissr/"

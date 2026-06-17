@@ -1,0 +1,1263 @@
+# ========================================================================
+# LISS Panel Housing (CD) Module merge recipe
+# ========================================================================
+# explicit actions, comparability contracts, audit-grade logging,
+# expected_presence, taxonomy refs
+# conforms to CANONICAL_SCHEMA.md v1.0.0
+
+meta:
+  module: cd
+  module_label: Housing
+  recipe_version: "1.0.0"
+  created: '2026-02-10'
+  source_spec: cross-wave harmonization specification
+  covered_waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  notes: >-
+    re-expressed R01-R09 as wave-scoped rename rules and S01/S02 as typed
+    recode_to_na rules in harmonization_rules with suffix lists derived from
+    cd_value_labels.csv; corrected the h_mortgage_ref_type boundary (0 cd08a,
+    1 cd09b-cd23p, 2 cd24q-cd25r); corrected the cd25r expansion count to 127;
+    restored structured dependencies on the four copy-derived variables and
+    wave_values on h_recall_months (TODO_REEXPRESS); filled CHK04; added CHK11
+    as the executable form of the B01 post_check.
+  schema_version: "1.0.0"
+global:
+  id_variable: nomem_encr
+  wave_variable: wave_id
+  year_variable: wave_year
+  labelled_policy: to_numeric
+  missing_variable_policy: warn_and_create_na
+  strip_label_whitespace: true
+  expected_presence:
+    critical:
+    - variable: nomem_encr
+      waves: all
+      on_absence: error
+    - variable: fieldwork_ym
+      waves: all
+      on_absence: warn
+    optional_note: add module-specific critical variables here
+wave_index:
+- id: cd08a
+  year: 2008
+  file_pattern: cd08a_EN_1_2p.csv
+  notes: ''
+  fieldwork: 2008-06 / 2008-09
+  financial_ref: contemporaneous
+  recall_months: 0
+  era: era1
+  role_map: &id001
+    h_rent_benefit: h_rent_benefit
+    h_rent_benefit_channel: h_rent_benefit_channel
+    h_rent_stated_gross_net: h_rent_stated_gross_net
+    h_rent_subsidy_prior_year: h_rent_subsidy_prior_year
+    h_scale_version_satisfaction: h_scale_version_satisfaction
+    h_mortgage_ref_type: h_mortgage_ref_type
+    h_financial_ref_year: h_financial_ref_year
+    h_recall_months: h_recall_months
+    h_dwelling_type_label_version: h_dwelling_type_label_version
+    h_landlord_type: h_landlord_type
+- id: cd09b
+  year: 2009
+  file_pattern: cd09b_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2009-06 / 2009-08
+  financial_ref: '2008-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd10c
+  year: 2010
+  file_pattern: cd10c_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2010-06 / 2010-08
+  financial_ref: '2009-12-31'
+  recall_months: 6
+  era: era1
+  aux_files:
+  - cd10c_EN_1_1p.csv
+  aux_note: stack both; zero respondent overlap (anomaly 9)
+  role_map: *id001
+- id: cd11d
+  year: 2011
+  file_pattern: cd11d_EN_2_0p.csv
+  notes: ''
+  fieldwork: 2011-06 / 2011-08
+  financial_ref: '2010-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd12e
+  year: 2012
+  file_pattern: cd12e_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2012-06 / 2012-08
+  financial_ref: '2011-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd13f
+  year: 2013
+  file_pattern: cd13f_EN_1_1p.csv
+  notes: ''
+  fieldwork: 2013-06 / 2013-08
+  financial_ref: '2012-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd14g
+  year: 2014
+  file_pattern: cd14g_EN_1_1p.csv
+  notes: anomaly 8 — atypical Oct-Nov fieldwork
+  fieldwork: 2014-10 / 2014-11
+  financial_ref: '2013-12-31'
+  recall_months: 10
+  era: era1
+  role_map: *id001
+- id: cd15h
+  year: 2015
+  file_pattern: cd15h_EN_1_0p.csv
+  notes: anomaly 7 — shares reference year with cd16i
+  fieldwork: 2015-06
+  financial_ref: '2014-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd16i
+  year: 2016
+  file_pattern: cd16i_EN_1_0p.csv
+  notes: anomaly 7 — shares reference year with cd15h; 18-month recall
+  fieldwork: 2016-06 / 2016-07
+  financial_ref: '2014-12-31'
+  recall_months: 18
+  era: era1
+  role_map: *id001
+- id: cd17j
+  year: 2017
+  file_pattern: cd17j_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2017-06 / 2017-07
+  financial_ref: '2016-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd18k
+  year: 2018
+  file_pattern: cd18k_EN_1_0p.csv
+  notes: last wave before cd19l restructuring
+  fieldwork: 2018-06 / 2018-08
+  financial_ref: '2017-12-31'
+  recall_months: 6
+  era: era1
+  role_map: *id001
+- id: cd19l
+  year: 2019
+  file_pattern: cd19l_EN_3_0p.csv
+  notes: anomalies 1-4 — major structural break
+  fieldwork: 2019-07 / 2019-08
+  financial_ref: '2018-12-31'
+  recall_months: 7
+  era: era2
+  role_map: *id001
+- id: cd20m
+  year: 2020
+  file_pattern: cd20m_EN_2_0p.csv
+  notes: ''
+  fieldwork: 2020-06 / 2020-08
+  financial_ref: '2019-12-31'
+  recall_months: 6
+  era: era2
+  role_map: *id001
+- id: cd21n
+  year: 2021
+  file_pattern: cd21n_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2021-06 / 2021-08
+  financial_ref: '2020-12-31'
+  recall_months: 6
+  era: era2
+  role_map: *id001
+- id: cd22o
+  year: 2022
+  file_pattern: cd22o_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2022-06 / 2022-08
+  financial_ref: '2021-12-31'
+  recall_months: 6
+  era: era2
+  role_map: *id001
+- id: cd23p
+  year: 2023
+  file_pattern: cd23p_EN_1_0p.csv
+  notes: ''
+  fieldwork: 2023-06 / 2023-08
+  financial_ref: '2022-12-31'
+  recall_months: 6
+  era: era2
+  role_map: *id001
+- id: cd24q
+  year: 2024
+  file_pattern: cd24q_EN_1_0p.csv
+  notes: anomaly 12 — dwelling type label change; anomaly 6b — 'all' mortgage wording
+  fieldwork: 2024-06 / 2024-08
+  financial_ref: '2023-12-31'
+  recall_months: 6
+  era: era2
+  role_map: *id001
+- id: cd25r
+  year: 2025
+  file_pattern: cd25r_EN_1_0p.csv
+  notes: anomaly 15 — 127 new variables
+  fieldwork: 2025-06 / 2025-08
+  financial_ref: '2024-12-31'
+  recall_months: 6
+  era: era2
+  role_map: *id001
+variable_rules:
+- rule_id: R01a_satisfaction_dwelling_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-02
+  description: rename post-strip s001 to h_satisfaction_dwelling in era-1 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  mapping:
+    s001: h_satisfaction_dwelling
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R01b_satisfaction_dwelling_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-02
+  description: rename post-strip s091 to h_satisfaction_dwelling in era-2 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s091: h_satisfaction_dwelling
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R02a_satisfaction_vicinity_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-02
+  description: rename post-strip s002 to h_satisfaction_vicinity in era-1 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  mapping:
+    s002: h_satisfaction_vicinity
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R02b_satisfaction_vicinity_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-02
+  description: rename post-strip s092 to h_satisfaction_vicinity in era-2 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s092: h_satisfaction_vicinity
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R03a_rent_period_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s006 to h_rent_period in era-1 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  mapping:
+    s006: h_rent_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R03b_rent_period_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s093 to h_rent_period in era-2 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s093: h_rent_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R04a_service_cost_period_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s031 to h_service_cost_period in era-1 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  mapping:
+    s031: h_service_cost_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R04b_service_cost_period_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s094 to h_service_cost_period in era-2 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s094: h_service_cost_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R05a_second_dwell_rent_period_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s064 to h_second_dwell_rent_period in era-1 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  mapping:
+    s064: h_second_dwell_rent_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R05b_second_dwell_rent_period_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s095 to h_second_dwell_rent_period in era-2 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s095: h_second_dwell_rent_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R06a_second_dwell_svc_period_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s070 to h_second_dwell_svc_period in era-1 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  mapping:
+    s070: h_second_dwell_svc_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R06b_second_dwell_svc_period_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-04
+  description: rename post-strip s096 to h_second_dwell_svc_period in era-2 waves (suffix renumbered at cd19l)
+  action: rename
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s096: h_second_dwell_svc_period
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R07a_mortgage_debt_cd08a  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-06
+  description: rename post-strip s017 to h_mortgage_debt in cd08a (suffix moved to 083 from cd09b onward)
+  action: rename
+  waves:
+  - cd08a
+  mapping:
+    s017: h_mortgage_debt
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R07b_mortgage_debt_cd09b_on  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-06
+  description: rename post-strip s083 to h_mortgage_debt from cd09b onward
+  action: rename
+  waves:
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s083: h_mortgage_debt
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R08_woz_ref_year  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-11
+  description: rename post-strip s029 to h_woz_ref_year; suffix unchanged but absent in cd19l and from cd23p onward
+  action: rename
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  - cd20m
+  - cd21n
+  - cd22o
+  mapping:
+    s029: h_woz_ref_year
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: R09_woz_latest_value  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-11
+  description: rename post-strip s099 to h_woz_latest_value (replacement WOZ item introduced at cd23p)
+  action: rename
+  waves:
+  - cd23p
+  - cd24q
+  - cd25r
+  mapping:
+    s099: h_woz_latest_value
+  if_absent: warn_and_create_na
+  log: true
+harmonization_rules:
+- rule_id: S01a_scale_999_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode 999 (DK) to NA on 0-10 satisfaction scales; suffix list per era-1 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  variables:
+  - '001'
+  - '002'
+  mapping:
+    999: null
+  log: count recoded values per variable per wave
+- rule_id: S01b_categorical_dk99_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode 99 (DK) to NA on small categoricals labelled with 99; suffix list per era-1 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  variables:
+  - '009'
+  - '018'
+  - '020'
+  - '022'
+  - '087'
+  mapping:
+    99: null
+  log: count recoded values per variable per wave
+- rule_id: S01c_categorical_pnts98_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode 98 (prefer not to say) to NA on small categoricals labelled with 98; suffix list per era-1 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  variables:
+  - '011'
+  - '015'
+  - '020'
+  - '054'
+  - '055'
+  - '058'
+  - '061'
+  - '086'
+  - '088'
+  mapping:
+    98: null
+  log: count recoded values per variable per wave
+- rule_id: S01d_year_sentinels_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode year DK sentinels to NA; suffix list per era-1 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  variables:
+  - '014'
+  - '029'
+  mapping:
+    99999: null
+    '9999999999': null
+  note: only 99999 is labelled on 014/029, but 9999999999 occurs in the 029 data (codebook gap); a 10-digit year is impossible, so it is scrubbed here
+  log: count recoded values per variable per wave
+- rule_id: S01e_monetary_big_sentinels_era1  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode monetary DK/PNTS sentinels to NA; identical 17-suffix list labelled for both codes per era-1 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  variables:
+  - '008'
+  - '010'
+  - '013'
+  - '017'
+  - '019'
+  - '021'
+  - '023'
+  - '024'
+  - '028'
+  - '033'
+  - '062'
+  - '063'
+  - '066'
+  - '068'
+  - '072'
+  - '083'
+  - '085'
+  mapping:
+    '9999999998': null
+    '9999999999': null
+  log: count recoded values per variable per wave
+- rule_id: S02a_scale_dk9_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -9 (DK) to NA on 0-10 satisfaction scales; suffix list per era-2 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  variables:
+  - '091'
+  - '092'
+  mapping:
+    -9: null
+  log: count recoded values per variable per wave
+- rule_id: S02b_year_dk9_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -9 (DK) to NA on year items; suffix list per era-2 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  variables:
+  - '014'  # purchase year, all era-2 waves
+  - '029'  # WOZ year, present only cd20m-cd22o
+  mapping:
+    -9: null
+  log: count recoded values per variable per wave
+- rule_id: S02c_categorical_dk9_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -9 (DK) to NA on small categoricals labelled with -9; suffix list per era-2 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  variables:
+  - '009'
+  - '015'
+  - '018'
+  - '020'
+  - '030'
+  - '069'
+  - '088'
+  - '097'  # cd23p onward
+  - '098'  # cd23p onward
+  - '100'  # cd23p onward
+  - '103'  # cd25r only
+  - '106'  # cd25r only
+  - '109'  # cd25r only
+  - '110'  # cd25r only
+  - '111'  # cd25r only
+  - '112'  # cd25r only
+  - '113'  # cd25r only
+  - '114'  # cd25r only
+  - '115'  # cd25r only
+  - '204'  # cd25r only
+  - '206'  # cd25r only
+  - '209'  # cd25r only
+  - '210'  # cd25r only
+  - '213'  # cd25r only
+  - '216'  # cd25r only
+  - '220'  # cd25r only
+  mapping:
+    -9: null
+  log: count recoded values per variable per wave
+- rule_id: S02d_categorical_pnts8_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -8 (prefer not to say) to NA on small categoricals labelled with -8; suffix list per era-2 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  variables:
+  - '015'
+  - '020'
+  - '054'
+  - '058'
+  - '061'
+  - '088'
+  - '097'  # cd23p onward
+  - '098'  # cd23p onward
+  - '100'  # cd23p onward
+  - '101'  # cd24q onward
+  - '103'  # cd25r only
+  - '106'  # cd25r only
+  - '204'  # cd25r only
+  - '206'  # cd25r only
+  - '209'  # cd25r only
+  mapping:
+    -8: null
+  log: count recoded values per variable per wave
+- rule_id: S02e_monetary_dk9_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -9 (DK) to NA on monetary amounts and continuous quantities labelled with -9; suffix list per era-2 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  variables:
+  - '008'
+  - '010'
+  - '013'
+  - '019'
+  - '021'
+  - '024'
+  - '028'
+  - '033'
+  - '062'
+  - '063'
+  - '066'
+  - '072'
+  - '083'
+  - '085'
+  - '099'  # cd23p onward
+  - '104'  # cd25r only
+  - '105'  # cd25r only; currency field paired with 104
+  - '107'  # cd25r only
+  - '203'  # cd25r only
+  - '208'  # cd25r only
+  - '211'  # cd25r only
+  - '214'  # cd25r only
+  - '217'  # cd25r only
+  - '218'  # cd25r only
+  mapping:
+    -9: null
+  log: count recoded values per variable per wave
+- rule_id: S02f_monetary_pnts8_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -8 (prefer not to say) to NA on monetary amounts labelled with -8; suffix list per era-2 value-label evidence
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  - cd21n
+  - cd22o
+  - cd23p
+  - cd24q
+  - cd25r
+  variables:
+  - '008'
+  - '010'
+  - '013'
+  - '019'
+  - '021'
+  - '024'
+  - '028'
+  - '033'
+  - '062'
+  - '063'
+  - '066'
+  - '072'
+  - '083'
+  - '085'
+  - '099'  # cd23p onward
+  - '104'  # cd25r only
+  - '105'  # cd25r only; currency field paired with 104
+  - '203'  # cd25r only
+  - '208'  # cd25r only
+  mapping:
+    -8: null
+  log: count recoded values per variable per wave
+- rule_id: S02g_pct_dk999_era2  # REEXPRESSED_FROM: note_only
+  anomaly_ref: A-01
+  description: recode -999 (DK) to NA on the 10-year house-price expectation percentage; -999 is its dedicated DK code because legitimate answers can be negative
+  action: recode_to_na
+  waves:
+  - cd25r
+  variables:
+  - '215'
+  mapping:
+    -999: null
+  note: -9 also occurs in the 215 data but is not labelled there and is a plausible substantive answer (minus 9 percent), so it is deliberately not scrubbed; expect a CHK01 warning on s215
+  log: count recoded values per variable per wave
+- rule_id: V01_rent_period_val5_era1
+  anomaly_ref: A-04
+  description: recode value 5 ('other') in era-1 period vars to NA
+  action: recode_to_na
+  waves:
+  - cd08a
+  - cd09b
+  - cd10c
+  - cd11d
+  - cd12e
+  - cd13f
+  - cd14g
+  - cd15h
+  - cd16i
+  - cd17j
+  - cd18k
+  variables:
+  - h_rent_period
+  - h_service_cost_period
+  - h_second_dwell_rent_period
+  - h_second_dwell_svc_period
+  mapping:
+    5: null
+  note: value 5 = 'other' in era 1, 'week' in era 2; cannot be pooled
+  log: count value-5 observations recoded per variable per wave
+- rule_id: V02_rent_benefit_routing_error
+  anomaly_ref: A-05
+  description: recode var-088 value 3 (routing error) to NA in cd19l/cd20m
+  action: recode_to_na
+  waves:
+  - cd19l
+  - cd20m
+  variables:
+  - 088
+  mapping:
+    3: null
+  log: count value-3 observations per wave
+boundary_rules:
+- rule_id: B01_cd10c_stack  # TODO_REEXPRESS: stack_aux_files is a stub in the current engine
+  anomaly_ref: A-09
+  description: stack aux files
+  action: stack_aux_files
+  boundary: cd10c
+  post_check: assert zero duplicate nomem_encr
+  note: the wave file_pattern matches only cd10c_EN_1_0p.csv, so any out-of-engine verification must load cd10c_EN_1_1p.csv explicitly; executable uniqueness check added as CHK11
+  log: true
+- rule_id: B02_cd13f_float_cast
+  anomaly_ref: A-13
+  description: safe integer cast
+  action: safe_integer_cast
+  boundary: cd13f
+  variables:
+  - '041'
+  - '042'
+  - '043'
+  - '044'
+  - '045'
+  - '046'
+  - '047'
+  - 048
+  - 049
+  - '050'
+  - '051'
+  - '052'
+  - '053'
+  post_check: all non-NA values in {0, 1}
+  log: true
+drop_retain_rules:
+- rule_id: D01_nohouse_encr
+  anomaly_ref: A-10
+  description: drop on nohouse_encr (inconsistently available cd08a-cd11d only; use LISS background)
+  action: drop
+  variable: nohouse_encr
+  reason: inconsistently available cd08a-cd11d only; use LISS background
+  log: true
+- rule_id: D02_open_text_period
+  anomaly_ref: null
+  description: drop (free-text fields; era 1 only; not machine-analysable)
+  action: drop
+  variables:
+  - '007'
+  - '032'
+  - '065'
+  - '071'
+  reason: free-text fields; era 1 only; not machine-analysable
+  log: true
+- rule_id: D03_cd25r_expansion_isolate
+  anomaly_ref: A-15
+  description: retain but flag (127 new vars; undocumented routing; cross-sectional only for now)
+  action: retain_but_flag
+  variable_suffix_range:
+  - 102
+  - 228
+  waves:
+  - cd25r
+  flag_column: h_cd25r_only
+  reason: 127 new vars; undocumented routing; cross-sectional only for now
+  log: true
+derived_variables:
+- var_name: h_rent_benefit
+  rule_id: h_rent_benefit
+  anomaly_ref: A-05
+  description: harmonized binary rent-benefit indicator
+  output_type: integer
+  method: direct
+  sources:
+    - waves: [cd08a, cd09b, cd10c]
+      variables: ['011']
+      value_crosswalk: {1: 1, 2: 0}
+    - waves: [cd11d, cd12e, cd13f]
+      variables: ['086']
+      value_crosswalk: {1: 1, 2: 1, 3: 0}
+    - waves: [cd14g, cd15h, cd16i, cd17j, cd18k, cd19l, cd20m, cd21n, cd22o, cd23p, cd24q, cd25r]
+      variables: ['088']
+      value_crosswalk: {1: 1, 2: 0}
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_rent_benefit_channel
+  rule_id: h_rent_benefit_channel
+  anomaly_ref: A-05
+  description: self-received vs lessor-paid (cd11d-cd13f only)
+  output_type: integer
+  method: direct
+  sources:
+    - waves: [cd11d, cd12e, cd13f]
+      variables: ['086']
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_rent_stated_gross_net
+  rule_id: h_rent_stated_gross_net
+  anomaly_ref: A-05
+  description: rent stated gross or net of benefit (cd11d-cd13f only)
+  output_type: integer
+  method: direct
+  sources:
+    - waves: [cd11d, cd12e, cd13f]
+      variables: ['087']
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_rent_subsidy_prior_year
+  rule_id: h_rent_subsidy_prior_year
+  anomaly_ref: A-05
+  description: past-tense rent subsidy (cd23p-cd25r only)
+  output_type: integer
+  method: direct
+  sources:
+    - waves: [cd23p, cd24q, cd25r]
+      variables: ['098']
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_scale_version_satisfaction
+  rule_id: h_scale_version_satisfaction
+  anomaly_ref: A-03
+  description: flag for satisfaction anchor version
+  output_type: integer
+  wave_values:
+    cd08a: 1
+    cd09b: 1
+    cd10c: 1
+    cd11d: 1
+    cd12e: 1
+    cd13f: 1
+    cd14g: 1
+    cd15h: 1
+    cd16i: 1
+    cd17j: 1
+    cd18k: 1
+    cd19l: 2
+    cd20m: 2
+    cd21n: 2
+    cd22o: 2
+    cd23p: 2
+    cd24q: 2
+    cd25r: 2
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_mortgage_ref_type
+  rule_id: h_mortgage_ref_type
+  anomaly_ref: A-06
+  description: flag for mortgage debt temporal reference
+  output_type: integer
+  wave_values:
+    cd08a: 0
+    cd09b: 1
+    cd10c: 1
+    cd11d: 1
+    cd12e: 1
+    cd13f: 1
+    cd14g: 1
+    cd15h: 1
+    cd16i: 1
+    cd17j: 1
+    cd18k: 1
+    cd19l: 1
+    cd20m: 1
+    cd21n: 1
+    cd22o: 1
+    cd23p: 1
+    cd24q: 2
+    cd25r: 2
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_financial_ref_year
+  rule_id: h_financial_ref_year
+  anomaly_ref: A-07
+  description: calendar year to which financial questions refer
+  output_type: integer
+  wave_values:
+    cd08a: null
+    cd09b: 2008
+    cd10c: 2009
+    cd11d: 2010
+    cd12e: 2011
+    cd13f: 2012
+    cd14g: 2013
+    cd15h: 2014
+    cd16i: 2014
+    cd17j: 2016
+    cd18k: 2017
+    cd19l: 2018
+    cd20m: 2019
+    cd21n: 2020
+    cd22o: 2021
+    cd23p: 2022
+    cd24q: 2023
+    cd25r: 2024
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_recall_months
+  rule_id: h_recall_months
+  anomaly_ref: A-08
+  description: approximate recall gap in months
+  output_type: integer
+  wave_values:
+    cd08a: 0
+    cd09b: 6
+    cd10c: 6
+    cd11d: 6
+    cd12e: 6
+    cd13f: 6
+    cd14g: 10
+    cd15h: 6
+    cd16i: 18
+    cd17j: 6
+    cd18k: 6
+    cd19l: 7
+    cd20m: 6
+    cd21n: 6
+    cd22o: 6
+    cd23p: 6
+    cd24q: 6
+    cd25r: 6
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_dwelling_type_label_version
+  rule_id: h_dwelling_type_label_version
+  anomaly_ref: A-12
+  description: flag for dwelling-type label era
+  output_type: integer
+  wave_values:
+    cd08a: 1
+    cd09b: 1
+    cd10c: 1
+    cd11d: 1
+    cd12e: 1
+    cd13f: 1
+    cd14g: 1
+    cd15h: 1
+    cd16i: 1
+    cd17j: 1
+    cd18k: 1
+    cd19l: 1
+    cd20m: 1
+    cd21n: 1
+    cd22o: 1
+    cd23p: 1
+    cd24q: 2
+    cd25r: 2
+  if_absent: warn_and_create_na
+  log: true
+- var_name: h_landlord_type
+  rule_id: h_landlord_type
+  anomaly_ref: A-14
+  description: landlord type (cd23p-cd25r only)
+  output_type: integer
+  method: direct
+  sources:
+    - waves: [cd23p, cd24q, cd25r]
+      variables: ['097']
+  if_absent: warn_and_create_na
+  log: true
+validation_checks:
+- check_id: CHK01_sentinel_residual
+  anomaly_ref: A-01
+  description: ''
+  type: ''
+  severity: warning
+  sentinel_set:
+  - 98
+  - 99
+  - 999
+  - 9999
+  - 99999
+  - '9999999998'
+  - '9999999999'
+  - -8
+  - -9
+  - -999
+  exclude_suffixes:
+  - 082
+  - _m
+  - 078
+  - 079
+  - 080
+  - 081
+  small_sentinel_exclude_types:
+  - monetary
+  note: 082=duration in seconds (99/999 legitimate); monetary vars may legitimately contain 98/99
+- check_id: CHK02_satisfaction_range
+  anomaly_ref: A-03
+  description: ''
+  type: all non-NA in 0:10
+  severity: error
+  variables:
+  - h_satisfaction_dwelling
+  - h_satisfaction_vicinity
+- check_id: CHK03_rent_period_val5
+  anomaly_ref: A-04
+  description: ''
+  type: no value 5 in h_rent_period where era == era1
+  severity: error
+- check_id: CHK04_rent_benefit_crosstab
+  anomaly_ref: A-05
+  description: crosstab h_rent_benefit against its per-wave sources to confirm the three question formulations harmonize consistently
+  type: crosstab h_rent_benefit x source (011 in cd08a-cd10c, 086 in cd11d-cd13f, 088 in cd14g-cd25r); all source categories must map per the derivation logic
+  severity: warning
+- check_id: CHK05_mortgage_range
+  anomaly_ref: A-01
+  description: ''
+  type: all non-NA in [0, 999999999]
+  severity: error
+  variables:
+  - h_mortgage_debt
+- check_id: CHK06_id_uniqueness
+  anomaly_ref: null
+  description: ''
+  type: no duplicate nomem_encr within any wave_id
+  severity: error
+- check_id: CHK07_cd10c_no_overlap
+  anomaly_ref: A-09
+  description: ''
+  type: n_distinct(nomem_encr) == nrow for cd10c
+  severity: error
+- check_id: CHK08_cd13f_binary
+  anomaly_ref: A-13
+  description: ''
+  type: cd13f vars 041-053 all non-NA in {0,1}
+  severity: error
+- check_id: CHK09_distribution_boundary
+  anomaly_ref: A-03
+  description: ''
+  type: distribution_comparison
+  severity: info
+  variables:
+  - h_satisfaction_dwelling
+  - h_satisfaction_vicinity
+  wave_pairs:
+  - - cd18k
+    - cd19l
+- check_id: CHK10_financial_ref_dup
+  anomaly_ref: A-07
+  description: ''
+  type: h_financial_ref_year == 2014 for cd15h and cd16i
+  severity: info
+- check_id: CHK11_cd10c_stack_uniqueness
+  anomaly_ref: A-09
+  description: executable form of the B01 post_check; after stacking cd10c_EN_1_0p and cd10c_EN_1_1p the wave must contain no duplicate respondent ids
+  type: uniqueness
+  severity: error
+  variable: nomem_encr
+  scope_wave: cd10c
+logging:
+  log_file: cd_merge_log.jsonl
+  report_file: cd_merge_report.txt
+  log_format: jsonl
+  per_rule_fields:
+  - rule_id
+  - wave_id
+  - variable
+  - action
+  - rows_affected
+  - values_changed
+  - distinct_before
+  - distinct_after
+  - na_count_before
+  - na_count_after
+  - timestamp
+  - duration_ms
+  summary_artifact:
+    enabled: true
+    include:
+    - total_na_created
+    - total_values_recoded
+    - total_rows_dropped
+    - total_vars_dropped
+    - wave_row_counts
+    - per_variable_na_rates
