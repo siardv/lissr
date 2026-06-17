@@ -48,6 +48,28 @@ results <- merge_liss_modules(
 )
 ```
 
+## Vignettes
+
+Worked examples ship with the package. After installing, list them with
+`browseVignettes("lissr")` or open one by its name, for example
+`vignette("getting-started", package = "lissr")`. You can also read the
+rendered versions in your browser without installing:
+
+- [Getting Started with lissr](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/getting-started.html):
+  a short orientation to the package and its workflow.
+- [Merging LISS Panel Data](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/merge-workflow.html):
+  the core single-module merge, from recipe to merged output.
+- [Longitudinal Panel Analysis](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/longitudinal-panel-analysis.html):
+  assembling and analyzing data across multiple waves.
+- [Cross-Sectional Analysis with a Single Wave](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/cross-sectional-analysis.html):
+  working with one wave and attaching the Background Variables.
+- [Multi-Module Linkage](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/multi-module-linkage.html):
+  joining several modules on the respondent id.
+- [Custom Merge Recipes](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/custom-recipes.html):
+  writing or adapting a YAML recipe against the canonical schema.
+- [Reproducible Research Pipelines](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/reproducible-pipelines.html):
+  structuring the workflow as a reproducible pipeline.
+
 ## Merge system
 
 The merge engine processes YAML recipes conforming to `CANONICAL_SCHEMA.md`
