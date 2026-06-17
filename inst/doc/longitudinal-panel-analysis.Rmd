@@ -1,0 +1,275 @@
+---
+title: "Longitudinal Panel Analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Longitudinal Panel Analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Why the merge engine matters for longitudinal work
+
+The LISS panel surveys the same individuals annually. Exploiting that
+panel structure — within-person change, fixed effects, event studies — is
+what makes LISS valuable beyond a repeated cross-section. But it also
+introduces complications that a cross-sectional workflow never encounters:
+
+- **Prefix stripping**: wave ch07a stores self-rated health as `ch07a001`,
+  while ch24q stores it as `ch24q001`. The merge engine strips the wave
+  prefix so both become `s001`, making `bind_rows()` work.
+- **Sentinel-code regime changes**: early waves use positive sentinels
+  (999 = "don't know"), later waves switch to negative codes (-9). The
+  recipe's harmonization rules recode both regimes to `NA` uniformly.
+- **Instrument redesigns**: some items change wording or response scale
+  between waves. The recipe's boundary rules flag these breaks with era
+  indicators and comparability contracts — essential information for
+  deciding whether to pool or split.
+- **Variable renumbering**: questionnaire items sometimes get new suffix
+  numbers. The recipe's crosswalk rules map old suffixes to new ones so
+  you get a single harmonised column.
+
+All of this is encoded in the YAML recipe and applied automatically.
+
+## Step 1 — download all waves of a module
+
+```{r download-all}
+library(lissr)
+library(dplyr)
+
+liss_login()
+bp <- liss_blueprint()
+
+# all SPSS files for the Health module
+health_files <- bp |>
+  filter(module == "Health", type == "spss")
+
+liss_download(health_files, .dir = "data/ch")
+```
+
+## Step 2 — merge all waves
+
+```{r merge}
+recipe <- liss_recipe("ch")
+result <- merge_liss_module(recipe, data_dir = "data/ch", output_dir = "output")
+
+panel <- result$data
+
+# the stacked panel has one row per person-wave
+panel |> count(wave_id) |> print(n = 20)
+#> # A tibble: 17 × 2
+#>    wave_id     n
+#>    <chr>   <int>
+#>  1 ch07a    6871
+#>  2 ch08b    6386
+#>  3 ch09c    6222
+#>  ...
+```
+
+## Step 3 — understand the panel structure
+
+### Participation patterns
+
+```{r participation}
+# how many waves did each respondent participate in?
+participation <- panel |>
+  group_by(nomem_encr) |>
+  summarise(n_waves = n_distinct(wave_id), .groups = "drop")
+
+# distribution of participation
+table(participation$n_waves)
+#>    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17
+#> 1842  801  602  489  431  378  354  307  301  285  284  300  343  388  482  723 2391
+
+# balanced sub-panel: respondents present in all 17 waves
+balanced_ids <- participation |>
+  filter(n_waves == max(n_waves)) |>
+  pull(nomem_encr)
+
+length(balanced_ids)
+#> [1] 2391
+```
+
+### Attrition diagnostics
+
+A common concern in panel studies is whether attrition is non-random. If
+sicker people drop out, your estimated health trend is biased upward.
+
+```{r attrition}
+# tag respondents who appear in wave 1 but not in the final wave
+first_wave <- "ch07a"
+last_wave  <- "ch24q"
+
+baseline <- panel |>
+  filter(wave_id == first_wave) |>
+  mutate(
+    survived = nomem_encr %in%
+      (panel |> filter(wave_id == last_wave) |> pull(nomem_encr))
+  )
+
+# compare baseline self-rated health between survivors and attriters
+baseline |>
+  group_by(survived) |>
+  summarise(
+    n         = n(),
+    mean_srh  = mean(s001, na.rm = TRUE),
+    mean_age  = mean(s002, na.rm = TRUE),
+    .groups   = "drop"
+  )
+#> # A tibble: 2 × 4
+#>   survived     n mean_srh mean_age
+#>   <lgl>    <int>    <dbl>    <dbl>
+#> 1 FALSE     4480     3.08     48.5
+#> 2 TRUE      2391     3.25     43.2
+```
+
+If baseline health is significantly different between groups, consider
+inverse-probability weighting or Heckman selection models.
+
+## Step 4 — fixed-effects estimation
+
+Person fixed effects absorb all time-invariant confounders (genetics,
+childhood environment, stable personality). This is the workhorse model
+for panel data.
+
+```{r fixed-effects}
+library(fixest)
+
+# self-rated health (s001) regressed on a time-varying predictor
+# e.g. BMI (s038) with person and year fixed effects
+fe_model <- fixest::feols(
+  s001 ~ s038 | nomem_encr + wave_year,
+  data = panel
+)
+
+summary(fe_model)
+```
+
+### Handling boundary breaks
+
+The Health module changed the e-cigarette question block at wave ch15h.
+The recipe creates a period flag; you should respect it.
+
+```{r boundary-check}
+# inspect boundary flags created by the merge engine
+flag_cols <- grep("_flag$|_period$|_era$", names(panel), value = TRUE)
+flag_cols
+#> [1] "ecig_era_flag"  "work_capacity_period"
+
+# if your analysis touches e-cigarette variables, restrict to waves
+# on one side of the boundary — or include the era flag as a control
+panel |>
+  filter(!is.na(ecig_era_flag)) |>
+  count(ecig_era_flag, wave_year)
+```
+
+The merge report (`output/ch_merge_report.txt`) lists every comparability
+contract and its recommended pooling strategy. Check it before deciding
+to pool across eras.
+
+## Step 5 — event-study / difference-in-differences
+
+Panel data combined with a dated treatment allows event-study designs.
+For example, suppose a policy change affected a subset of respondents
+in 2016. You can estimate dynamic treatment effects:
+
+```{r event-study}
+# define treatment: respondents living in province X at baseline
+# (you would attach this from background variables)
+panel <- panel |>
+  mutate(
+    post     = as.integer(wave_year >= 2016),
+    rel_year = wave_year - 2016
+  )
+
+# event-study with staggered treatment
+es_model <- fixest::feols(
+  s001 ~ i(rel_year, treated, ref = -1) | nomem_encr + wave_year,
+  data = panel
+)
+
+fixest::iplot(es_model, main = "Event study: self-rated health")
+```
+
+## Step 6 — growth curves and multilevel models
+
+If you prefer a random-effects framework (e.g. for prediction or when
+between-person variation is of interest), the stacked panel feeds
+directly into `lme4`:
+
+```{r growth-curve}
+library(lme4)
+
+# linear growth curve: health trajectories over time
+panel <- panel |>
+  mutate(year_centered = wave_year - 2007)
+
+growth <- lme4::lmer(
+  s001 ~ year_centered + (1 + year_centered | nomem_encr),
+  data = panel
+)
+
+summary(growth)
+```
+
+## Working with a wave subset
+
+Sometimes you only need a window of waves — for instance, the five years
+around a policy change. Rather than merging all 17 waves, trim the
+recipe before merging:
+
+```{r subset-waves}
+recipe <- liss_recipe("ch")
+
+# keep only 2014–2018
+target_waves <- c("ch15h", "ch16i", "ch17j", "ch18k")
+recipe$wave_index <- purrr::keep(
+  recipe$wave_index,
+  ~ .x$id %in% target_waves
+)
+
+result <- merge_liss_module(recipe, data_dir = "data/ch", output_dir = "output")
+```
+
+This is faster and produces a smaller output file, but note that boundary
+rules spanning the excluded waves will not fire.
+
+## Audit trail
+
+Every merge produces a JSONL log (`ch_merge_log.jsonl`) recording each
+rule application with timestamps, row counts, and NA deltas. This gives
+you a transparent audit trail for the Supplementary Materials section
+of a paper — you can show exactly what transformations were applied to
+the raw data.
+
+```{r audit}
+log <- jsonlite::stream_in(file("output/ch_merge_log.jsonl"), verbose = FALSE)
+
+# how many values were recoded to NA?
+log |>
+  filter(action == "recode_to_na") |>
+  summarise(total_recoded = sum(values_changed, na.rm = TRUE))
+```
+
+## Checklist for longitudinal LISS analyses
+
+- [ ] Used `merge_liss_module()` or equivalent to stack waves with
+  harmonised column names.
+- [ ] Checked the merge report for comparability contracts and boundary
+  flags before pooling across eras.
+- [ ] Reported attrition rates and tested for selective dropout.
+- [ ] Specified the estimator (FE, RE, FD) and justified it for your
+  research question.
+- [ ] If using person fixed effects, verified the outcome has sufficient
+  within-person variation across waves.
+- [ ] Attached time-varying demographics from the correct fieldwork-month
+  background variables files.
+- [ ] Cited the LISS wave identifiers and recipe version in the methods
+  section.

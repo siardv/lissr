@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Longitudinal Panel Analysis</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Longitudinal Panel Analysis</h1>
+
+
+
+<div id="why-the-merge-engine-matters-for-longitudinal-work" class="section level2">
+<h2>Why the merge engine matters for longitudinal work</h2>
+<p>The LISS panel surveys the same individuals annually. Exploiting that
+panel structure — within-person change, fixed effects, event studies —
+is what makes LISS valuable beyond a repeated cross-section. But it also
+introduces complications that a cross-sectional workflow never
+encounters:</p>
+<ul>
+<li><strong>Prefix stripping</strong>: wave ch07a stores self-rated
+health as <code>ch07a001</code>, while ch24q stores it as
+<code>ch24q001</code>. The merge engine strips the wave prefix so both
+become <code>s001</code>, making <code>bind_rows()</code> work.</li>
+<li><strong>Sentinel-code regime changes</strong>: early waves use
+positive sentinels (999 = “don’t know”), later waves switch to negative
+codes (-9). The recipe’s harmonization rules recode both regimes to
+<code>NA</code> uniformly.</li>
+<li><strong>Instrument redesigns</strong>: some items change wording or
+response scale between waves. The recipe’s boundary rules flag these
+breaks with era indicators and comparability contracts — essential
+information for deciding whether to pool or split.</li>
+<li><strong>Variable renumbering</strong>: questionnaire items sometimes
+get new suffix numbers. The recipe’s crosswalk rules map old suffixes to
+new ones so you get a single harmonised column.</li>
+</ul>
+<p>All of this is encoded in the YAML recipe and applied
+automatically.</p>
+</div>
+<div id="step-1-download-all-waves-of-a-module" class="section level2">
+<h2>Step 1 — download all waves of a module</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(lissr)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">liss_login</span>()</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>bp <span class="ot">&lt;-</span> <span class="fu">liss_blueprint</span>()</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># all SPSS files for the Health module</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>health_files <span class="ot">&lt;-</span> bp <span class="sc">|&gt;</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="fu">filter</span>(module <span class="sc">==</span> <span class="st">&quot;Health&quot;</span>, type <span class="sc">==</span> <span class="st">&quot;spss&quot;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="fu">liss_download</span>(health_files, <span class="at">.dir =</span> <span class="st">&quot;data/ch&quot;</span>)</span></code></pre></div>
+</div>
+<div id="step-2-merge-all-waves" class="section level2">
+<h2>Step 2 — merge all waves</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">merge_liss_module</span>(recipe, <span class="at">data_dir =</span> <span class="st">&quot;data/ch&quot;</span>, <span class="at">output_dir =</span> <span class="st">&quot;output&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>panel <span class="ot">&lt;-</span> result<span class="sc">$</span>data</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># the stacked panel has one row per person-wave</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>panel <span class="sc">|&gt;</span> <span class="fu">count</span>(wave_id) <span class="sc">|&gt;</span> <span class="fu">print</span>(<span class="at">n =</span> <span class="dv">20</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; # A tibble: 17 × 2</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;    wave_id     n</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt;   &lt;int&gt;</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;  1 ch07a    6871</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt;  2 ch08b    6386</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt;  3 ch09c    6222</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt;  ...</span></span></code></pre></div>
+</div>
+<div id="step-3-understand-the-panel-structure" class="section level2">
+<h2>Step 3 — understand the panel structure</h2>
+<div id="participation-patterns" class="section level3">
+<h3>Participation patterns</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># how many waves did each respondent participate in?</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>participation <span class="ot">&lt;-</span> panel <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">group_by</span>(nomem_encr) <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_waves =</span> <span class="fu">n_distinct</span>(wave_id), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co"># distribution of participation</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="fu">table</span>(participation<span class="sc">$</span>n_waves)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; 1842  801  602  489  431  378  354  307  301  285  284  300  343  388  482  723 2391</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co"># balanced sub-panel: respondents present in all 17 waves</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>balanced_ids <span class="ot">&lt;-</span> participation <span class="sc">|&gt;</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>  <span class="fu">filter</span>(n_waves <span class="sc">==</span> <span class="fu">max</span>(n_waves)) <span class="sc">|&gt;</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>  <span class="fu">pull</span>(nomem_encr)</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="fu">length</span>(balanced_ids)</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; [1] 2391</span></span></code></pre></div>
+</div>
+<div id="attrition-diagnostics" class="section level3">
+<h3>Attrition diagnostics</h3>
+<p>A common concern in panel studies is whether attrition is non-random.
+If sicker people drop out, your estimated health trend is biased
+upward.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># tag respondents who appear in wave 1 but not in the final wave</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>first_wave <span class="ot">&lt;-</span> <span class="st">&quot;ch07a&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>last_wave  <span class="ot">&lt;-</span> <span class="st">&quot;ch24q&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> panel <span class="sc">|&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="fu">filter</span>(wave_id <span class="sc">==</span> first_wave) <span class="sc">|&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>    <span class="at">survived =</span> nomem_encr <span class="sc">%in%</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>      (panel <span class="sc">|&gt;</span> <span class="fu">filter</span>(wave_id <span class="sc">==</span> last_wave) <span class="sc">|&gt;</span> <span class="fu">pull</span>(nomem_encr))</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  )</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co"># compare baseline self-rated health between survivors and attriters</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>baseline <span class="sc">|&gt;</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="fu">group_by</span>(survived) <span class="sc">|&gt;</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>    <span class="at">n         =</span> <span class="fu">n</span>(),</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>    <span class="at">mean_srh  =</span> <span class="fu">mean</span>(s001, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>    <span class="at">mean_age  =</span> <span class="fu">mean</span>(s002, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>    <span class="at">.groups   =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  )</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 4</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt;   survived     n mean_srh mean_age</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt;   &lt;lgl&gt;    &lt;int&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; 1 FALSE     4480     3.08     48.5</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; 2 TRUE      2391     3.25     43.2</span></span></code></pre></div>
+<p>If baseline health is significantly different between groups,
+consider inverse-probability weighting or Heckman selection models.</p>
+</div>
+</div>
+<div id="step-4-fixed-effects-estimation" class="section level2">
+<h2>Step 4 — fixed-effects estimation</h2>
+<p>Person fixed effects absorb all time-invariant confounders (genetics,
+childhood environment, stable personality). This is the workhorse model
+for panel data.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">library</span>(fixest)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co"># self-rated health (s001) regressed on a time-varying predictor</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co"># e.g. BMI (s038) with person and year fixed effects</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>fe_model <span class="ot">&lt;-</span> fixest<span class="sc">::</span><span class="fu">feols</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  s001 <span class="sc">~</span> s038 <span class="sc">|</span> nomem_encr <span class="sc">+</span> wave_year,</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">data =</span> panel</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>)</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">summary</span>(fe_model)</span></code></pre></div>
+<div id="handling-boundary-breaks" class="section level3">
+<h3>Handling boundary breaks</h3>
+<p>The Health module changed the e-cigarette question block at wave
+ch15h. The recipe creates a period flag; you should respect it.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># inspect boundary flags created by the merge engine</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>flag_cols <span class="ot">&lt;-</span> <span class="fu">grep</span>(<span class="st">&quot;_flag$|_period$|_era$&quot;</span>, <span class="fu">names</span>(panel), <span class="at">value =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>flag_cols</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ecig_era_flag&quot;  &quot;work_capacity_period&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co"># if your analysis touches e-cigarette variables, restrict to waves</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co"># on one side of the boundary — or include the era flag as a control</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>panel <span class="sc">|&gt;</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ecig_era_flag)) <span class="sc">|&gt;</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="fu">count</span>(ecig_era_flag, wave_year)</span></code></pre></div>
+<p>The merge report (<code>output/ch_merge_report.txt</code>) lists
+every comparability contract and its recommended pooling strategy. Check
+it before deciding to pool across eras.</p>
+</div>
+</div>
+<div id="step-5-event-study-difference-in-differences" class="section level2">
+<h2>Step 5 — event-study / difference-in-differences</h2>
+<p>Panel data combined with a dated treatment allows event-study
+designs. For example, suppose a policy change affected a subset of
+respondents in 2016. You can estimate dynamic treatment effects:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># define treatment: respondents living in province X at baseline</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># (you would attach this from background variables)</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>panel <span class="ot">&lt;-</span> panel <span class="sc">|&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>    <span class="at">post     =</span> <span class="fu">as.integer</span>(wave_year <span class="sc">&gt;=</span> <span class="dv">2016</span>),</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>    <span class="at">rel_year =</span> wave_year <span class="sc">-</span> <span class="dv">2016</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  )</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co"># event-study with staggered treatment</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>es_model <span class="ot">&lt;-</span> fixest<span class="sc">::</span><span class="fu">feols</span>(</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  s001 <span class="sc">~</span> <span class="fu">i</span>(rel_year, treated, <span class="at">ref =</span> <span class="sc">-</span><span class="dv">1</span>) <span class="sc">|</span> nomem_encr <span class="sc">+</span> wave_year,</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="at">data =</span> panel</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>)</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>fixest<span class="sc">::</span><span class="fu">iplot</span>(es_model, <span class="at">main =</span> <span class="st">&quot;Event study: self-rated health&quot;</span>)</span></code></pre></div>
+</div>
+<div id="step-6-growth-curves-and-multilevel-models" class="section level2">
+<h2>Step 6 — growth curves and multilevel models</h2>
+<p>If you prefer a random-effects framework (e.g. for prediction or when
+between-person variation is of interest), the stacked panel feeds
+directly into <code>lme4</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">library</span>(lme4)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co"># linear growth curve: health trajectories over time</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>panel <span class="ot">&lt;-</span> panel <span class="sc">|&gt;</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">year_centered =</span> wave_year <span class="sc">-</span> <span class="dv">2007</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>growth <span class="ot">&lt;-</span> lme4<span class="sc">::</span><span class="fu">lmer</span>(</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  s001 <span class="sc">~</span> year_centered <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">+</span> year_centered <span class="sc">|</span> nomem_encr),</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="at">data =</span> panel</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>)</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="fu">summary</span>(growth)</span></code></pre></div>
+</div>
+<div id="working-with-a-wave-subset" class="section level2">
+<h2>Working with a wave subset</h2>
+<p>Sometimes you only need a window of waves — for instance, the five
+years around a policy change. Rather than merging all 17 waves, trim the
+recipe before merging:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co"># keep only 2014–2018</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>target_waves <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ch15h&quot;</span>, <span class="st">&quot;ch16i&quot;</span>, <span class="st">&quot;ch17j&quot;</span>, <span class="st">&quot;ch18k&quot;</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>recipe<span class="sc">$</span>wave_index <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">keep</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  recipe<span class="sc">$</span>wave_index,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  <span class="sc">~</span> .x<span class="sc">$</span>id <span class="sc">%in%</span> target_waves</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>)</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">merge_liss_module</span>(recipe, <span class="at">data_dir =</span> <span class="st">&quot;data/ch&quot;</span>, <span class="at">output_dir =</span> <span class="st">&quot;output&quot;</span>)</span></code></pre></div>
+<p>This is faster and produces a smaller output file, but note that
+boundary rules spanning the excluded waves will not fire.</p>
+</div>
+<div id="audit-trail" class="section level2">
+<h2>Audit trail</h2>
+<p>Every merge produces a JSONL log (<code>ch_merge_log.jsonl</code>)
+recording each rule application with timestamps, row counts, and NA
+deltas. This gives you a transparent audit trail for the Supplementary
+Materials section of a paper — you can show exactly what transformations
+were applied to the raw data.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>log <span class="ot">&lt;-</span> jsonlite<span class="sc">::</span><span class="fu">stream_in</span>(<span class="fu">file</span>(<span class="st">&quot;output/ch_merge_log.jsonl&quot;</span>), <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co"># how many values were recoded to NA?</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>log <span class="sc">|&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="fu">filter</span>(action <span class="sc">==</span> <span class="st">&quot;recode_to_na&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total_recoded =</span> <span class="fu">sum</span>(values_changed, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code></pre></div>
+</div>
+<div id="checklist-for-longitudinal-liss-analyses" class="section level2">
+<h2>Checklist for longitudinal LISS analyses</h2>
+<ul class="task-list">
+<li><label><input type="checkbox"></input>Used
+<code>merge_liss_module()</code> or equivalent to stack waves with
+harmonised column names.</label></li>
+<li><label><input type="checkbox"></input>Checked the merge report for
+comparability contracts and boundary flags before pooling across
+eras.</label></li>
+<li><label><input type="checkbox"></input>Reported attrition rates and tested
+for selective dropout.</label></li>
+<li><label><input type="checkbox"></input>Specified the estimator (FE, RE, FD)
+and justified it for your research question.</label></li>
+<li><label><input type="checkbox"></input>If using person fixed effects,
+verified the outcome has sufficient within-person variation across
+waves.</label></li>
+<li><label><input type="checkbox"></input>Attached time-varying demographics
+from the correct fieldwork-month background variables
+files.</label></li>
+<li><label><input type="checkbox"></input>Cited the LISS wave identifiers and
+recipe version in the methods section.</label></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
