@@ -1,5 +1,9 @@
 # lissr
 
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/siardv/lissr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/siardv/lissr/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 Programmatic access to the [LISS Data Archive](https://www.lissdata.nl/).
 Authenticate, browse available modules and waves, interactively select and
 download data files, and merge longitudinal waves using recipe-driven YAML
