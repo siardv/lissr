@@ -57,22 +57,21 @@ results <- merge_liss_modules(
 Worked examples ship with the package. After installing, list them with
 `browseVignettes("lissr")` or open one by its name, for example
 `vignette("getting-started", package = "lissr")`. You can also read the
-rendered versions on the package website at
-<https://siardv.github.io/lissr/> without installing:
+rendered versions in your browser without installing:
 
-- [Getting Started with lissr](https://siardv.github.io/lissr/articles/getting-started.html):
+- [Getting Started with lissr](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/getting-started.html):
   a short orientation to the package and its workflow.
-- [Merging LISS Panel Data](https://siardv.github.io/lissr/articles/merge-workflow.html):
+- [Merging LISS Panel Data](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/merge-workflow.html):
   the core single-module merge, from recipe to merged output.
-- [Longitudinal Panel Analysis](https://siardv.github.io/lissr/articles/longitudinal-panel-analysis.html):
+- [Longitudinal Panel Analysis](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/longitudinal-panel-analysis.html):
   assembling and analyzing data across multiple waves.
-- [Cross-Sectional Analysis with a Single Wave](https://siardv.github.io/lissr/articles/cross-sectional-analysis.html):
+- [Cross-Sectional Analysis with a Single Wave](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/cross-sectional-analysis.html):
   working with one wave and attaching the Background Variables.
-- [Multi-Module Linkage](https://siardv.github.io/lissr/articles/multi-module-linkage.html):
+- [Multi-Module Linkage](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/multi-module-linkage.html):
   joining several modules on the respondent id.
-- [Custom Merge Recipes](https://siardv.github.io/lissr/articles/custom-recipes.html):
+- [Custom Merge Recipes](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/custom-recipes.html):
   writing or adapting a YAML recipe against the canonical schema.
-- [Reproducible Research Pipelines](https://siardv.github.io/lissr/articles/reproducible-pipelines.html):
+- [Reproducible Research Pipelines](https://htmlpreview.github.io/?https://github.com/siardv/lissr/blob/main/inst/doc/reproducible-pipelines.html):
   structuring the workflow as a reproducible pipeline.
 
 ## Merge system
@@ -153,6 +152,31 @@ onboard_new_wave(
   prev_wave_id = "ch24q"
 )
 ```
+
+## A note on how this package was built
+
+I started building `lissr` in June 2021, before AI coding assistants were a
+realistic option, and it has been a constant companion project ever since.
+The problem it addresses, the recipe grammar, the merge and harmonization
+logic, and the design decisions grew out of five years of reading LISS
+codebooks, breaking merges, and rebuilding them.
+
+I also want to be open about the fact that AI language models (including
+Anthropic's Claude) contributed to later versions. I used them as
+assistants, not as authors: to review code, stress-test the merge engine,
+cross-reference recipe rules against codebooks and real data files, propose
+refactorings, draft tests and documentation, and speed up the grueling
+parts of package development. Nothing was accepted on trust. Every
+suggestion was read, questioned, run, and frequently rejected or rewritten;
+for the 1.1.0 release, `lissr-review.md` and `lissr-verification-report.md`
+in this repository document that process in detail. Whatever ships has
+passed the full test suite and R CMD check, and responsibility for every
+line, including the mistakes, is mine alone.
+
+`lissr` exists to make merge and harmonization decisions in panel data
+explicit instead of silent. It seems only consistent to be equally explicit
+about how the package itself was made. If you have questions about any part
+of that process, the issue tracker is open.
 
 ## License
 
