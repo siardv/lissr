@@ -2,7 +2,7 @@
 # liss_merge_engine.R, unified recipe-driven merge engine for LISS panel data
 # ============================================================================
 # implements all 11 review improvements.
-# processes any YAML recipe conforming to CANONICAL_SCHEMA.md v1.0.0.
+# processes any YAML recipe conforming to CANONICAL_SCHEMA.md v1.0.0 or v1.1.0 (additive).
 #
 # key capabilities:
 #   - pre-flight schema validation with fail-fast
@@ -89,13 +89,13 @@ local({
 RECOGNIZED_RULE_KEYS <- c(
   "action", "anomaly_ref", "assignments", "codes", "column", "columns",
   "combined_label", "comparability", "corrected_label", "crosswalk", "default",
-  "derived_suffix", "description", "early_label", "eras", "flag_column",
+  "derived_suffix", "description", "early_label", "eras", "exclude", "flag_column",
   "flag_name", "flag_true_waves", "flag_value_post", "flag_value_pre",
   "flag_variable", "from_value", "if_absent", "keep", "keep_values", "label_map",
   "late_label", "mapping", "new_fragment", "offset", "old_fragment",
   "output_scheme_flag", "output_variable", "output_vars", "parties_to_pool",
   "party_names_to_pool", "pattern", "phases", "post_recode", "prefix",
-  "present_in_waves", "recodes", "retain", "retain_in", "rule_id",
+  "present_in_waves", "recode", "recodes", "retain", "retain_in", "rule_id",
   "scheme_column", "scope", "sentinel_values", "set_label", "source",
   "source_column", "source_variable", "sources", "stem", "stems", "suffixes",
   "suffixes_range", "swap", "target", "target_column", "target_type",
@@ -110,6 +110,8 @@ RECOGNIZED_RULE_KEYS <- c(
 SANCTIONED_RULE_KEYS <- c(
   # minimal annotation
   "description", "log", "note", "notes", "reason", "guidance",
+  "label", "boundary", "pool", "required", "sentinel_label",
+  "fill_missing_waves",
   # boundary and coverage provenance
   "absent_cw19l_only", "absent_from_waves", "absent_in", "absent_waves",
   "conservative_pooling", "cw19l_only_variables", "deleted_without_replacement",
@@ -346,9 +348,10 @@ discover_wave_files <- function(recipe, data_dir) {
     found <- list.files(data_dir, pattern = pat_re, full.names = TRUE,
                         ignore.case = TRUE)
 
-    # fallback: try wave_id as prefix glob (handles .sav/.csv/.dta mismatch)
+    # fallback: wave_id prefix limited to data extensions, so codebooks and
+    # other sidecar files can never be swept in (handles .sav/.csv/.dta mismatch)
     if (length(found) == 0) {
-      fallback_re <- paste0("^", w$id, "[_.]")
+      fallback_re <- paste0("^", w$id, "[_.].*\\.(sav|zsav|dta|csv)$")
       found <- list.files(data_dir, pattern = fallback_re, full.names = TRUE,
                           ignore.case = TRUE)
       if (length(found) > 0)
@@ -359,7 +362,77 @@ discover_wave_files <- function(recipe, data_dir) {
       cli::cli_warn("no file found for wave {.val {w$id}} (tried {.val {pat}})")
       return(NULL)
     }
-    list(wave_id = w$id, year = w$year, paths = found, wave_meta = w)
+
+    # separate recipe-declared aux files (supplemental, disjoint respondents)
+    # from primary candidates. aux entries match by basename, extension-agnostic.
+    aux_decl <- as.character(unlist(w$aux_files %||% list()))
+    is_aux <- rep(FALSE, length(found))
+    if (length(aux_decl) > 0) {
+      base_found <- basename(found)
+      is_aux <- base_found %in% aux_decl |
+        tools::file_path_sans_ext(base_found) %in%
+          tools::file_path_sans_ext(aux_decl)
+    }
+    primary <- found[!is_aux]
+    aux     <- found[is_aux]
+
+    # declared aux files resolve independently of file_pattern: an explicitly
+    # named aux entry is looked up in data_dir even when the primary glob does
+    # not cover it, so narrowing the pattern cannot silently drop a declaration
+    if (length(aux_decl) > 0) {
+      have <- c(basename(aux), tools::file_path_sans_ext(basename(aux)))
+      missing_aux <- aux_decl[!(aux_decl %in% have |
+                                  tools::file_path_sans_ext(aux_decl) %in% have)]
+      for (ad in missing_aux) {
+        hit <- list.files(data_dir, pattern = utils::glob2rx(ad),
+                          full.names = TRUE, ignore.case = TRUE)
+        if (length(hit) == 0) {
+          ext_agnostic <- paste0(tools::file_path_sans_ext(ad), ".*")
+          hit <- list.files(data_dir, pattern = utils::glob2rx(ext_agnostic),
+                            full.names = TRUE, ignore.case = TRUE)
+        }
+        if (length(hit) > 0) {
+          aux <- c(aux, hit)
+        } else {
+          cli::cli_warn(paste0("wave '", w$id, "': declared aux file '", ad,
+                               "' not found in data_dir"))
+        }
+      }
+      aux <- unique(aux)
+      primary <- setdiff(primary, aux)
+    }
+
+    # more than one primary candidate means superseded releases or stray
+    # matches; prefer the highest release version, else demand disambiguation
+    if (length(primary) > 1) {
+      ver <- stringr::str_match(basename(primary),
+                                "[_.](\\d+(?:[._]\\d+)?)p?(?=[._])")[, 2]
+      ver_num <- suppressWarnings(as.numeric(gsub("_", ".", ver)))
+      if (all(!is.na(ver_num)) && sum(ver_num == max(ver_num)) == 1) {
+        keep <- primary[which.max(ver_num)]
+        dropped <- setdiff(basename(primary), basename(keep))
+        cli::cli_warn(paste0(
+          "wave '", w$id, "': ", length(primary), " files match; using highest ",
+          "release version '", basename(keep), "' and ignoring: ",
+          paste(dropped, collapse = ", "),
+          ". remove superseded files or narrow file_pattern to silence this."))
+        primary <- keep
+      } else {
+        cli::cli_abort(c(
+          paste0("wave '", w$id, "': ", length(primary),
+                 " files match and release versions cannot be ranked"),
+          "i" = paste0("candidates: ",
+                       paste(basename(primary), collapse = ", ")),
+          "i" = "narrow file_pattern in the recipe or remove the extra files"))
+      }
+    }
+    if (length(primary) == 0) {
+      cli::cli_warn(paste0("wave '", w$id, "': only aux_files matched; ",
+                           "no primary data file found, skipping wave"))
+      return(NULL)
+    }
+    list(wave_id = w$id, year = w$year, paths = primary,
+         aux_paths = aux, wave_meta = w)
   })
   purrr::compact(files)
 }
@@ -377,11 +450,21 @@ read_wave_file <- function(path) {
   }
   ext <- tolower(tools::file_ext(path))
   if (ext %in% c("sav", "zsav")) {
-    haven::read_sav(path)
+    # user_na = TRUE keeps spss user-defined missing codes (dk/refusal
+    # sentinels) as values so the recipe recodes can see and govern them;
+    # declarations are stashed by the labelled policy and either round-tripped
+    # to the output or swept to NA at write time (never leaked as values)
+    haven::read_sav(path, user_na = TRUE)
   } else if (ext == "dta") {
     haven::read_dta(path)
-  } else {
+  } else if (ext == "csv") {
     readr::read_csv(path, show_col_types = FALSE)
+  } else {
+    cli::cli_abort(c(
+      "unsupported data file extension {.val {ext}} for {.file {path}}",
+      "i" = "supported: .sav, .zsav, .dta, .csv",
+      "i" = "a codebook or other non-data file may have matched the wave pattern"
+    ))
   }
 }
 
@@ -498,8 +581,19 @@ apply_labelled_policy <- function(df, policy) {
     "to_numeric" = {
       df[labelled_cols] <- purrr::map(df[labelled_cols], function(x) {
         labs <- attr(x, "labels")
-        vals <- as.numeric(haven::zap_labels(x))
-        attr(vals, "_original_labels") <- labs
+        vlab <- attr(x, "label", exact = TRUE)
+        nav  <- attr(x, "na_values", exact = TRUE)
+        nar  <- attr(x, "na_range",  exact = TRUE)
+        # unclass rather than zap_labels: zap_labels() converts spss
+        # user-missing codes to NA, which would hide the dk/refusal sentinels
+        # from the recipe recodes; the stashed declarations below let the
+        # write step round-trip or sweep whatever the recipes leave behind
+        vals <- as.numeric(unclass(x))
+        attr(vals, "_original_labels")   <- labs
+        if (!is.null(nav)) attr(vals, "_original_na_values") <- nav
+        if (!is.null(nar)) attr(vals, "_original_na_range")  <- nar
+        # as.numeric() strips every attribute; put the variable label back
+        if (!is.null(vlab)) attr(vals, "label") <- vlab
         vals
       })
     },
@@ -525,6 +619,158 @@ strip_label_whitespace <- function(df) {
     }
   }
   df
+}
+
+#' harvest per-column label metadata after the labelled policy ran (internal)
+#'
+#' called once per wave in phase 1; records the value labels stashed in
+#' `_original_labels`, the spss user-missing declarations, and the variable
+#' label, keyed by the post-strip column name, so `restore_value_labels()`
+#' can rebuild haven labelled columns at write time.
+#' @noRd
+harvest_labels <- function(df, registry, wave = NA_character_) {
+  for (col in names(df)) {
+    labs <- attr(df[[col]], "_original_labels", exact = TRUE)
+    nav  <- attr(df[[col]], "_original_na_values", exact = TRUE)
+    nar  <- attr(df[[col]], "_original_na_range",  exact = TRUE)
+    if (is.null(labs) && is.null(nav) && is.null(nar)) next
+    registry[[col]] <- append(
+      registry[[col]] %||% list(),
+      list(list(labels    = labs,
+                na_values = nav,
+                na_range  = nar,
+                wave      = wave,
+                vlab      = attr(df[[col]], "label", exact = TRUE))))
+  }
+  invisible(registry)
+}
+
+#' restore value labels on the merged frame where it is safe (internal)
+#'
+#' a column is restored only when (a) every wave that carried metadata carried
+#' the identical label set and user-missing declarations (so cross-era
+#' recodings like the cr religion schemes are never mislabelled), (b) the
+#' column is numeric, and (c) every observed value is NA, a labelled code, or
+#' a declared user-missing code, so post-recode values cannot receive a stale
+#' label. restored columns become haven::labelled_spss() when declarations
+#' exist (round-tripping the dk/refusal distinction into the .sav) and
+#' haven::labelled() otherwise.
+#' @noRd
+restore_value_labels <- function(merged, registry) {
+  restored <- character(0)
+  skipped  <- character(0)
+  for (col in ls(registry)) {
+    if (!(col %in% names(merged))) next
+    sets <- registry[[col]]
+    if (length(sets) == 0) next
+    first <- sets[[1]]
+    same  <- all(vapply(sets, function(s)
+      identical(s$labels, first$labels) &&
+        identical(s$na_values, first$na_values) &&
+        identical(s$na_range,  first$na_range), logical(1)))
+    x <- merged[[col]]
+    if (!same || !is.numeric(x) ||
+        (is.null(first$labels) && is.null(first$na_values) &&
+         is.null(first$na_range))) {
+      skipped <- c(skipped, col)
+      next
+    }
+    # metadata harvested from spss string variables can be character-typed
+    # (e.g. na_values "999") while the merged column is numeric; coerce
+    # losslessly or skip, so a type mismatch can never abort the write phase
+    to_num <- function(v) {
+      if (is.null(v)) return(NULL)
+      out <- suppressWarnings(as.numeric(v))
+      if (anyNA(out) && !anyNA(v)) return(NA)
+      names(out) <- names(v)
+      out
+    }
+    labs <- to_num(first$labels)
+    navs <- to_num(first$na_values)
+    narg <- to_num(first$na_range)
+    if (identical(labs, NA) || identical(navs, NA) || identical(narg, NA)) {
+      skipped <- c(skipped, col)
+      next
+    }
+    allowed <- c(as.numeric(labs %||% numeric(0)),
+                 as.numeric(navs %||% numeric(0)))
+    obs <- unique(x[!is.na(x)])
+    in_range <- if (!is.null(narg) && length(narg) == 2)
+      obs >= narg[[1]] & obs <= narg[[2]] else rep(FALSE, length(obs))
+    if (length(obs) > 0 && !all(obs %in% allowed | in_range)) {
+      skipped <- c(skipped, col)
+      next
+    }
+    vlab <- attr(x, "label", exact = TRUE) %||% first$vlab
+    vals <- as.numeric(x)
+    res <- tryCatch({
+      if (!is.null(navs) || !is.null(narg)) {
+        haven::labelled_spss(vals, labels = labs, na_values = navs,
+                             na_range = narg, label = vlab)
+      } else {
+        haven::labelled(vals, labels = labs, label = vlab)
+      }
+    }, error = function(e) NULL)
+    if (is.null(res)) {
+      skipped <- c(skipped, col)
+      next
+    }
+    merged[[col]] <- res
+    restored <- c(restored, col)
+  }
+  list(data = merged, restored = restored, skipped = skipped)
+}
+
+#' sweep residual user-missing codes on non-restored columns (internal)
+#'
+#' safety net for columns whose metadata could not be restored (era-dependent
+#' label sets, recoded values): any cell still equal to a declared spss
+#' user-missing code, for any wave that declared it, becomes NA rather than
+#' leaking into the output as a substantive value. recipes retain first claim
+#' because they run earlier and may have moved the code (e.g. cs 999 -> -9).
+#' @noRd
+sweep_user_missing <- function(merged, registry, cols,
+                               wave_var = "wave_id", veto = list()) {
+  swept <- 0L
+  wave_col <- if (wave_var %in% names(merged)) merged[[wave_var]] else NULL
+  col_vetoed <- function(col, sfx_waves) {
+    # a column is veto-covered for a wave when a recipe exclude block named
+    # its suffix for that wave; matching mirrors the harmonization-time names
+    for (sfx in names(sfx_waves)) {
+      if (col %in% c(paste0("s", sfx), paste0("stem_", sfx), sfx))
+        return(sfx_waves[[sfx]])
+    }
+    character(0)
+  }
+  for (col in cols) {
+    if (!(col %in% names(merged)) || !is.numeric(merged[[col]])) next
+    sets <- registry[[col]] %||% list()
+    if (length(sets) == 0) next
+    x <- merged[[col]]
+    hit <- rep(FALSE, length(x))
+    veto_waves <- col_vetoed(col, veto)
+    for (s in sets) {
+      nav <- unique(stats::na.omit(suppressWarnings(as.numeric(s$na_values))))
+      nar <- suppressWarnings(as.numeric(s$na_range))
+      has_range <- length(nar) == 2 && !anyNA(nar)
+      if (length(nav) == 0 && !has_range) next
+      w <- s$wave %||% NA_character_
+      # sweep only the rows of the wave that declared the code; a set
+      # harvested without wave information falls back to all rows
+      in_wave <- if (!is.na(w) && !is.null(wave_col)) wave_col == w
+                 else rep(TRUE, length(x))
+      if (!is.na(w) && w %in% veto_waves) next
+      h <- in_wave & !is.na(x) & x %in% nav
+      if (has_range) h <- h | (in_wave & !is.na(x) & x >= nar[[1]] & x <= nar[[2]])
+      hit <- hit | h
+    }
+    n <- sum(hit)
+    if (n > 0) {
+      merged[[col]][hit] <- NA
+      swept <- swept + n
+    }
+  }
+  list(data = merged, swept = swept)
 }
 
 # ============================================================================
@@ -927,7 +1173,8 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
   tryCatch({
     switch(action,
       "recode_to_na" = {
-        mapping <- rule$mapping %||% list()
+        # [[ ]] on 'recode': $ would partial-match 'recodes' when the key is absent
+        mapping <- rule$mapping %||% rule[["recode"]] %||% list()
         scope <- rule$scope %||% rule$suffixes %||% rule$variables %||% "all_numeric"
         codes_to_na <- as.numeric(names(mapping))
         if (length(codes_to_na) == 0)
@@ -972,6 +1219,20 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
           }
         } else {
           target_cols <- resolve_scope(df, scope)
+          # wave-scoped exclude blocks (cv HR01c/HR02 carve-outs): a block names
+          # suffixes and waves; a column is skipped when its suffix AND the
+          # current wave both match. blocks without a waves key apply to all.
+          excl_cols <- character(0)
+          for (ex in (rule$exclude %||% list())) {
+            if (!is.list(ex)) next
+            ex_waves <- resolve_waves(ex$waves, all_wave_ids)
+            if (!(wave_id %in% ex_waves)) next
+            ec <- purrr::map_chr(ex$suffixes %||% ex$variables %||% list(),
+                                 ~ find_col(df, .x) %||% NA_character_)
+            excl_cols <- c(excl_cols, ec[!is.na(ec)])
+          }
+          if (length(excl_cols) > 0)
+            target_cols <- setdiff(target_cols, unique(excl_cols))
           total_recoded <- 0L
           for (col in target_cols) {
             if (is.numeric(df[[col]])) {
@@ -1000,15 +1261,24 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
         # -7 structural-sentinel guard: before a structural
         # recode writes -7, assert -7 is absent from the target; error on collision
         .to_vals <- suppressWarnings(as.numeric(unlist(mapping)))
+        if (length(suffixes) == 0) {
+          # auditability: a rule with no resolvable targets must still leave a trace
+          log_entries <- append(log_entries, list(
+            make_log(rid, wave_id, "*", paste0(action, ":NO_TARGETS"), 0L,
+                     duration_ms = elapsed_ms(t0))))
+        }
         for (sfx in suffixes) {
           col <- resolve_var_target(sfx, wave_meta, df)
           if (!is.null(col) && is.numeric(df[[col]])) {
             if (-7 %in% .to_vals && any(df[[col]] == -7, na.rm = TRUE))
               stop(sprintf("-7 collision in '%s': column already contains -7 (rule %s)", col, rid))
+            # snapshot semantics: every mask is computed against the original
+            # vector, so a map like {1: 2, 2: 3} cannot chain (1 -> 2 -> 3)
+            orig <- df[[col]]
             changed <- 0L
             for (from_val in names(mapping)) {
               to_val <- mapping[[from_val]]
-              mask <- !is.na(df[[col]]) & df[[col]] == as.numeric(from_val)
+              mask <- !is.na(orig) & orig == as.numeric(from_val)
               n <- sum(mask)
               if (n > 0) {
                 if (is.null(to_val) || identical(to_val, ".na"))
@@ -1028,6 +1298,11 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
       "fix_label" = {
         suffixes <- rule$suffixes %||% rule$stems %||%
                     rule$variables %||% list()
+        if (length(suffixes) == 0) {
+          log_entries <- append(log_entries, list(
+            make_log(rid, wave_id, "*", "fix_label:NO_TARGETS", 0L,
+                     duration_ms = elapsed_ms(t0))))
+        }
         for (sfx in suffixes) {
           col <- resolve_var_target(sfx, wave_meta, df)
           if (!is.null(col)) {
@@ -1036,7 +1311,8 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
             new_frag <- rule$new_fragment %||% rule$corrected_label %||% ""
             if (nchar(old_frag) > 0)
               attr(df[[col]], "label") <- sub(old_frag, new_frag, lbl, fixed = TRUE)
-            else
+            else if (nchar(new_frag) > 0)
+              # set-label mode; an empty new_frag must not blank an existing label
               attr(df[[col]], "label") <- new_frag
             log_entries <- append(log_entries, list(
               make_log(rid, wave_id, col, action, 1L,
@@ -1168,9 +1444,12 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
         total_changed <- 0L
         for (col in target_cols) {
           if (is.numeric(df[[col]])) {
+            # snapshot semantics: masks come from the pre-rule vector so
+            # overlapping from/to sets cannot chain
+            orig <- df[[col]]
             for (from_val in names(mapping)) {
               to_val <- mapping[[from_val]]
-              mask <- !is.na(df[[col]]) & df[[col]] == as.numeric(from_val)
+              mask <- !is.na(orig) & orig == as.numeric(from_val)
               n <- sum(mask)
               if (n > 0) {
                 if (is.null(to_val) || identical(to_val, ".na"))
@@ -1881,8 +2160,8 @@ run_validations <- function(df, checks, log_entries) {
                  detail = "key columns not found")
           }
         },
-        list(check_id = cid, passed = TRUE, severity = "info",
-             detail = paste0("type '", type, "' not auto-checked"))
+        list(check_id = cid, passed = NA, severity = sev,
+             detail = paste0("type '", type, "' not implemented; SKIPPED"))
       )
     }, error = function(e) {
       list(check_id = cid, passed = NA, severity = sev,
@@ -1893,7 +2172,7 @@ run_validations <- function(df, checks, log_entries) {
 
     status <- if (isTRUE(result$passed)) "PASS"
               else if (isFALSE(result$passed)) "FAIL" else "SKIP"
-    icon <- switch(status, "PASS" = "\u2713", "FAIL" = "\u2717", "\u2014")
+    icon <- switch(status, "PASS" = "\u2713", "FAIL" = "\u2717", "~")
     detail_str <- if (!is.null(result$detail) && status == "FAIL") {
       paste0(" -- ", result$detail)
     } else ""
@@ -1908,7 +2187,16 @@ run_validations <- function(df, checks, log_entries) {
   if (error_count > 0)
     cli::cli_warn("{error_count} validation check(s) with severity='error' FAILED")
 
-  list(results = results, log = log_entries, error_count = error_count)
+  n_pass <- sum(vapply(results, function(r) isTRUE(r$passed), logical(1)))
+  n_fail <- sum(vapply(results, function(r) isFALSE(r$passed), logical(1)))
+  n_skip <- length(results) - n_pass - n_fail
+  if (n_skip > 0)
+    cli::cli_inform(paste0("  checks: ", n_pass, " passed, ", n_fail,
+                           " failed, ", n_skip,
+                           " skipped (type not implemented or not evaluable)"))
+
+  list(results = results, log = log_entries, error_count = error_count,
+       n_pass = n_pass, n_fail = n_fail, n_skip = n_skip)
 }
 
 # ============================================================================
@@ -1924,10 +2212,13 @@ run_validations <- function(df, checks, log_entries) {
 #' @param recipe a parsed recipe list (from [load_recipe()]), or a path to a recipe file.
 #' @param data_dir character. directory containing wave data files.
 #' @param output_dir character. directory for output files.
+#' @param strict logical. if `TRUE`, abort before writing any outputs when a
+#'   validation check with `severity: error` fails; the default `FALSE`
+#'   preserves the historical report-and-continue behavior.
 #' @return a list (invisibly) with elements `data`, `log`, `validation`,
 #'   `summary`, and `recipe`.
 #' @export
-merge_liss_module <- function(recipe, data_dir, output_dir = ".") {
+merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE) {
   # accept either a parsed recipe list or a path to a recipe file
   if (is.character(recipe) && length(recipe) == 1) recipe <- load_recipe(recipe)
 
@@ -1952,6 +2243,8 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".") {
   expected   <- global$expected_presence %||% NULL
 
   log_entries <- list()
+  # per-column value-label registry for the write-time restore (round-trip)
+  label_registry <- new.env(parent = emptyenv())
 
   # phase 1: load and pre-process each wave
   cli::cli_h2("phase 1: loading and pre-processing waves")
@@ -1966,9 +2259,43 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".") {
     dfs <- purrr::map(wf$paths, read_wave_file)
     df <- if (length(dfs) == 1) dfs[[1]] else dplyr::bind_rows(dfs)
 
+    # aux files (recipe-declared supplemental samples): stack only under an
+    # enforced zero-overlap contract; shared ids mean a superseding release
+    for (ap in (wf$aux_paths %||% character(0))) {
+      aux_df <- read_wave_file(ap)
+      if (id_var %in% names(df) && id_var %in% names(aux_df)) {
+        overlap <- intersect(df[[id_var]], aux_df[[id_var]])
+        if (length(overlap) > 0) {
+          cli::cli_abort(c(
+            paste0("wave '", wid, "': aux file '", basename(ap), "' shares ",
+                   length(overlap), " respondent id(s) with the primary file"),
+            "i" = paste0("aux_files must contain disjoint respondents ",
+                         "(supplemental samples); a shared-id file is a ",
+                         "superseding release and must not be stacked"),
+            "i" = "fix file_pattern / aux_files for this wave in the recipe"))
+        }
+      }
+      df <- dplyr::bind_rows(df, aux_df)
+      cli::cli_inform("  stacked aux file {.file {basename(ap)}} (+{nrow(aux_df)} rows)")
+    }
+
+    # unconditional integrity gate: duplicated respondent ids within one wave
+    # are never valid for these modules, whatever the recipe says
+    if (id_var %in% names(df)) {
+      n_dup <- sum(duplicated(df[[id_var]]) & !is.na(df[[id_var]]))
+      if (n_dup > 0) {
+        cli::cli_abort(c(
+          paste0("wave '", wid, "': ", n_dup, " duplicated '", id_var,
+                 "' value(s) in the loaded data"),
+          "i" = paste0("check for superseded file versions or unintended ",
+                       "extra matches in '", data_dir, "'")))
+      }
+    }
+
     if (strip_ws) df <- strip_label_whitespace(df)
     df <- strip_wave_prefix(df, wid, c(id_var, "nohouse_encr"))
     df <- apply_labelled_policy(df, lbl_policy)
+    label_registry <- harvest_labels(df, label_registry, wid)
 
     df[[wave_var]] <- wid
     df[[year_var]] <- as.integer(wave_years[wid])
@@ -2219,6 +2546,13 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".") {
   val <- run_validations(merged, recipe$validation_checks %||% list(), log_entries)
   log_entries <- val$log
 
+  if (isTRUE(strict) && val$error_count > 0) {
+    cli::cli_abort(c(
+      paste0(val$error_count, " validation check(s) with severity='error' failed"),
+      "i" = "strict mode: no outputs were written",
+      "i" = "re-run with strict = FALSE to write outputs despite failures"))
+  }
+
   # phase 7: write outputs
   cli::cli_h2("phase 7: writing outputs")
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
@@ -2232,7 +2566,45 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".") {
          "Install it with: install.packages(\"jsonlite\")", call. = FALSE)
   }
 
-  # merged data (SPSS .sav preserves variable and value labels)
+  # restore value labels and user-missing declarations harvested in phase 1
+  # where provably safe; sweep declared missing codes the recipes left behind
+  # on every column that could not be restored, so no dk/refusal code ever
+  # leaks into the output as a substantive value
+  if (identical(lbl_policy, "to_numeric")) {
+    rl <- restore_value_labels(merged, label_registry)
+    merged <- rl$data
+    # recipe exclude blocks are documented decisions that a declared code is
+    # substantive for those suffix/wave cells; the sweep must honor them
+    veto <- list()
+    all_rules <- c(recipe$variable_rules %||% list(),
+                   recipe$harmonization_rules %||% list())
+    for (r in all_rules) {
+      for (bl in (r$exclude %||% list())) {
+        sfxs <- as.character(unlist(bl$suffixes %||% list()))
+        wvs  <- as.character(unlist(bl$waves %||% list()))
+        if (length(wvs) == 0) wvs <- names(wave_years)
+        for (sfx in sfxs)
+          veto[[sfx]] <- unique(c(veto[[sfx]], wvs))
+      }
+    }
+    sw <- sweep_user_missing(merged, label_registry, rl$skipped,
+                             wave_var = wave_var, veto = veto)
+    merged <- sw$data
+    cli::cli_inform(paste0("  value labels restored on ", length(rl$restored),
+                           " column(s); skipped on ", length(rl$skipped),
+                           " (recoded values or era-dependent metadata); ",
+                           sw$swept, " residual user-missing cell(s) swept to NA"))
+    log_entries <- append(log_entries, list(
+      make_log("LABEL_RESTORE", "*",
+               paste0(length(rl$restored), " restored / ",
+                      length(rl$skipped), " skipped"),
+               "restore_value_labels", length(rl$restored)),
+      make_log("NA_SWEEP", "*", paste0(length(rl$skipped), " col(s)"),
+               "sweep_user_missing", sw$swept,
+               values_changed = sw$swept)))
+  }
+
+  # merged data (SPSS .sav carries the variable labels and the restored value labels)
   merged <- sanitize_spss_names(merged)
   out_sav <- file.path(output_dir, paste0(mod_code, "_merged.sav"))
   haven::write_sav(merged, out_sav)
@@ -2284,9 +2656,11 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".") {
 #' @param data_dir character. root data directory. per-module subdirectories
 #'   are tried first (e.g. `data_dir/ch/`), falling back to `data_dir`.
 #' @param output_dir character. directory for output files.
+#' @param strict logical. forwarded to [merge_liss_module()].
 #' @return a named list of per-module results (invisibly).
 #' @export
-merge_liss_modules <- function(recipe_paths, data_dir, output_dir = ".") {
+merge_liss_modules <- function(recipe_paths, data_dir, output_dir = ".",
+                               strict = FALSE) {
   recipes <- load_recipes(recipe_paths)
   results <- list()
 
@@ -2323,7 +2697,8 @@ merge_liss_modules <- function(recipe_paths, data_dir, output_dir = ".") {
     mod_data_dir <- file.path(data_dir, mod)
     if (!dir.exists(mod_data_dir)) mod_data_dir <- data_dir
     tryCatch({
-      results[[mod]] <- merge_liss_module(recipes[[mod]], mod_data_dir, output_dir)
+      results[[mod]] <- merge_liss_module(recipes[[mod]], mod_data_dir, output_dir,
+                                           strict = strict)
     }, error = function(e) {
       cli::cli_alert_danger(
         "module {.val {mod}} failed: {e$message}"
@@ -2359,7 +2734,7 @@ write_report <- function(merged, validation_results, log_entries, recipe, path) 
     paste0("LISS ", toupper(mod), " Module \u2014 Merge Report"),
     paste0("Generated: ", Sys.time()),
     paste0("Recipe version: ", recipe$meta$recipe_version),
-    paste0("Schema: canonical v1.0.0"),
+    paste0("Schema: canonical v1.1.0 (accepts v1.0.0)"),
     "",
     paste0("Rows: ", nrow(merged)),
     paste0("Columns: ", ncol(merged)),

@@ -4,7 +4,7 @@
 \alias{merge_liss_module}
 \title{run the full merge pipeline for a single module}
 \usage{
-merge_liss_module(recipe, data_dir, output_dir = ".")
+merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE)
 }
 \arguments{
 \item{recipe}{a parsed recipe list (from \code{\link[=load_recipe]{load_recipe()}}), or a path to a recipe file.}
@@ -12,6 +12,10 @@ merge_liss_module(recipe, data_dir, output_dir = ".")
 \item{data_dir}{character. directory containing wave data files.}
 
 \item{output_dir}{character. directory for output files.}
+
+\item{strict}{logical. if \code{TRUE}, abort before writing any outputs when a
+validation check with \code{severity: error} fails; the default \code{FALSE}
+preserves the historical report-and-continue behavior.}
 }
 \value{
 a list (invisibly) with elements \code{data}, \code{log}, \code{validation},

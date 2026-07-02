@@ -8,7 +8,7 @@
 meta:
   module: cv
   module_label: Politics and Values
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -49,7 +49,7 @@ meta:
     description documents vote_hypo codes 1/2 as would-not-vote /
     not-eligible. (11) DV06-DV09 marked TODO_REEXPRESS (duplicates of
     BR01-BR03/VR06 flags).
-  schema_version: "1.0.0"
+  schema_version: 1.1.0
 global:
   id_variable: nomem_encr
   wave_variable: wave_id
@@ -497,9 +497,8 @@ harmonization_rules:
   # on suffix 243 in cv17i-cv19k, 999 means 'I am not eligible to
   # vote', not DK; excluded here pending the eligibility sentinel decision
   # exclude semantics: each block skips cells
-  # where suffix AND wave both match. engine support for exclude is
-  # unverified from the recipe side; if unsupported, 243 needs manual
-  # post-hoc repair.
+  # where suffix AND wave both match. engine support implemented in
+  # liss_merge_engine.R (recode_to_na honors rule$exclude blocks).
   exclude:
   - suffixes:
     - '243'
@@ -534,7 +533,7 @@ harmonization_rules:
   # the excluded cells and will surface in VC01 as informative hits.
   # exclude semantics: each block skips cells where suffix AND wave both
   # match; grammar mirrors type_coerce suffixes/variables lists. engine
-  # support unverified from the recipe side.
+  # support implemented (recode_to_na honors rule$exclude blocks).
   exclude:
   - suffixes:
     - '243'

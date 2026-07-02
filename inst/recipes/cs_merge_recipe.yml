@@ -8,7 +8,7 @@
 meta:
   module: cs
   module_label: Culture and Sports
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -198,9 +198,12 @@ variable_rules:
 harmonization_rules:
 - rule_id: A1_dk_recode
   anomaly_ref: A-01
-  description: 'Recode 999 -> -9 for all variables with DK label in pre-cs20m waves. Post-cs20m waves already use -9.
-
-    '
+  description: >
+    Recode 999 -> -9 on the pre-cs20m items whose value labels define 999 as
+    don't know. Post-cs20m waves already use -9. Suffix list verified against
+    cs08a (codes anchored at 999; 44 other variables carry a DK label at
+    substantive codes 4-14 and must NOT be touched). Re-verify the list per
+    wave before extending: cs09b-cs19l pending the same code-anchored scan.
   action: value_recode
   waves:
   - cs08a
@@ -215,13 +218,12 @@ harmonization_rules:
   - cs17j
   - cs18k
   - cs19l
-  apply_to: all_with_value_label
-  match_label_regex: (?i)don.?t\s*know
+  suffixes: ['001', '002', '283']
   from_value: 999
   to_value: -9
   if_absent: warn_and_skip
   log: true
-  preserve_original_suffix: _dk_orig
+
 - rule_id: A1_dk_shift_origin
   anomaly_ref: A-01
   description: 'Recode in-scale DK code 9 -> -9 on social-network member origin items (stems 320, 331, 342, 353, 364) in
