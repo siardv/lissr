@@ -1,0 +1,64 @@
+url: https://siardv.github.io/lissr/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, articles, reference, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Get started
+      href: articles/getting-started.html
+
+articles:
+- title: Get started
+  navbar: Get started
+  contents:
+  - getting-started
+  - merge-workflow
+- title: Analysis workflows
+  navbar: Analysis workflows
+  contents:
+  - cross-sectional-analysis
+  - longitudinal-panel-analysis
+  - multi-module-linkage
+- title: Recipes and pipelines
+  navbar: Recipes and pipelines
+  contents:
+  - custom-recipes
+  - reproducible-pipelines
+
+reference:
+- title: Authentication and credentials
+  contents:
+  - liss_store_credentials
+  - liss_login
+  - liss_is_logged_in
+  - liss_list_credentials
+  - liss_delete_credentials
+- title: Browse and select
+  contents:
+  - liss_modules
+  - liss_wave_matrix
+  - liss_select
+  - liss_server_status
+- title: Download
+  contents:
+  - liss_download
+- title: Recipes
+  contents:
+  - liss_recipe
+  - load_recipe
+  - validate_recipe
+  - liss_blueprint
+  - onboard_new_wave
+- title: Merge engine
+  contents:
+  - merge_liss_module
+  - merge_liss_modules
+  - merge_liss_panel
+- title: Package overview
+  contents:
+  - lissr-package

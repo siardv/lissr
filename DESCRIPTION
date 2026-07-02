@@ -9,7 +9,7 @@ Description: Programmatic access to the LISS Data Archive
     recipe-driven YAML specifications conforming to a canonical schema
     (v1.0.0). Credentials are stored securely via the system keyring.
 License: MIT + file LICENSE
-URL: https://github.com/siardv/lissr
+URL: https://siardv.github.io/lissr/, https://github.com/siardv/lissr
 BugReports: https://github.com/siardv/lissr/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
