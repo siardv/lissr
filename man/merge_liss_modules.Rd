@@ -4,7 +4,7 @@
 \alias{merge_liss_modules}
 \title{merge multiple modules sequentially}
 \usage{
-merge_liss_modules(recipe_paths, data_dir, output_dir = ".")
+merge_liss_modules(recipe_paths, data_dir, output_dir = ".", strict = FALSE)
 }
 \arguments{
 \item{recipe_paths}{character vector of paths to YAML recipe files.}
@@ -13,6 +13,8 @@ merge_liss_modules(recipe_paths, data_dir, output_dir = ".")
 are tried first (e.g. \verb{data_dir/ch/}), falling back to \code{data_dir}.}
 
 \item{output_dir}{character. directory for output files.}
+
+\item{strict}{logical. forwarded to \code{\link[=merge_liss_module]{merge_liss_module()}}.}
 }
 \value{
 a named list of per-module results (invisibly).

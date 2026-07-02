@@ -31,7 +31,7 @@ meta:
   module: "cr"
   module_label: "Religion and Ethnicity"
   schema_version: "1.0.0"
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: "2026-06-13"
   source_spec: "cross-wave harmonization specification"
   covered_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i,
@@ -203,7 +203,7 @@ harmonization_rules:
       era-1 current religion (suffix 013, cr08a-cr13f) into the harmonised
       religion scheme. source labels verified from cr_value_labels.csv.
     anomaly_ref: A-02
-    suffix: "013"
+    suffixes: ["013"]
     waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f]
     mapping: { 1: 1, 2: 2, 3: 4, 4: 5, 5: 3, 6: 3, 7: 6, 8: 8, 9: 9, 10: 11, 11: 10, 12: 7, 13: 12, 14: 13 }
 
@@ -214,7 +214,7 @@ harmonization_rules:
       scheme. codes 5-12 were reassigned vs era-1; Dutch Reformed and
       Gereformeerd were removed from 013 (now via bridge variable 133).
     anomaly_ref: A-02
-    suffix: "013"
+    suffixes: ["013"]
     waves: [cr14g, cr15h, cr16i, cr17j, cr18k]
     mapping: { 1: 1, 2: 2, 3: 4, 4: 5, 5: 6, 6: 8, 7: 9, 8: 11, 9: 10, 10: 7, 11: 12, 12: 13 }
 
@@ -222,12 +222,12 @@ harmonization_rules:
     action: value_recode
     description: >
       era-3 current religion (suffix 144, cr19l-cr25r) into the harmonised
-      scheme. 16-value instrument with finer Protestant distinctions; all
+      scheme. 14-value instrument (plus -9 DK) with finer Protestant distinctions; all
       Reformed denominations (codes 3-6) fold into harmonised code 3.
       targets native suffix 144 so it is order-independent of the
       144 -> 013 crosswalk_rename in boundary_rules.
     anomaly_ref: A-02
-    suffix: "144"
+    suffixes: ["144"]
     waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
     mapping: { 1: 1, 2: 2, 3: 3, 4: 3, 5: 3, 6: 3, 7: 5, 8: 4, 9: 6, 10: 7, 11: 8, 12: 9, 13: 10, 14: 13 }
 
@@ -242,7 +242,7 @@ harmonization_rules:
       remove the stray leading space in the Humanism label (value 13) that
       appears in cr09b-cr13f, so exact-match label code does not fail.
     anomaly_ref: A-08
-    suffix: "013"
+    suffixes: ["013"]
     waves: [cr09b, cr10c, cr11d, cr12e, cr13f]
     old_fragment: " Humanism (Humanistisch Verbond)"
     new_fragment: "Humanism (Humanistisch Verbond)"
@@ -253,7 +253,7 @@ harmonization_rules:
       same leading-space Humanism fix for the past-religion item (suffix 022),
       which shares the defect in the early waves.
     anomaly_ref: A-08
-    suffix: "022"
+    suffixes: ["022"]
     waves: [cr09b, cr10c, cr11d, cr12e, cr13f]
     old_fragment: " Humanism (Humanistisch Verbond)"
     new_fragment: "Humanism (Humanistisch Verbond)"

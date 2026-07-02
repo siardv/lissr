@@ -8,7 +8,7 @@
 meta:
   module: cp
   module_label: Personality
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-09'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -281,10 +281,10 @@ harmonization_rules:
   - cp15h
   - cp17i
   - cp18j
-  items:
+  suffixes:
   - '010'
   - '011'
-  - 019
+  - '019'
   mapping:
     999: .na
   log: count recoded per item per wave
@@ -298,10 +298,10 @@ harmonization_rules:
   - cp22n
   - cp23o
   - cp24p
-  items:
+  suffixes:
   - '010'
   - '011'
-  - 019
+  - '019'
   mapping:
     -9: .na
   log: count recoded per item per wave
@@ -314,7 +314,7 @@ harmonization_rules:
   items:
   - '010'
   - '011'
-  - 019
+  - '019'
   flag_name: dk_unavailable
   flag_value: true
   log: record that DK was not offered; count of non-NA responses
@@ -568,7 +568,7 @@ validation_checks:
   items:
   - '010'
   - '011'
-  - 019
+  - '019'
   forbidden_values:
   - 999
   - -9
@@ -580,7 +580,7 @@ validation_checks:
   items:
   - '010'
   - '011'
-  - 019
+  - '019'
   waves:
   - cp19k
   threshold: 0.02
@@ -593,7 +593,7 @@ validation_checks:
   items:
   - '010'
   - '011'
-  - 019
+  - '019'
   max_mean: 11
 - check_id: V04_structural_na_post_cp19k
   anomaly_ref: A-02

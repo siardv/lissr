@@ -8,7 +8,7 @@
 meta:
   module: cd
   module_label: Housing
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -86,15 +86,17 @@ wave_index:
   role_map: *id001
 - id: cd10c
   year: 2010
-  file_pattern: cd10c_EN_1_0p.csv
-  notes: ''
+  file_pattern: cd10c_EN_1.1p*
+  notes: >-
+    1.0p and 1.1p contain the identical 3626 respondents (verified 2026-07:
+    100 percent id overlap, shared columns value-identical); 1.1p removes the
+    open-text dwelling-location item cd10c059 (disclosure control) and
+    supersedes 1.0p. load 1.1p only; never stack the two. this corrects the
+    earlier zero-overlap assumption (anomaly 9).
   fieldwork: 2010-06 / 2010-08
   financial_ref: '2009-12-31'
   recall_months: 6
   era: era1
-  aux_files:
-  - cd10c_EN_1_1p.csv
-  aux_note: stack both; zero respondent overlap (anomaly 9)
   role_map: *id001
 - id: cd11d
   year: 2011
@@ -892,14 +894,16 @@ harmonization_rules:
     3: null
   log: count value-3 observations per wave
 boundary_rules:
-- rule_id: B01_cd10c_stack  # TODO_REEXPRESS: stack_aux_files is a stub in the current engine
+- rule_id: B01_cd10c_stack
   anomaly_ref: A-09
-  description: stack aux files
-  action: stack_aux_files
-  boundary: cd10c
-  post_check: assert zero duplicate nomem_encr
-  note: the wave file_pattern matches only cd10c_EN_1_0p.csv, so any out-of-engine verification must load cd10c_EN_1_1p.csv explicitly; executable uniqueness check added as CHK11
+  description: >-
+    retired. cd10c_EN_1.1p supersedes 1.0p (identical respondents; item 059
+    redacted); the wave_index now selects 1.1p directly and the engine's
+    per-wave duplicate-id gate blocks any accidental stacking. kept as
+    documentation of the resolved anomaly.
+  action: note_only
   log: true
+
 - rule_id: B02_cd13f_float_cast
   anomaly_ref: A-13
   description: safe integer cast
@@ -1198,15 +1202,23 @@ validation_checks:
   variables:
   - h_mortgage_debt
 - check_id: CHK06_id_uniqueness
-  anomaly_ref: null
-  description: ''
-  type: no duplicate nomem_encr within any wave_id
+  anomaly_ref: A-09
+  description: no duplicate nomem_encr within any wave_id
+  type: uniqueness
+  column: nomem_encr
+  within: wave_id
   severity: error
+
 - check_id: CHK07_cd10c_no_overlap
   anomaly_ref: A-09
-  description: ''
-  type: n_distinct(nomem_encr) == nrow for cd10c
+  description: >-
+    cd10c respondents unique after the 1.1p supersession fix (previously a
+    non-executable free-text check; now the same executable uniqueness gate)
+  type: uniqueness
+  column: nomem_encr
+  within: wave_id
   severity: error
+
 - check_id: CHK08_cd13f_binary
   anomaly_ref: A-13
   description: ''

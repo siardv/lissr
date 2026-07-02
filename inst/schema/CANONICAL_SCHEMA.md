@@ -1,4 +1,14 @@
-# LISS Panel Merge Recipe: Canonical Schema v1.0.0
+# LISS Panel Merge Recipe: Canonical Schema v1.1.0
+
+Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0 recipe
+remains valid and merges unchanged; the additions are the `recode` alias and
+`exclude` blocks on `recode_to_na` rules, the `aux_files` resolution and
+zero-overlap contract on `wave_index` entries, release-version disambiguation
+when several primary files match one wave, the `uniqueness` validation check
+family, the SKIP outcome for unimplemented check types, the `strict` merge
+gate, and the value-label / user-missing round-trip under
+`labelled_policy: to_numeric`. Recipes may declare either schema version in
+`meta.schema_version`; the engine accepts both.
 
 ## Purpose
 
@@ -54,6 +64,29 @@ The engine rejects unknown or empty actions unless the action is `note_only`.
 | `lowercase_labels`    | normalize label case                     |
 | `flag_only`           | mark anomaly without transforming data   |
 | `note_only`           | documentary; no data transformation      |
+
+#### `recode_to_na` keys (v1.1.0)
+
+The sentinel map may be given as `mapping:`, `codes:`, or the alias
+`recode:` (the three are equivalent; `recode` accepts the
+`code: reason-tag` form used by several recipes, where the tag is
+documentary). Scoping follows the common rules (`suffixes`, `variables`,
+or `scope: all_numeric`). A rule may additionally carry `exclude:` blocks;
+each block names `suffixes` and `waves`, and a cell is skipped when its
+suffix and its wave both match a block. An exclude block is a documented
+decision that the code is substantive for those cells, and the write-phase
+user-missing sweep honors the same blocks (see Implementation notes).
+
+```yaml
+- rule_id: HR02_dk_negative
+  action: recode_to_na
+  scope: all_numeric
+  recode: { -9: ".dk" }
+  waves: [cv20l, cv21n]
+  exclude:
+    - suffixes: ["243"]
+      waves: [cv20l, cv21n]
+```
 
 ### Boundary rules
 
@@ -173,6 +206,27 @@ wave_index:
     era: 1
 ```
 
+Optional per-entry field `aux_files` (v1.1.0 contract): a list of
+supplemental data files whose rows are appended to the wave after loading.
+Each entry resolves independently of `file_pattern` (matched in the module
+data directory by name, extension-agnostic), so narrowing the primary
+pattern cannot silently drop a declaration; an entry that resolves to no
+file warns. Auxiliary rows must be disjoint from the primary file on the
+id variable: any shared respondent id aborts the merge, because an
+overlapping "auxiliary" is in practice a superseded release of the same
+wave and stacking it would duplicate respondents.
+
+File resolution and reading (v1.1.0): when more than one primary file
+matches a wave's pattern, the engine ranks release versions parsed from
+the file names (for example `1.0p` vs `1.1p`), keeps the highest, and
+warns with the ignored files listed; unrankable candidates abort with a
+request to narrow `file_pattern`. Files are read by extension from a
+whitelist (`.sav`, `.zsav`, `.dta`, `.csv`); unknown extensions abort
+rather than being parsed as CSV. SPSS files are read with user-defined
+missing values preserved (`haven::read_sav(user_na = TRUE)`), so declared
+DK/refusal codes reach the recipes as values; see Implementation notes for
+what happens to them at write time.
+
 ### Rule sections (common structure)
 
 Every rule **must** have:
@@ -207,28 +261,29 @@ of truth:
 RECOGNIZED_RULE_KEYS (consulted; global union):
   action, anomaly_ref, assignments, codes, column, columns, combined_label,
   comparability, corrected_label, crosswalk, default, derived_suffix,
-  description, early_label, eras, flag_column, flag_name, flag_true_waves,
-  flag_value_post, flag_value_pre, flag_variable, from_value, if_absent, keep,
-  keep_values, label_map, late_label, mapping, new_fragment, offset,
-  old_fragment, output_scheme_flag, output_variable, output_vars,
+  description, early_label, eras, exclude, flag_column, flag_name,
+  flag_true_waves, flag_value_post, flag_value_pre, flag_variable, from_value,
+  if_absent, keep, keep_values, label_map, late_label, mapping, new_fragment,
+  offset, old_fragment, output_scheme_flag, output_variable, output_vars,
   parties_to_pool, party_names_to_pool, pattern, phases, post_recode, prefix,
-  present_in_waves, recodes, retain, retain_in, rule_id, scheme_column, scope,
-  sentinel_values, set_label, source, source_column, source_variable, sources,
-  stem, stems, suffixes, suffixes_range, swap, target, target_column,
+  present_in_waves, recode, recodes, retain, retain_in, rule_id, scheme_column,
+  scope, sentinel_values, set_label, source, source_column, source_variable,
+  sources, stem, stems, suffixes, suffixes_range, swap, target, target_column,
   target_type, target_variable, target_variables, to_value, transforms, value,
   variable, variable_pattern, variables, variables_pattern, wave, waves,
   waves_early, waves_late, waves_post, waves_pre
 
 SANCTIONED_RULE_KEYS (documentation/provenance; never warn):
   description, log, note, notes, reason, guidance,
-  absent_cw19l_only, absent_from_waves, absent_in, absent_waves,
+  absent_cw19l_only, absent_from_waves, absent_in, absent_waves, boundary,
   conservative_pooling, cw19l_only_variables, deleted_without_replacement,
-  discontinued_blocks, dropped_variables, introductions,
-  later_drops_outside_the_93, missing_reason, new_variables_pattern,
-  non_comparable_replacements, nonexistent_ids_matched_by_pattern,
-  pooling_allowed, post_check, present_waves, reintroduced_in_cw25r,
-  restored_wave, review_required, structurally_missing_waves, waves_absent,
-  waves_absent_from, waves_available, waves_new, waves_old, waves_present
+  discontinued_blocks, dropped_variables, fill_missing_waves, introductions,
+  label, later_drops_outside_the_93, missing_reason, new_variables_pattern,
+  non_comparable_replacements, nonexistent_ids_matched_by_pattern, pool,
+  pooling_allowed, post_check, present_waves, reintroduced_in_cw25r, required,
+  restored_wave, review_required, sentinel_label, structurally_missing_waves,
+  waves_absent, waves_absent_from, waves_available, waves_new, waves_old,
+  waves_present
 ```
 
 Authoring guidance: a rule is scoped only by its `waves` key. A mis-named
@@ -349,6 +404,33 @@ not fully capture. They are documentary.
   3. The per-era crosswalks and target labels are documented inline in the cr
   recipe.
 
+- Value recodes use snapshot semantics (v1.1.0). `value_recode`,
+  `recode_to_na`, and the `recode` branch build every mask against the
+  column's values as they stood when the rule started, so overlapping maps
+  such as `{1: 2, 2: 3}` cannot chain (a 1 becomes 2 and stops; only
+  original 2s become 3). `post_recode` blocks already used snapshot
+  semantics in v1.0.0.
+
+- Label and user-missing round-trip under `labelled_policy: to_numeric`
+  (v1.1.0). At read time each labelled column's value labels, user-missing
+  declarations (`na_values`, `na_range`), and variable label are stashed
+  per wave before the column is converted to plain numeric. At write time
+  a column is restored to `haven::labelled_spss` only when every
+  contributing wave carried identical metadata and every observed value is
+  NA, a labelled code, or a declared missing code, so cross-era recodings
+  are never mislabelled. Columns that cannot be restored pass through a
+  residual sweep: any cell still equal to a code its own wave declared
+  user-missing becomes NA rather than leaking into the output as a
+  substantive value. The sweep is per wave (a code declared missing only
+  in wave A is never swept from wave B) and honors `exclude` blocks from
+  recode rules, which act as a veto for the named suffix and wave cells.
+  Recipes always get first claim: a recode that moves a code (for example
+  cs 999 to -9) runs earlier, and the moved value is not swept.
+
+- A rule that resolves zero target columns writes a `NO_TARGETS` entry to
+  the JSONL log (v1.1.0), so a mis-keyed or mis-scoped rule is visible in
+  the audit trail instead of vanishing.
+
 ---
 
 ## Validation enforcement
@@ -368,3 +450,22 @@ not fully capture. They are documentary.
 Violations produce immediate errors (not warnings). The optional
 `global.expected_presence` contract is not checked here; it is evaluated at merge
 time, where the engine honors each entry's `on_absence` (`error` or `warn`).
+
+### Check execution semantics (v1.1.0)
+
+Implemented check types, evaluated at merge time in phase 6:
+`uniqueness` (aliases `assert_unique`, `n_duplicates`; key column within a
+grouping variable, defaults `nomem_encr` within `wave_id`),
+`value_absence` (alias `assert_absent_values`), `value_range` (alias
+`range_check`), `na_rate` (alias `na_rate_check`), `expected_presence`,
+`structural_missingness`, and `wave_count`. A check whose `type` is not in
+this list reports `SKIP` with `passed = NA` and is counted separately from
+passes and failures; it never reports PASS for logic that did not run, and
+it never contributes to the error count. The per-run summary reports
+`n_pass`, `n_fail`, and `n_skip`.
+
+`merge_liss_module(..., strict = FALSE)`: with `strict = TRUE`, any failed
+check of `severity: error` aborts the merge before phase 7, so no outputs
+are written. The default keeps v1.0.0 behavior (failures are reported and
+logged; outputs are still written). `merge_liss_modules()` forwards the
+argument.

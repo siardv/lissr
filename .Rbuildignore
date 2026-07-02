@@ -8,4 +8,9 @@
 ^pkgdown$
 \.DS_Store$
 ^TODO\.md$
+^PATCH_NOTES\.md$
+^lissr-review\.md$
+^lissr-verification-report\.md$
+^lissr_1\.1\.0_preview\.diff$
+^v2$
 ^CITATION\.cff$
