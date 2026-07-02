@@ -1,3 +1,95 @@
+# lissr 1.2.0
+
+Feature release: a rule-driven income-cleaning framework for merged LISS
+data. Every behavior below is exercised by the regression tests in
+`tests/testthat/test-clean-income.R` and by a seeded end-to-end smoke run
+(`inst/scripts/verification/income_cleaning_smoke.R`); the architecture,
+rule catalog, and the mapping to the legacy analysis scripts live in the
+repository's `INCOME_CLEANING_DESIGN.md`.
+
+## Income cleaning
+
+* New `liss_clean_income()` detects, evaluates, and corrects implausible
+  household-income values under a declarative YAML ruleset
+  (`inst/cleaning/income_cleaning_rules.yml`, schema 1.0.0) of 24 rules:
+  six preparation rules (P01-P06), eleven detectors (D01-D11), six
+  correction-candidate generators (C01-C06), and one finalizer (F01).
+  Rules dispatch by action, evaluate in ruleset order, and every rule
+  carries a description, rationale, parameters, and literature references
+  that the generated report reproduces.
+* Full decision transparency. Original values are preserved unchanged in
+  `<target>_observed`; every modified cell is marked in
+  `<target>_clean_status` with its final action and rule; and every
+  decision, applied or proposed, lands in an 18-column typed ledger with
+  the responsible rule, the evidence, the admissible candidate set with
+  sources, the anchor, the valid range, and a plain-language
+  justification. `liss_cleaning_report()` renders the methodology directly
+  from the ruleset plus a decision appendix, and writes the ledger as CSV
+  and an engine-shaped JSONL audit log.
+* Three modes. `correct` applies corrections; `flag` is a true dry run
+  whose `<target>_proposed` column is identical to what `correct` would
+  write while the data remain untouched; `na_only` voids detected cells
+  without imputing. Re-running on already-cleaned data aborts (the
+  `*_observed` column acts as a double-cleaning guard).
+* Researcher control. `income_cap`, `min_income`, `disable`,
+  `enable_only`, per-rule `params`, a `variables` mapping, and custom
+  ruleset files are honored and recorded in the run metadata and the
+  report, so a reviewer can reproduce any configured run from its report
+  alone.
+* Seeded smoke evidence: on 400 synthetic households (2,168 rows) with
+  158 planted errors across seven families, recovery is 100 percent in
+  every family (65/65 decimal shifts, 33/33 extra zeros, 9/9 cap
+  blowouts, 22/22 personal-income echoes, 11/11 tiny junk values, 11/11
+  sign flips, 7/7 residual sentinels), 0 of 2,010 clean cells are
+  falsely modified, 83 percent of scale corrections land within 10
+  percent of the true value (median relative error 3.8 percent, at the
+  simulation's noise floor), and the run completes in about half a
+  second.
+* The modified-z detector (D10) gained a `min_relative_deviation` gate
+  (default 0.3) after the smoke run exposed that the ungated legacy
+  criterion rewrote 12.09 percent of clean cells in tight households,
+  where a tiny MAD inflates the z-score of ordinary variation. The gate
+  removes every false positive with recall unchanged; the tight-household
+  case is pinned in the regression suite.
+* `liss_equivalise_income()` converts household income to a
+  per-equivalent-adult scale (`weighted_sqrt`, matching the source
+  pipelines' `stand_inc` formula, plus `oecd_modified` and `sqrt`).
+* New exports: `liss_clean_income()`, `liss_cleaning_ruleset()`,
+  `validate_cleaning_ruleset()`, `liss_cleaning_report()`, and
+  `liss_equivalise_income()`, with print and summary methods for run
+  results and rulesets. A new vignette, `income-cleaning`, walks the
+  workflow.
+* No new dependencies. Temporal smoothing uses a native weighted moving
+  average (equivalent to `imputeTS::na_ma` with linear weighting,
+  including window widening), and the numeric kernels are base R.
+
+## Corrections to the source cleaning logic
+
+The framework supersedes the income-cleaning blocks of the two analysis
+scripts it was distilled from. Eleven behaviors were deliberately changed,
+each documented in `INCOME_CLEANING_DESIGN.md` and pinned by a regression
+test, among them: the donor pool no longer offers the flagged row as its
+own donor; the power-of-ten kernel returns a full-length vector so zeros
+and negatives cannot desynchronize magnitudes from rows; the target
+variable resolves by explicit name and alias instead of a `net|brut`
+pattern match that could capture personal-income columns; blanket `abs()`
+on the target became the ledgered sign-rectification rule P03; bound
+violations rank by deviation ratio rather than first index; households
+process in wave order rather than file order; and residual SPSS
+user-missing codes are swept by the declared metadata (P06) rather than
+trusted to upstream reads.
+
+## Tests
+
+* 44 new test blocks in `tests/testthat/test-clean-income.R`: kernel
+  units against hand-computed values, one fixture household per detector,
+  ledger invariants, mode contracts, determinism and row-order
+  independence, override paths, alias and fallback resolution, background
+  attachment, report artifacts, and equivalisation.
+* Full suite in installed-package context: 74 test blocks, 208 passing
+  expectations, 0 failures, 6 skips (5 empirical gates behind
+  `LISSR_VERIFICATION_DIR`, 1 CRAN skip).
+
 # lissr 1.1.0
 
 Correctness release. Every fix below was verified against real LISS Panel

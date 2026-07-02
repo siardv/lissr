@@ -1,0 +1,526 @@
+# ========================================================================
+# LISS Panel household-income cleaning ruleset
+# ========================================================================
+# declarative decision rules for detecting, evaluating, and (where
+# justified) correcting implausible household-income values in merged
+# LISS data. every rule carries a rule_id, a description, a rationale,
+# optional literature references, and an enabled switch, so researchers
+# can inspect, disable, or re-parameterise any rule without touching
+# code. the engine (liss_clean_income) ledgers every decision it takes
+# under a rule_id defined here; the report generator reproduces the
+# description and rationale next to each decision.
+#
+# conforms to the income-cleaning schema v1.0.0 (see
+# INCOME_CLEANING_DESIGN.md). validated by validate_cleaning_ruleset().
+
+meta:
+  ruleset: income_cleaning
+  ruleset_version: "1.0.0"
+  schema_version: "1.0.0"
+  target_module: ci
+  created: "2026-07-02"
+  description: >-
+    Detection and constrained correction of implausible self-reported
+    net household income (nethh) in LISS panel data. Consolidated from
+    two production analysis pipelines and re-expressed as declarative,
+    individually switchable decision rules with full audit logging.
+  provenance: >-
+    Rules P01-P06, D01-D11, C01-C06, F01 encode the household-income
+    outlier detection and constrained imputation procedures previously
+    maintained ad hoc in two downstream analysis projects. Latent
+    defects in the ad hoc code (magnitude-vector misalignment on zero
+    incomes, donor-pool self-contamination, regex over-matching of
+    income columns) are corrected here; see the legacy mapping table in
+    INCOME_CLEANING_DESIGN.md for the full account.
+
+references:
+  tukey1977: >-
+    Tukey, J. W. (1977). Exploratory Data Analysis. Reading, MA:
+    Addison-Wesley.
+  leys2013: >-
+    Leys, C., Ley, C., Klein, O., Bernard, P., & Licata, L. (2013).
+    Detecting outliers: Do not use standard deviation around the mean,
+    use absolute deviation around the median. Journal of Experimental
+    Social Psychology, 49(4), 764-766.
+  iglewicz1993: >-
+    Iglewicz, B., & Hoaglin, D. C. (1993). How to Detect and Handle
+    Outliers. Milwaukee, WI: ASQC Quality Press.
+  moritz2017: >-
+    Moritz, S., & Bartz-Beielstein, T. (2017). imputeTS: Time series
+    missing value imputation in R. The R Journal, 9(1), 207-218.
+
+# ---- variable mapping --------------------------------------------------
+# column names are resolved against the input at run time. `target` may
+# be satisfied by any alias; the first present name wins and is reported.
+# `wave` is a preference-ordered candidate list. when `household_id` is
+# absent (e.g. waves without nohouse_encr) the engine falls back to
+# person-level grouping and logs the substitution.
+variables:
+  target: nethh
+  target_aliases:
+    - ci00a339
+  person_id: nomem_encr
+  household_id: nohouse_encr
+  household_id_fallback: nomem_encr
+  wave:
+    - wavenr
+    - wave_year
+    - wave
+  personal_net: nettoink
+  personal_gross: brutoink
+  category_code: nethh_min
+  category_min: nethh_min
+  category_max: nethh_max
+  donor_keys:
+    - aantalhh
+    - positiehh
+    - belbezig
+    - leeftijd
+    - oplmet
+  birth_year: gebjaar
+  age: leeftijd
+
+# ---- global constraints ------------------------------------------------
+constraints:
+  # maximum plausible annual net household income (EUR, Netherlands)
+  income_cap: 150000
+  # minimum plausible annual net household income for imputation ranges
+  min_income: 8000
+  # additive origin for annual wavenr (wave_year = wavenr + origin)
+  wavenr_origin: 2007
+  # LISS income category coding 1-7 mapped to euro brackets
+  category_bounds:
+    lower: [0, 8000, 16000, 24000, 36000, 48000, 60000]
+    upper: [8000, 16000, 24000, 36000, 48000, 60000, 120000]
+  # residual SPSS user-missing codes swept defensively by P06
+  sentinel_codes: ["9999999998", "9999999999"]
+
+# ---- preparation rules -------------------------------------------------
+preparation_rules:
+  - rule_id: P01
+    action: attach_background
+    enabled: true
+    log: true
+    description: >-
+      Attach background demographics to the income module on the annual
+      wave scale before cleaning.
+    rationale: >-
+      The LISS background file keys months as YYYYMM while income
+      modules key annual waves. Joining on a monthly index attaches an
+      arbitrary background month to each annual wave. The rule derives
+      an annual wavenr from the background wave (YYYY - wavenr_origin),
+      keeps one background row per person-year (latest month within the
+      year), and joins on nomem_encr plus the aligned annual wavenr.
+      The join never uses nohouse_encr, because the household id is not
+      a stable person-level key and changes with household composition.
+      Runs only when a background frame is supplied.
+
+  - rule_id: P02
+    action: resolve_target_variable
+    enabled: true
+    log: true
+    description: >-
+      Resolve the income target column from the configured name or its
+      aliases, and record which name was used.
+    rationale: >-
+      The continuous net household income variable appears as nethh in
+      role-mapped merges and as ci00a339 in raw codebook naming. The
+      rule resolves by explicit name list rather than by pattern
+      matching, because regex identification of income columns (the
+      legacy approach) can over-match unrelated variables.
+
+  - rule_id: P03
+    action: rectify_sign
+    enabled: true
+    log: true
+    description: >-
+      Replace negative target values with their absolute value, one
+      ledger entry per rectified cell.
+    rationale: >-
+      Negative net household income in LISS self-reports reflects a
+      sign-entry error rather than genuine negative income. The legacy
+      pipelines applied abs() silently across all income-like columns;
+      here the rectification is target-only, per-cell, and fully
+      ledgered. Personal income context variables are compared in
+      absolute value inside D03/D04 without modifying the data.
+    params:
+      apply_to: [target]
+
+  - rule_id: P04
+    action: map_category_bounds
+    enabled: true
+    log: true
+    description: >-
+      When the category column holds bracket codes (1-7), expand them
+      to euro lower/upper bounds via constraints.category_bounds.
+    rationale: >-
+      Several waves store the income bracket as a 1-7 code. Correction
+      candidates and bound checks operate in euros, so codes are
+      expanded to bracket bounds. Columns already holding euro bounds
+      pass through unchanged. The decision is taken per column, keyed
+      on whether the maximum finite value is at most max_code.
+    params:
+      max_code: 7
+
+  - rule_id: P05
+    action: backfill_age
+    enabled: true
+    log: true
+    description: >-
+      Backfill missing respondent age for donor matching, from the
+      person-invariant birth year and the wave year.
+    rationale: >-
+      Background files are time-bounded, so late waves can lack age,
+      which silently weakens donor-pool matching. Birth year is carried
+      within person and age is derived as wave_year - birth_year. The
+      backfill feeds the internal donor-matching frame only; the age
+      column in the returned data is never modified.
+
+  - rule_id: P06
+    action: guard_residual_sentinels
+    enabled: true
+    log: true
+    description: >-
+      Sweep residual SPSS user-missing codes on the target to NA before
+      any numeric evaluation, one ledger entry per swept cell.
+    rationale: >-
+      Merged lissr output declares user-missing codes and sweeps
+      residuals, but data from other provenances (or reads with
+      user_na = TRUE) may still carry codes such as 9999999998 as
+      substantive values. Any code reaching a detector would be treated
+      as an astronomically high income. The guard honours declared
+      haven na_values/na_range first and constraints.sentinel_codes as
+      a fallback.
+
+# ---- detection rules ---------------------------------------------------
+# dispositions: void_bounds (invalidate category bounds), set_na (void
+# the target value), correct (route the cell to the constrained
+# correction stage), flag (annotate only, never modify). the iterative
+# in-household stage evaluates rules with disposition `correct` and
+# scope `household` in the order listed here; the first rule that fires
+# supplies the single worst cell corrected in that iteration.
+detection_rules:
+  - rule_id: D01
+    action: invalid_category_bounds
+    disposition: void_bounds
+    scope: global
+    enabled: true
+    log: true
+    description: >-
+      Void category bounds that are negative or exceed the plausible
+      bracket ceiling; the income value itself is untouched.
+    rationale: >-
+      Corrupt bracket metadata must not constrain corrections. Bounds
+      outside [min_valid, max_valid] are treated as absent for the
+      affected row, and the voiding is ledgered so researchers can see
+      exactly which constraints were discarded.
+    params:
+      min_valid: 0
+      max_valid: 120000
+
+  - rule_id: D02
+    action: absolute_floor
+    disposition: set_na
+    scope: global
+    enabled: true
+    log: true
+    description: >-
+      Void target values below an absolute floor (default 10 EUR/year).
+    rationale: >-
+      Annual household incomes below 10 euros are placeholder or
+      keying artefacts with no plausible substantive reading. They are
+      voided rather than corrected because they carry no recoverable
+      magnitude information.
+    params:
+      threshold: 10
+
+  - rule_id: D03
+    action: contextual_floor
+    disposition: set_na
+    scope: global
+    enabled: true
+    log: true
+    description: >-
+      Void target values at or below a contextual floor (default 100)
+      when a gross personal income is present for the same row.
+    rationale: >-
+      A household reporting at most 100 euros a year while a member
+      reports gross personal income is internally inconsistent; the
+      household figure is the implausible one. Comparison uses the
+      absolute value of the personal figure.
+    params:
+      threshold: 100
+
+  - rule_id: D04
+    action: personal_income_echo
+    disposition: set_na
+    scope: global
+    enabled: true
+    log: true
+    description: >-
+      Void low household values that echo a personal income figure
+      within a small tolerance.
+    rationale: >-
+      Respondents sometimes enter their personal income in the
+      household field. A household total under `ceiling` that sits
+      within `tolerance` of the personal net or gross figure is treated
+      as such an echo. Comparison uses absolute personal values.
+    params:
+      ceiling: 10000
+      tolerance: 100
+
+  - rule_id: D05
+    action: low_magnitude_scale
+    disposition: correct
+    scope: household
+    stage: preliminary
+    enabled: true
+    log: true
+    description: >-
+      In households where every reported magnitude is at or below
+      magnitude_ceiling, scale individual values by `factor` when the
+      scaled value falls within the row's category bounds, or (absent
+      bounds) moves the value closer to the household median of the
+      other waves while staying within global limits.
+    rationale: >-
+      Whole-household low-magnitude reporting is the signature of
+      monthly-for-annual or thousands-omitted entry. Scaling is only
+      applied cell-wise under an explicit plausibility test, never
+      unconditionally.
+    params:
+      magnitude_ceiling: 1000
+      factor: 10
+
+  - rule_id: D06
+    action: scale_error
+    disposition: correct
+    scope: household
+    enabled: true
+    log: true
+    references: [tukey1977]
+    description: >-
+      Flag cells whose local log-volatility is at least volatility_min
+      and whose order of magnitude differs from the household's modal
+      magnitude.
+    rationale: >-
+      A decimal-point error produces a tenfold jump: high local
+      volatility on the log scale combined with a magnitude that breaks
+      the household's modal magnitude. This is the most specific
+      in-household signature and is evaluated first.
+    params:
+      volatility_min: 0.6
+
+  - rule_id: D07
+    action: category_bound_violation
+    disposition: correct
+    scope: household
+    enabled: true
+    log: true
+    description: >-
+      Flag cells more than upper_factor above the reported bracket's
+      upper bound, or below lower_factor of a positive lower bound.
+    rationale: >-
+      The bracket answer and the euro answer come from the same
+      respondent; gross disagreement between them indicates a keying
+      error in the euro amount. The 50 percent margins avoid flagging
+      legitimate boundary answers.
+    params:
+      upper_factor: 1.5
+      lower_factor: 0.5
+
+  - rule_id: D08
+    action: exceeds_cap
+    disposition: correct
+    scope: household
+    enabled: true
+    log: true
+    description: >-
+      Flag cells above the absolute income cap.
+    rationale: >-
+      Values above constraints.income_cap are outside the plausible
+      range for annual net household income in the Netherlands
+      regardless of household history.
+
+  - rule_id: D09
+    action: robust_consensus
+    disposition: correct
+    scope: household
+    enabled: true
+    log: true
+    references: [tukey1977, leys2013]
+    description: >-
+      Flag cells identified by at least `consensus` of the configured
+      robust univariate detectors (Tukey IQR fences, MAD interval)
+      within the household series, confirmed by local log-volatility of
+      at least volatility_min.
+    rationale: >-
+      IQR fences (Tukey 1977) and MAD intervals (Leys et al. 2013) are
+      resistant to the outliers they hunt, unlike mean/SD rules. The
+      volatility confirmation prevents flagging households whose level
+      genuinely shifted.
+    params:
+      methods: [iqr, mad]
+      consensus: 1
+      thresholds:
+        iqr: 1.5
+        mad: 2.5
+      volatility_min: 0.4
+      min_obs: 4
+
+  - rule_id: D10
+    action: extreme_robust_z
+    disposition: correct
+    scope: household
+    enabled: true
+    log: true
+    references: [iglewicz1993, leys2013]
+    description: >-
+      Flag cells whose MAD-based modified z-score exceeds `threshold`
+      in absolute value.
+    rationale: >-
+      A final net for extreme deviations that survive the preceding
+      criteria; the modified z-score (Iglewicz & Hoaglin 1993) remains
+      informative down to three observations. Because a tiny MAD in a
+      tightly clustered household lets modest fluctuations exceed the z
+      threshold, the flagged value must additionally deviate from the
+      household median of the other waves by at least
+      min_relative_deviation; without this gate the rule over-corrects
+      plausible year-to-year variation (verified on seeded synthetic
+      panels).
+    params:
+      threshold: 3
+      min_obs: 3
+      min_relative_deviation: 0.3
+
+  - rule_id: D11
+    action: dataset_consensus
+    disposition: flag
+    scope: dataset
+    enabled: true
+    log: true
+    references: [tukey1977, leys2013]
+    description: >-
+      After all corrections, flag values identified by at least
+      `consensus` of the configured robust detectors on the full
+      cleaned distribution. Flag only; values are never modified.
+    rationale: >-
+      Dataset-level extremes can be genuine (high-income households),
+      so the rule annotates rather than corrects, leaving the analytic
+      decision to the researcher.
+    params:
+      methods: [iqr, mad]
+      consensus: 1
+      thresholds:
+        iqr: 1.5
+        mad: 2.5
+
+# ---- correction rules (candidate generators) ---------------------------
+# evaluated in order for every cell routed to correction; all surviving
+# candidates are filtered to the cell's valid range and the candidate
+# closest to the anchor is applied. generation order is the
+# deterministic tie-break.
+correction_rules:
+  - rule_id: C01
+    action: household_center
+    enabled: true
+    description: >-
+      Median and mean of the household's other observed values.
+    rationale: >-
+      Within-household central tendency is the most reliable predictor
+      of a mis-keyed wave's true value.
+    params:
+      statistics: [median, mean]
+
+  - rule_id: C02
+    action: category_midpoint
+    enabled: true
+    description: >-
+      Midpoint of the row's own category bounds, when both are present.
+    rationale: >-
+      The bracket answer survives keying errors in the euro amount and
+      brackets the truth by construction.
+
+  - rule_id: C03
+    action: scale_rectification
+    enabled: true
+    description: >-
+      The observed value divided by 10 or 100, and (for values below
+      multiplier_ceiling) multiplied by 10, each retained only when it
+      falls inside the cell's valid range.
+    rationale: >-
+      If the error is a misplaced decimal or an omitted/added zero, the
+      rescaled original is the best possible correction because it
+      preserves the respondent's significant digits.
+    params:
+      divisors: [10, 100]
+      multiplier: 10
+      multiplier_ceiling: 1000
+
+  - rule_id: C04
+    action: temporal_smoothing
+    enabled: true
+    references: [moritz2017]
+    description: >-
+      Weighted moving average of the household series at the flagged
+      position, with the flagged value masked (window k, linear
+      weights, widened until a neighbour is found).
+    rationale: >-
+      Equivalent to imputeTS::na_ma(weighting = "linear") but
+      implemented natively to avoid a hard dependency; respects the
+      temporal ordering of waves.
+    params:
+      k: 2
+      weighting: linear
+
+  - rule_id: C05
+    action: donor_pool
+    enabled: true
+    description: >-
+      Aggregate of observed values from respondents matched on the
+      donor keys, narrowing key by key while at least min_donors
+      matches survive; the cell under correction is excluded from its
+      own donor pool.
+    rationale: >-
+      Cross-sectional similarity (household size, position, occupation,
+      age, education) anchors households whose own series is too short
+      or too contaminated. The legacy implementation allowed the
+      flagged value to donate to itself; that contamination is removed.
+    params:
+      aggregate: median
+      min_donors: 1
+
+  - rule_id: C06
+    action: range_midpoint
+    enabled: true
+    description: >-
+      Fallback: the midpoint of the cell's valid range, used only when
+      no other candidate survives the range filter.
+    rationale: >-
+      Guarantees a bounded, documented correction exists for every
+      routed cell, so no correction silently falls through.
+
+# ---- candidate selection -----------------------------------------------
+selection:
+  anchor: household_median
+  fallback_anchor: range_midpoint
+
+# ---- finalization rules ------------------------------------------------
+finalization_rules:
+  - rule_id: F01
+    action: hard_cap_to_na
+    enabled: true
+    log: true
+    description: >-
+      Set to NA any value that, after all corrections, remains
+      non-positive or above the income cap.
+    rationale: >-
+      Values the constrained correction stage could not bring inside
+      the plausible range are unrecoverable; retaining them would leak
+      implausible magnitudes into analyses.
+
+# ---- logging and report configuration ----------------------------------
+logging:
+  decisions_file: income_cleaning_decisions.csv
+  log_file: income_cleaning_log.jsonl
+  report_file: income_cleaning_report.md
+  max_appendix_rows: 500
