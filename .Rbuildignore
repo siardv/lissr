@@ -13,4 +13,5 @@
 ^lissr-verification-report\.md$
 ^lissr_1\.1\.0_preview\.diff$
 ^v2$
+^\.github$
 ^CITATION\.cff$
