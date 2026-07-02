@@ -1,13 +1,15 @@
 Package: lissr
 Title: View, Download, and Merge LISS Panel Data
-Version: 1.1.0
+Version: 1.2.0
 Authors@R: person("Siard", "van den Bosch", email = "siardvandenbosch@me.com", role = c("aut", "cre", "cph"))
 Description: Programmatic access to the LISS Data Archive
     (<https://www.lissdata.nl/>). Authenticate with two-factor
     verification, browse available modules and waves, interactively
     select and download data files, and merge longitudinal waves using
     recipe-driven YAML specifications conforming to a canonical schema
-    (v1.0.0). Credentials are stored securely via the system keyring.
+    (v1.0.0), with a rule-driven income-cleaning framework producing
+    audit-grade decision ledgers and reports. Credentials are stored
+    securely via the system keyring.
 License: MIT + file LICENSE
 URL: https://siardv.github.io/lissr/, https://github.com/siardv/lissr
 BugReports: https://github.com/siardv/lissr/issues

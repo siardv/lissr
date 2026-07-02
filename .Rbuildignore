@@ -15,4 +15,8 @@
 ^v2$
 ^\.github$
 ^income$
+^INCOME_CLEANING_DESIGN\.md$
+^INCOME_CLEANING_PATCH_NOTES\.md$
+^apply_income_cleaning_1\.2\.0\.sh$
+^lissr_1\.2\.0_income_cleaning\.diff$
 ^CITATION\.cff$
