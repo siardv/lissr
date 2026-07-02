@@ -24,6 +24,10 @@ articles:
   - cross-sectional-analysis
   - longitudinal-panel-analysis
   - multi-module-linkage
+- title: Income cleaning
+  navbar: Income cleaning
+  contents:
+  - income-cleaning
 - title: Recipes and pipelines
   navbar: Recipes and pipelines
   contents:
@@ -59,6 +63,13 @@ reference:
   - merge_liss_module
   - merge_liss_modules
   - merge_liss_panel
+- title: Income cleaning
+  contents:
+  - liss_clean_income
+  - liss_cleaning_ruleset
+  - validate_cleaning_ruleset
+  - liss_cleaning_report
+  - liss_equivalise_income
 - title: Package overview
   contents:
   - lissr-package
