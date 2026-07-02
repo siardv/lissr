@@ -22,3 +22,6 @@ inst/doc
 !/build/
 !/build/**
 income/
+
+# local pkgdown builds (the site is deployed from gh-pages)
+/docs/
