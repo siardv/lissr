@@ -1,3 +1,33 @@
+# lissr 1.3.1
+
+First cut of the party-scheme taxonomy, and a factual correction to the
+cv26r scheme note.
+
+## Party-scheme taxonomy
+
+* New reference file `inst/recipes/taxonomies/cv_party_scheme.yml` (the
+  externalization the cv recipe's meta has pointed at since the schema was
+  written). Schemes 4 (cv24p, cv25q) and 5 (cv26r) are fully catalogued from
+  the SPSS value labels of the 307/308 vote items, verbatim, including the
+  special codes and the 307-to-308 offset relation; schemes 1 to 3 are
+  declared with their waves and marked pending. Engine consumption remains
+  future work.
+* New tests pin the taxonomy to the recipe's per-wave scheme declarations
+  and turn the catalogued registry invariants into regressions: unique codes
+  per scheme, `code_308 = code_307 + 1` for every entry, and identity of
+  every code shared between schemes 4 and 5.
+
+## Correction
+
+* The 1.3.0 note on cv26r said the post-election mapping was "not
+  code-comparable with scheme 4". Cataloguing the value labels shows the
+  opposite mechanism: codes form a stable party registry. Every code shared
+  by schemes 4 and 5 denotes the same party; the delta is exactly 50PLUS
+  entering at its historical slot (307:10, 308:11) and NSC leaving (307:21,
+  308:22), with retired codes left unassigned rather than reused. The wave
+  entry and the meta note now state this; the scheme-5 declaration itself
+  stands, since the id names the code set a wave can contain.
+
 # lissr 1.3.0
 
 Wave onboarding release: the four 2025/2026 waves enter the recipes, and the
