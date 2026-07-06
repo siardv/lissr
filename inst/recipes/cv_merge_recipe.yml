@@ -74,8 +74,10 @@ global:
     party_scheme:
       source: taxonomies/cv_party_scheme.yml
       note: >-
-        schemes 4-5 catalogued in taxonomies/cv_party_scheme.yml (1.0.0),
-        schemes 1-3 pending; engine consumption still pending
+        schemes 1-5 catalogued in taxonomies/cv_party_scheme.yml (2.0.0)
+        from archive value labels; open: late scheme-3 code-set
+        verification (cv22n/cv23o) and registry code 19; engine
+        consumption still pending
 wave_index:
 - id: cv08a
   year: 2008
