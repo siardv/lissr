@@ -1,101 +1,207 @@
 # cv party-code taxonomy: canonical value-label registry for the vote items
-# (suffix 307 = actual vote, suffix 308 = hypothetical vote). referenced by
-# meta.party_scheme in cv_merge_recipe.yml; each wave_index entry declares
-# which scheme applies to its 307/308 codes. labels are reproduced verbatim
-# from the spss value labels of the named source files.
+# (actual vote and hypothetical vote). referenced by meta.party_scheme in
+# cv_merge_recipe.yml; each wave_index entry declares which scheme applies
+# and which wave-specific suffixes carry the two items (vote_actual_suffix,
+# vote_hypo_suffix; suffixes are owned by the recipe and deliberately not
+# duplicated here). labels are reproduced verbatim from the spss value
+# labels of the verified source files.
 meta:
   taxonomy: cv_party_scheme
-  version: 1.0.0
-  status: partial
-  catalogued_schemes: [4, 5]
-  pending_schemes: [1, 2, 3]
+  version: 2.0.0
+  status: catalogued
+  catalogued_schemes: [1, 2, 3, 4, 5]
+  open_items:
+  - >-
+    late scheme-3 code sets: the 2021 election falls inside the scheme-3
+    span, so cv22n/cv23o are expected to extend the cv18j list with appended
+    codes (16-19); harvest cv22n to verify and to decide whether the recipe
+    should split the scheme
+  - >-
+    identity of registry code 19: assigned after the cv18j list and retired
+    before scheme 4; expected to surface in the cv22n harvest
   provenance: >-
-    schemes 4 and 5 catalogued 2026-07-06 from the value labels of
-    cv25q307/cv25q308 (cv25q_EN_1.0p.sav) and cv26r307/cv26r308
-    (cv26r_EN_1.0p.sav); zero data rows were read
+    catalogued 2026-07-06 from value labels only (zero data rows): scheme 1
+    from cv08a054/cv08a058 (cv08a_1.1p_EN.sav), scheme 2 from
+    cv13f207/cv13f209 (cv13f_EN_1.0p.sav), scheme 3 from cv18j307/cv18j308
+    (cv18j_EN_1.0p.sav), scheme 4 from cv25q307/cv25q308
+    (cv25q_EN_1.0p.sav), scheme 5 from cv26r307/cv26r308
+    (cv26r_EN_1.0p.sav)
   code_semantics: >-
-    codes form a stable party registry, not per-election ballot numbers:
-    every code shared by schemes 4 and 5 denotes the same party, retired
-    parties leave their code unassigned, and returning parties reclaim
-    their historical code (50PLUS returns at 307:10). a scheme id therefore
-    names the code set a wave can contain, not a renumbering.
-  offset_relation: >-
-    within every scheme, code_308 equals code_307 plus one for every
-    registry entry; suffix 308 additionally places would-not-vote at code 1;
-    dk (-9) and refusal (-8) are unshifted on both suffixes
-
-special_codes:
-- key: dk
-  code_307: -9
-  code_308: -9
-  label: 'I dont know'
-- key: refusal
-  code_307: -8
-  code_308: -8
-  label: 'I prefer not to say'
-- key: would_not_vote
-  code_307: null
-  code_308: 1
-  label_pattern: '[if {wave_id}243=0: I would not vote]'
+    two regimes. schemes 1 and 2 are election-specific lists: codes are
+    renumbered between schemes (CDA is 1, then 5, then 3; VVD is 3, then 1)
+    and must never be pooled across schemes; in scheme 1 the actual and
+    hypothetical items do not even share a party set. from scheme 3 onward
+    the codes form a persistent registry: every code shared by schemes 3, 4,
+    and 5 denotes the same party, new parties are appended, retired parties
+    leave their code unassigned, and returning parties reclaim their
+    historical code (50PLUS returns at actual-code 10 in scheme 5).
+  special_code_note: >-
+    dk and refusal codes follow each wave's dk_scheme (999/998 high-positive
+    through cv19k, -9/-8 negative from cv20l), not the party scheme; the
+    values recorded per scheme below are as observed on that scheme's
+    verified wave
+  hypo_offset_note: >-
+    hypo_offset gives the uniform shift from actual-vote codes to
+    hypothetical-vote codes for the parties of a scheme (specials excluded);
+    scheme 1 has none because its two items carry independent lists
 
 schemes:
 - scheme: 1
   waves: [cv08a, cv09b, cv10c, cv11d, cv12e]
-  status: pending_catalogue
+  verified_waves: [cv08a]
+  status: catalogued
+  hypo_offset: null
+  special_codes:
+  - {key: would_not_vote, code_actual: null, code_hypo: 1, label: 'I would not vote'}
+  - {key: not_eligible, code_actual: null, code_hypo: 2, label: 'I am not eligible to vote'}
+  - {key: refusal, code_actual: 998, code_hypo: 998, label: 'I prefer not to say'}
+  - {key: dk, code_actual: 999, code_hypo: 999, label: 'I dont know'}
+  parties_actual:
+  - {key: cda, code: 1, label: 'CDA (Christian democrat party)'}
+  - {key: pvda, code: 2, label: 'PvdA (labor party)'}
+  - {key: vvd, code: 3, label: 'VVD (liberal party)'}
+  - {key: sp, code: 4, label: 'Socialistische Partij (SP) (socialist party)'}
+  - {key: groenlinks, code: 5, label: 'GroenLinks (green party)'}
+  - {key: lpf, code: 6, label: 'Lijst vijf Fortuyn \\ LPF (Fortuyn party)'}
+  - {key: d66, code: 7, label: 'D66 (social-liberal party)'}
+  - {key: christenunie, code: 8, label: 'ChristenUnie (Christian union party)'}
+  - {key: sgp, code: 9, label: 'SGP (Christian Reformed party)'}
+  - {key: een_nl, code: 10, label: 'Eén NL (one country party)'}
+  - {key: pvv, code: 11, label: 'Groep Wilders \\ Partij voor de Vrijheid (Wilders freedom party)'}
+  - {key: pvdd, code: 12, label: 'Partij voor de Dieren (animal welfare party)'}
+  - {key: other_party, code: 13, label: 'other party'}
+  - {key: blank, code: 14, label: 'blank'}
+  parties_hypo:
+  - {key: cda, code: 3, label: 'CDA (Christian democrat party)'}
+  - {key: pvda, code: 4, label: 'PvdA (labor party)'}
+  - {key: vvd, code: 5, label: 'VVD (liberal party)'}
+  - {key: sp, code: 6, label: 'Socialistische Partij (SP) (socialist party)'}
+  - {key: groenlinks, code: 7, label: 'GroenLinks (green party)'}
+  - {key: d66, code: 8, label: 'D66 (social-liberal party)'}
+  - {key: christenunie, code: 9, label: 'ChristenUnie (Christian union party)'}
+  - {key: sgp, code: 10, label: 'SGP (Christian Reformed party)'}
+  - {key: ton, code: 11, label: 'Rita Verdonk \\ Trots op Nederland (Verdonks Dutch pride party)'}
+  - {key: pvv, code: 12, label: 'Groep Wilders \\ Partij voor de Vrijheid (Wilders freedom party)'}
+  - {key: pvdd, code: 13, label: 'Partij voor de Dieren (animal welfare party)'}
+  - {key: other_party, code: 14, label: 'other party'}
+  - {key: blank, code: 15, label: 'blank'}
 - scheme: 2
   waves: [cv13f, cv14g, cv16h, cv17i]
-  status: pending_catalogue
+  verified_waves: [cv13f]
+  status: catalogued
+  hypo_offset: 2
+  special_codes:
+  - {key: would_not_vote, code_actual: null, code_hypo: 1, label: 'I would not vote'}
+  - {key: not_eligible, code_actual: null, code_hypo: 2, label: 'I am not eligible to vote'}
+  - {key: refusal, code_actual: 998, code_hypo: 998, label: 'I prefer not to say'}
+  - {key: dk, code_actual: 999, code_hypo: 999, label: 'I dont know', label_hypo: 'I don''t know'}
+  parties:
+  - {key: vvd, code_actual: 1, code_hypo: 3, label: 'VVD (liberal party)'}
+  - {key: pvda, code_actual: 2, code_hypo: 4, label: 'PvdA (labor party)'}
+  - {key: pvv, code_actual: 3, code_hypo: 5, label: 'PVV (Wilders freedom party)'}
+  - {key: sp, code_actual: 4, code_hypo: 6, label: 'SP (socialist party)'}
+  - {key: cda, code_actual: 5, code_hypo: 7, label: 'CDA (Christian democrat party)'}
+  - {key: d66, code_actual: 6, code_hypo: 8, label: 'D66 (social-liberal party)'}
+  - {key: christenunie, code_actual: 7, code_hypo: 9, label: 'ChristenUnie (Christian union party)'}
+  - {key: groenlinks, code_actual: 8, code_hypo: 10, label: 'GroenLinks (green party)'}
+  - {key: sgp, code_actual: 9, code_hypo: 11, label: 'SGP (Christian Reformed party)'}
+  - {key: pvdd, code_actual: 10, code_hypo: 12, label: 'Partij voor de Dieren (animal welfare party)'}
+  - {key: fifty_plus, code_actual: 11, code_hypo: 13, label: '50Plus (fifty plus party)'}
+  - {key: other_party, code_actual: 12, code_hypo: 14, label: 'other party'}
+  - {key: blank, code_actual: 13, code_hypo: 15, label: 'blank'}
 - scheme: 3
   waves: [cv18j, cv19k, cv20l, cv21m, cv22n, cv23o]
-  status: pending_catalogue
+  verified_waves: [cv18j]
+  status: catalogued
+  hypo_offset: 1
+  notes: >-
+    the persistent registry begins here: this list is carried code-for-code
+    into schemes 4 and 5. verified on cv18j (pre-2021-election); see
+    meta.open_items for the expected late-span extension
+  special_codes:
+  - {key: would_not_vote, code_actual: null, code_hypo: 1, label_pattern: '[if {wave_id}243=0: I would not vote]'}
+  - {key: refusal, code_actual: 998, code_hypo: 998, label: 'I prefer not to say'}
+  - {key: dk, code_actual: 999, code_hypo: 999, label: 'I dont know'}
+  parties:
+  - {key: vvd, code_actual: 1, code_hypo: 2, label: 'VVD (liberal party)'}
+  - {key: pvv, code_actual: 2, code_hypo: 3, label: 'PVV (Wilders freedom party)'}
+  - {key: cda, code_actual: 3, code_hypo: 4, label: 'CDA (Christian democrat party)'}
+  - {key: d66, code_actual: 4, code_hypo: 5, label: 'D66 (social-liberal party)'}
+  - {key: groenlinks, code_actual: 5, code_hypo: 6, label: 'GroenLinks (green party)'}
+  - {key: sp, code_actual: 6, code_hypo: 7, label: 'SP (socialist party)'}
+  - {key: pvda, code_actual: 7, code_hypo: 8, label: 'PvdA (labor party)'}
+  - {key: christenunie, code_actual: 8, code_hypo: 9, label: 'ChristenUnie (Christian union party)'}
+  - {key: pvdd, code_actual: 9, code_hypo: 10, label: 'Partij voor de Dieren (animal welfare party)'}
+  - {key: fifty_plus, code_actual: 10, code_hypo: 11, label: '50Plus (fifty plus party)'}
+  - {key: sgp, code_actual: 11, code_hypo: 12, label: 'SGP (Christian Reformed party)'}
+  - {key: denk, code_actual: 12, code_hypo: 13, label: 'DENK'}
+  - {key: fvd, code_actual: 13, code_hypo: 14, label: 'Forum voor Democratie', label_hypo: 'Forum voor Democratie (Party for Democracy)'}
+  - {key: blank, code_actual: 14, code_hypo: 15, label: 'blank'}
+  - {key: other_party, code_actual: 15, code_hypo: 16, label: 'other party'}
 - scheme: 4
   waves: [cv24p, cv25q]
+  verified_waves: [cv25q]
   status: catalogued
-  unassigned_codes_307: [5, 7, 10, 19]
-  notes: >-
-    unassigned codes are registry slots of parties retired before this
-    scheme; identifying them awaits the scheme 1-3 catalogues (10 is
-    50PLUS's slot, vacant here and reoccupied in scheme 5)
+  hypo_offset: 1
+  retired_codes:
+  - {code_actual: 5, key: groenlinks, evidence: 'scheme 3'}
+  - {code_actual: 7, key: pvda, evidence: 'scheme 3'}
+  - {code_actual: 10, key: fifty_plus, evidence: 'scheme 3; reoccupied in scheme 5'}
+  - {code_actual: 19, key: null, evidence: 'pending: assigned after the cv18j list, retired before scheme 4; see meta.open_items'}
+  special_codes:
+  - {key: would_not_vote, code_actual: null, code_hypo: 1, label_pattern: '[if {wave_id}243=0: I would not vote]'}
+  - {key: refusal, code_actual: -8, code_hypo: -8, label: 'I prefer not to say'}
+  - {key: dk, code_actual: -9, code_hypo: -9, label: 'I dont know'}
   parties:
-  - {key: vvd, code_307: 1, code_308: 2, label: 'VVD (liberal party)'}
-  - {key: pvv, code_307: 2, code_308: 3, label: 'PVV (Wilders freedom party)'}
-  - {key: cda, code_307: 3, code_308: 4, label: 'CDA (Christian democrat party)'}
-  - {key: d66, code_307: 4, code_308: 5, label: 'D66 (social-liberal party)'}
-  - {key: sp, code_307: 6, code_308: 7, label: 'SP (socialist party)'}
-  - {key: christenunie, code_307: 8, code_308: 9, label: 'ChristenUnie (Christian union party)'}
-  - {key: pvdd, code_307: 9, code_308: 10, label: 'Partij voor de Dieren (animal welfare party)'}
-  - {key: sgp, code_307: 11, code_308: 12, label: 'SGP (Christian Reformed party)'}
-  - {key: denk, code_307: 12, code_308: 13, label: 'DENK'}
-  - {key: fvd, code_307: 13, code_308: 14, label: 'Forum voor Democratie (party for democracy)'}
-  - {key: blank, code_307: 14, code_308: 15, label: 'blank'}
-  - {key: other_party, code_307: 15, code_308: 16, label: 'other party'}
-  - {key: volt, code_307: 16, code_308: 17, label: 'Volt'}
-  - {key: ja21, code_307: 17, code_308: 18, label: 'JA21 (Right Answer 2021)'}
-  - {key: bbb, code_307: 18, code_308: 19, label: 'BBB (farmer–citizen movement)'}
-  - {key: gl_pvda, code_307: 20, code_308: 21, label: 'GroenLinks (green party)-PvdA (labor party)'}
-  - {key: nsc, code_307: 21, code_308: 22, label: 'NSC (New Social Contract)'}
+  - {key: vvd, code_actual: 1, code_hypo: 2, label: 'VVD (liberal party)'}
+  - {key: pvv, code_actual: 2, code_hypo: 3, label: 'PVV (Wilders freedom party)'}
+  - {key: cda, code_actual: 3, code_hypo: 4, label: 'CDA (Christian democrat party)'}
+  - {key: d66, code_actual: 4, code_hypo: 5, label: 'D66 (social-liberal party)'}
+  - {key: sp, code_actual: 6, code_hypo: 7, label: 'SP (socialist party)'}
+  - {key: christenunie, code_actual: 8, code_hypo: 9, label: 'ChristenUnie (Christian union party)'}
+  - {key: pvdd, code_actual: 9, code_hypo: 10, label: 'Partij voor de Dieren (animal welfare party)'}
+  - {key: sgp, code_actual: 11, code_hypo: 12, label: 'SGP (Christian Reformed party)'}
+  - {key: denk, code_actual: 12, code_hypo: 13, label: 'DENK'}
+  - {key: fvd, code_actual: 13, code_hypo: 14, label: 'Forum voor Democratie (party for democracy)'}
+  - {key: blank, code_actual: 14, code_hypo: 15, label: 'blank'}
+  - {key: other_party, code_actual: 15, code_hypo: 16, label: 'other party'}
+  - {key: volt, code_actual: 16, code_hypo: 17, label: 'Volt'}
+  - {key: ja21, code_actual: 17, code_hypo: 18, label: 'JA21 (Right Answer 2021)'}
+  - {key: bbb, code_actual: 18, code_hypo: 19, label: 'BBB (farmer–citizen movement)'}
+  - {key: gl_pvda, code_actual: 20, code_hypo: 21, label: 'GroenLinks (green party)-PvdA (labor party)'}
+  - {key: nsc, code_actual: 21, code_hypo: 22, label: 'NSC (New Social Contract)'}
 - scheme: 5
   waves: [cv26r]
+  verified_waves: [cv26r]
   status: catalogued
-  unassigned_codes_307: [5, 7, 19]
+  hypo_offset: 1
   changes_vs_scheme_4: >-
-    added fifty_plus (307:10, 308:11); removed nsc (307:21, 308:22); every
-    shared code carries an identical label
+    added fifty_plus (actual 10, hypo 11); removed nsc (actual 21, hypo 22);
+    every shared code carries an identical label
+  retired_codes:
+  - {code_actual: 5, key: groenlinks, evidence: 'scheme 3'}
+  - {code_actual: 7, key: pvda, evidence: 'scheme 3'}
+  - {code_actual: 19, key: null, evidence: 'pending: see meta.open_items'}
+  - {code_actual: 21, key: nsc, evidence: 'scheme 4'}
+  special_codes:
+  - {key: would_not_vote, code_actual: null, code_hypo: 1, label_pattern: '[if {wave_id}243=0: I would not vote]'}
+  - {key: refusal, code_actual: -8, code_hypo: -8, label: 'I prefer not to say'}
+  - {key: dk, code_actual: -9, code_hypo: -9, label: 'I dont know'}
   parties:
-  - {key: vvd, code_307: 1, code_308: 2, label: 'VVD (liberal party)'}
-  - {key: pvv, code_307: 2, code_308: 3, label: 'PVV (Wilders freedom party)'}
-  - {key: cda, code_307: 3, code_308: 4, label: 'CDA (Christian democrat party)'}
-  - {key: d66, code_307: 4, code_308: 5, label: 'D66 (social-liberal party)'}
-  - {key: sp, code_307: 6, code_308: 7, label: 'SP (socialist party)'}
-  - {key: christenunie, code_307: 8, code_308: 9, label: 'ChristenUnie (Christian union party)'}
-  - {key: pvdd, code_307: 9, code_308: 10, label: 'Partij voor de Dieren (animal welfare party)'}
-  - {key: fifty_plus, code_307: 10, code_308: 11, label: '50PLUS (fifty plus party)'}
-  - {key: sgp, code_307: 11, code_308: 12, label: 'SGP (Christian Reformed party)'}
-  - {key: denk, code_307: 12, code_308: 13, label: 'DENK'}
-  - {key: fvd, code_307: 13, code_308: 14, label: 'Forum voor Democratie (party for democracy)'}
-  - {key: blank, code_307: 14, code_308: 15, label: 'blank'}
-  - {key: other_party, code_307: 15, code_308: 16, label: 'other party'}
-  - {key: volt, code_307: 16, code_308: 17, label: 'Volt'}
-  - {key: ja21, code_307: 17, code_308: 18, label: 'JA21 (Right Answer 2021)'}
-  - {key: bbb, code_307: 18, code_308: 19, label: 'BBB (farmer–citizen movement)'}
-  - {key: gl_pvda, code_307: 20, code_308: 21, label: 'GroenLinks (green party)-PvdA (labor party)'}
+  - {key: vvd, code_actual: 1, code_hypo: 2, label: 'VVD (liberal party)'}
+  - {key: pvv, code_actual: 2, code_hypo: 3, label: 'PVV (Wilders freedom party)'}
+  - {key: cda, code_actual: 3, code_hypo: 4, label: 'CDA (Christian democrat party)'}
+  - {key: d66, code_actual: 4, code_hypo: 5, label: 'D66 (social-liberal party)'}
+  - {key: sp, code_actual: 6, code_hypo: 7, label: 'SP (socialist party)'}
+  - {key: christenunie, code_actual: 8, code_hypo: 9, label: 'ChristenUnie (Christian union party)'}
+  - {key: pvdd, code_actual: 9, code_hypo: 10, label: 'Partij voor de Dieren (animal welfare party)'}
+  - {key: fifty_plus, code_actual: 10, code_hypo: 11, label: '50PLUS (fifty plus party)'}
+  - {key: sgp, code_actual: 11, code_hypo: 12, label: 'SGP (Christian Reformed party)'}
+  - {key: denk, code_actual: 12, code_hypo: 13, label: 'DENK'}
+  - {key: fvd, code_actual: 13, code_hypo: 14, label: 'Forum voor Democratie (party for democracy)'}
+  - {key: blank, code_actual: 14, code_hypo: 15, label: 'blank'}
+  - {key: other_party, code_actual: 15, code_hypo: 16, label: 'other party'}
+  - {key: volt, code_actual: 16, code_hypo: 17, label: 'Volt'}
+  - {key: ja21, code_actual: 17, code_hypo: 18, label: 'JA21 (Right Answer 2021)'}
+  - {key: bbb, code_actual: 18, code_hypo: 19, label: 'BBB (farmer–citizen movement)'}
+  - {key: gl_pvda, code_actual: 20, code_hypo: 21, label: 'GroenLinks (green party)-PvdA (labor party)'}

@@ -1,3 +1,32 @@
+# lissr 1.3.2
+
+Completes the party-scheme taxonomy: all five schemes catalogued from
+archive value labels, three of the four vacant registry slots named, and
+the taxonomy schema generalized to carry the pre-registry schemes.
+
+## Full catalogue (taxonomy 2.0.0)
+
+* Schemes 1 (cv08a054/058), 2 (cv13f207/209), and 3 (cv18j307/308) join
+  schemes 4 and 5, catalogued verbatim from SPSS value labels with zero
+  data rows read. The schema generalizes accordingly: suffix-agnostic
+  field names (`code_actual`/`code_hypo`), per-scheme `hypo_offset` and
+  special codes, `verified_waves` per scheme, and separate actual and
+  hypothetical party tables for scheme 1, whose two items carry different
+  party sets (LPF and Een NL only in the actual vote, Trots op Nederland
+  only in the hypothetical).
+* The registry finding is now scoped precisely: schemes 1 and 2 renumber
+  wholesale between schemes (CDA is 1, then 5, then 3) and must never be
+  pooled across schemes; the persistent registry begins at scheme 3, whose
+  2017 list is carried code-for-code into schemes 4 and 5.
+* Three vacant scheme-4 slots are named with in-archive evidence:
+  5 GroenLinks, 7 PvdA, 10 50PLUS (reoccupied in scheme 5). Code 19
+  remains pending, expected to surface in a cv22n harvest together with
+  the late scheme-3 code sets (the 2021 election falls inside the
+  scheme-3 span), both recorded as open items in the taxonomy.
+* Tests extended: per-scheme offsets, scheme-1 set divergence, the
+  renumbering anchors, registry stability from scheme 3 onward, and
+  named retired codes cross-checked against their evidence scheme.
+
 # lissr 1.3.1
 
 First cut of the party-scheme taxonomy, and a factual correction to the
