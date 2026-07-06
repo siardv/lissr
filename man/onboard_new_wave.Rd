@@ -4,7 +4,7 @@
 \alias{onboard_new_wave}
 \title{onboard a new wave into a merge recipe}
 \usage{
-onboard_new_wave(recipe_path, new_file, prev_wave_id = NULL)
+onboard_new_wave(recipe_path, new_file, prev_wave_id = NULL, prev_file = NULL)
 }
 \arguments{
 \item{recipe_path}{character. path to the current canonical YAML recipe.}
@@ -13,15 +13,21 @@ onboard_new_wave(recipe_path, new_file, prev_wave_id = NULL)
 
 \item{prev_wave_id}{character. wave id to diff against (e.g. \code{"ch24q"}).
 if \code{NULL}, the diff step is skipped.}
+
+\item{prev_file}{character. optional explicit path to the previous wave
+file. if \code{NULL}, it is resolved via the recipe's \code{file_pattern} for
+\code{prev_wave_id} in the same directory as \code{new_file}.}
 }
 \value{
 an onboarding report list (invisibly).
 }
 \description{
-semi-automated workflow that detects variable diffs against the previous
-wave, generates a candidate \code{wave_index} entry, checks expected-presence
-constraints, flags potential boundary breaks, and prints an onboarding
-checklist.
+semi-automated workflow that reads the new wave file, locates and reads the
+actual previous wave file (resolved through the recipe's \code{file_pattern},
+with the engine's release-version disambiguation), diffs the real variable
+suffix sets in both directions, generates a candidate \code{wave_index} entry,
+checks expected-presence constraints, flags potential boundary breaks, and
+prints an onboarding checklist.
 }
 \examples{
 \dontrun{

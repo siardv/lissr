@@ -1,3 +1,45 @@
+# lissr 1.3.0
+
+Wave onboarding release: the four 2025/2026 waves enter the recipes, and the
+onboarding diff is repaired so future onboardings rest on real comparisons.
+
+## New waves onboarded
+
+* `ch25r`, `cp25q`, `cs25r`, and `cv26r` are added to their module recipes:
+  `wave_index` entries, `covered_waves`, and every wave-scoped rule whose
+  condition persists into the new wave (46 recipe edits in total). The
+  extensions were decided by a structural and label-level review against the
+  predecessor wave of each module.
+* `ch25r`: 29 new suffixes 278-306 (a two-week symptom-frequency battery and
+  a stress-domain block), no removals; reference-year labels updated.
+* `cp25q` and `cs25r`: structurally and label-identical to their
+  predecessors.
+* `cv26r`: political-item churn after the 29 October 2025 parliamentary
+  elections (added 221/256 for the returning 50PLUS and 353-355 for new
+  politician items; removed 306, 341, 343-345). The wave declares
+  `party_scheme: 5` because the post-election ballot mapping is not
+  code-comparable with scheme 4; the value-label catalogue for the pending
+  party-scheme taxonomy is noted in the wave entry.
+
+## Onboarding diff repaired
+
+* `onboard_new_wave()` step 3 previously reconstructed the previous wave's
+  variable names from the new wave's own names, so it always reported zero
+  additions and hardcoded zero removals. It now locates the actual previous
+  wave file through the recipe's `file_pattern` (with the engine's fallback
+  and release-version disambiguation), reads it, and reports the real
+  bidirectional suffix diff. A new `prev_file` argument overrides the
+  automatic resolution; when no file can be found the report carries
+  `diff_skipped = TRUE` instead of a silent empty diff.
+* The new-wave reader now goes through the engine's `read_wave_file()`, so
+  SPSS user-defined missing codes stay visible to the step-6 sentinel scan.
+
+## Tests
+
+* New regression tests cover the bidirectional diff, the skipped-diff path,
+  and the `prev_file` override, plus an invariant test pinning
+  `covered_waves` to `wave_index` across all ten bundled recipes.
+
 # lissr 1.2.1
 
 Correctness patch: three guarantees the package documents are now enforced by

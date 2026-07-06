@@ -29,6 +29,7 @@ meta:
   - cv23o
   - cv24p
   - cv25q
+  - cv26r
   notes: >-
     Year 2015 (cv15) is structurally absent. cv16h spans Dec 2015-Jan 2016.
     Wave ordering follows calendar time, not letter sequence.
@@ -328,6 +329,29 @@ wave_index:
   flags:
   - news_stem_broadened
   role_map: *id001
+- id: cv26r
+  year: 2026
+  file_pattern: cv26r_*
+  notes: >-
+    vs cv25q: added 221/256 (50PLUS returns) and 353-355 (Klaver, De Vos,
+    Struijs); removed 306 (Baudet), 341/343 (NSC), 344 (Timmermans), 345
+    (Omtzigt). election-date labels updated on 053/307 (29 October 2025
+    parliamentary elections); punctuation-only label touches on 047-052 and
+    104. party_scheme 5 marks the new post-election ballot mapping (codes not
+    comparable with scheme 4; catalogue cv26r value labels of 307/308 into the
+    pending taxonomies externalization). no _m fieldwork variable (absent in
+    cv since cv20l)
+  era: 5
+  file_version: '1.0'
+  admin_structure: three_part
+  dk_scheme: negative
+  party_scheme: 5
+  vote_actual_suffix: '307'
+  vote_hypo_suffix: '308'
+  has_nohouse: false
+  flags:
+  - news_stem_broadened
+  role_map: *id001
 variable_rules:
 - rule_id: VR01_vote_actual
   anomaly_ref: A-04
@@ -521,6 +545,7 @@ harmonization_rules:
   - cv23o
   - cv24p
   - cv25q
+  - cv26r
   scope: all_numeric
   # -9 is polysemous in the negative-code era. carve-outs below keep
   # the blanket recode away from cells where -9 is structural, not DK:
@@ -544,6 +569,7 @@ harmonization_rules:
     - cv23o
     - cv24p
     - cv25q
+    - cv26r
   - suffixes:
     - _m1
     - _m2
@@ -554,6 +580,7 @@ harmonization_rules:
     - cv23o
     - cv24p
     - cv25q
+    - cv26r
   recode:
     -9: .dk
   sentinel_label: NA_DK
@@ -590,6 +617,7 @@ harmonization_rules:
   - cv23o
   - cv24p
   - cv25q
+  - cv26r
   scope: all_numeric
   recode:
     -8: .ref
@@ -692,6 +720,7 @@ boundary_rules:
   - cv23o
   - cv24p
   - cv25q
+  - cv26r
   log: true
   comparability:
     status: comparable
@@ -727,6 +756,7 @@ boundary_rules:
   - cv23o
   - cv24p
   - cv25q
+  - cv26r
   log: true
   comparability:
     status: comparable
@@ -759,6 +789,7 @@ boundary_rules:
     D:
     - cv24p
     - cv25q
+    - cv26r
   log: true
   comparability:
     status: partial
@@ -823,6 +854,7 @@ boundary_rules:
   - cv23o
   - cv24p
   - cv25q
+  - cv26r
   log: true
   comparability:
     status: comparable
@@ -881,6 +913,7 @@ derived_variables:
     cv23o: cv23o
     cv24p: cv24p
     cv25q: cv25q
+    cv26r: cv26r
   if_absent: warn_and_create_na
   log: false
 - name: era

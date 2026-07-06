@@ -1,14 +1,19 @@
 #' onboard a new wave into a merge recipe
 #'
-#' semi-automated workflow that detects variable diffs against the previous
-#' wave, generates a candidate `wave_index` entry, checks expected-presence
-#' constraints, flags potential boundary breaks, and prints an onboarding
-#' checklist.
+#' semi-automated workflow that reads the new wave file, locates and reads the
+#' actual previous wave file (resolved through the recipe's `file_pattern`,
+#' with the engine's release-version disambiguation), diffs the real variable
+#' suffix sets in both directions, generates a candidate `wave_index` entry,
+#' checks expected-presence constraints, flags potential boundary breaks, and
+#' prints an onboarding checklist.
 #'
 #' @param recipe_path character. path to the current canonical YAML recipe.
 #' @param new_file character. path to the new wave data file (.sav, .dta, or .csv).
 #' @param prev_wave_id character. wave id to diff against (e.g. `"ch24q"`).
 #'   if `NULL`, the diff step is skipped.
+#' @param prev_file character. optional explicit path to the previous wave
+#'   file. if `NULL`, it is resolved via the recipe's `file_pattern` for
+#'   `prev_wave_id` in the same directory as `new_file`.
 #' @return an onboarding report list (invisibly).
 #' @export
 #' @examples
@@ -19,7 +24,8 @@
 #'   prev_wave_id = "ch24q"
 #' )
 #' }
-onboard_new_wave <- function(recipe_path, new_file, prev_wave_id = NULL) {
+onboard_new_wave <- function(recipe_path, new_file, prev_wave_id = NULL,
+                             prev_file = NULL) {
 
   recipe <- yaml::yaml.load_file(recipe_path)
   mod <- recipe$meta$module
@@ -28,14 +34,9 @@ onboard_new_wave <- function(recipe_path, new_file, prev_wave_id = NULL) {
 
   # step 1: read new file (auto-detect format)
   cli::cli_h2("step 1: reading new wave file")
-  ext <- tolower(tools::file_ext(new_file))
-  new_df <- if (ext %in% c("sav", "zsav")) {
-    haven::read_sav(new_file)
-  } else if (ext == "dta") {
-    haven::read_dta(new_file)
-  } else {
-    readr::read_csv(new_file, show_col_types = FALSE)
-  }
+  # read_wave_file keeps spss user-defined missing codes visible (user_na),
+  # so the sentinel scan in step 6 can actually see them
+  new_df <- read_wave_file(new_file)
   cli::cli_inform("  rows: {nrow(new_df)}, cols: {ncol(new_df)}")
 
   # extract wave id from filename
@@ -73,26 +74,50 @@ onboard_new_wave <- function(recipe_path, new_file, prev_wave_id = NULL) {
     if (is.null(prev_wave)) {
       cli::cli_warn("previous wave {.val {prev_wave_id}} not found in recipe")
     } else {
-      # compare by stripping prefixes
-      strip_prefix <- function(names, wave_id) {
-        gsub(paste0("^", wave_id), "", names)
-      }
-      new_suffixes  <- strip_prefix(new_vars, new_wave_id)
-      prev_suffixes <- strip_prefix(
-        gsub(new_wave_id, prev_wave_id, new_vars), prev_wave_id)
-
-      # variables unique to new wave (potential additions)
-      added <- setdiff(new_suffixes, prev_suffixes)
-      removed <- character(0)  # need previous file for exact diff
-
-      if (length(added) > 0) {
-        cli::cli_alert_info("{length(added)} new variable suffix(es) detected")
-        for (a in head(added, 20)) cli::cli_bullets(c(" " = a))
-        if (length(added) > 20) cli::cli_inform("  ... and {length(added) - 20} more")
+      # resolve the actual previous wave file: explicit path, or the recipe's
+      # file_pattern in the new file's directory, via the engine's resolver
+      # (same glob, fallback, and release-version policy as the merge itself)
+      if (is.null(prev_file)) {
+        hit <- discover_wave_files(list(wave_index = list(prev_wave)),
+                                   dirname(new_file))
+        if (length(hit) > 0) prev_file <- hit[[1]]$paths[[1]]
       }
 
-      report$added_suffixes <- added
-      report$removed_suffixes <- removed
+      if (is.null(prev_file) || !file.exists(prev_file)) {
+        cli::cli_warn(c(
+          "previous wave file for {.val {prev_wave_id}} not found in {.path {dirname(new_file)}}",
+          "i" = "pass {.arg prev_file} explicitly; diff skipped"))
+        report$diff_skipped <- TRUE
+      } else {
+        cli::cli_inform("  previous wave file: {.file {basename(prev_file)}}")
+        prev_df <- read_wave_file(prev_file)
+
+        # real bidirectional diff on suffix sets stripped from each wave's own
+        # variable names (unprefixed columns such as nomem_encr cancel out)
+        strip_prefix <- function(nms, wave_id) sub(paste0("^", wave_id), "", nms)
+        new_suffixes  <- strip_prefix(new_vars, new_wave_id)
+        prev_suffixes <- strip_prefix(sort(names(prev_df)), prev_wave_id)
+
+        added   <- setdiff(new_suffixes, prev_suffixes)
+        removed <- setdiff(prev_suffixes, new_suffixes)
+
+        if (length(added) > 0) {
+          cli::cli_alert_info("{length(added)} suffix(es) added vs {.val {prev_wave_id}}")
+          for (a in head(added, 20)) cli::cli_bullets(c(" " = a))
+          if (length(added) > 20) cli::cli_inform("  ... and {length(added) - 20} more")
+        }
+        if (length(removed) > 0) {
+          cli::cli_alert_warning("{length(removed)} suffix(es) removed vs {.val {prev_wave_id}}")
+          for (r in head(removed, 20)) cli::cli_bullets(c("!" = r))
+          if (length(removed) > 20) cli::cli_inform("  ... and {length(removed) - 20} more")
+        }
+        if (length(added) == 0 && length(removed) == 0)
+          cli::cli_alert_success("suffix sets identical to {.val {prev_wave_id}}")
+
+        report$prev_file <- prev_file
+        report$added_suffixes <- added
+        report$removed_suffixes <- removed
+      }
     }
   } else {
     cli::cli_inform("  no previous wave specified; skipping diff")

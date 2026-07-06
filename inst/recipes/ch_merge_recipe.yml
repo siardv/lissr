@@ -29,6 +29,7 @@ meta:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   notes: >-
     V06 re-expressed note_only -> fix_label for the ch08b Dutch 'variabele'
     labels, suffixes corrected to 001-003 and waves to [ch08b] (A-12); CHK05
@@ -157,6 +158,22 @@ wave_index:
   file_pattern: ch24q_*
   notes: menopause module; gender category 3; suffix 020 wording change
   role_map: *id001
+- id: ch25r
+  year: 2025
+  file_pattern: ch25r_*
+  notes: >-
+    29 new suffixes 278-306 (two-week symptom-frequency battery plus a
+    stress-domain block); no removals vs ch24q; reference-year label updates
+    on 239/260/263 (2024 -> 2025); fieldwork 2025-11
+  role_map:
+    wave_has_work_capacity: wave_has_work_capacity
+    wave_has_insurance: wave_has_insurance
+    wave_has_ecig: wave_has_ecig
+    missing_reason_matrix: missing_reason_matrix
+    ecig_count_per_day: '266'
+    ecig_ml_per_day: '266'
+    extra_questions_flag: '262'
+    health_insurer_id: '262'
 variable_rules:
 - rule_id: G01
   anomaly_ref: A-10
@@ -366,6 +383,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   notes: "availability: suffixes 059 and 123 are first fielded in ch08b and are absent from ch07a; their ch07a absence is covered by V08"
 - rule_id: V10
   anomaly_ref: A-05
@@ -425,6 +443,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   notes: "availability: 204, 205 and the premium payer items 245-249 are first fielded in ch08b; 261 is first fielded in ch09c (ch08b carries the identical item as suffix 244, bridged by B06); all are absent from ch07a, covered by V08"
 - rule_id: V11
   anomaly_ref: A-05
@@ -456,6 +475,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
 - rule_id: V12
   anomaly_ref: A-05
   description: own-risk deductible present only in ch07a-ch08b
@@ -486,6 +506,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
 - rule_id: V13
   anomaly_ref: A-05
   description: monthly insurance premium unique to ch07a
@@ -516,6 +537,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
 - rule_id: V14
   anomaly_ref: null
   description: items 122 (partner work change due to health) and 124 (health problems temporary) discontinued after ch18k, undocumented removal
@@ -546,6 +568,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   notes: "also absent from ch07a, where the items were not yet fielded (covered by V08); the items vanish at ch19l together with the surrounding health-and-work block"
 - rule_id: V15
   anomaly_ref: null
@@ -577,6 +600,7 @@ variable_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
 harmonization_rules:
 - rule_id: H01
   anomaly_ref: A-11
@@ -688,6 +712,7 @@ boundary_rules:
     - ch22o
     - ch23p
     - ch24q
+    - ch25r
     unit: milliliters
   pooling_allowed: false
   comparability:
@@ -722,6 +747,7 @@ boundary_rules:
     - ch22o
     - ch23p
     - ch24q
+    - ch25r
   comparability:
     status: partial
     method: pool_with_flags
@@ -754,6 +780,7 @@ boundary_rules:
     - ch22o
     - ch23p
     - ch24q
+    - ch25r
   comparability:
     status: partial
     method: pool_with_flags
@@ -830,6 +857,7 @@ boundary_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   flag_column: ch_hca_items_present
   notes: "structurally NA in ch07a-ch12f; presence flag only, the engine writes no data columns; feeds missing-reason documentation for DV06"
 - rule_id: B08
@@ -853,6 +881,7 @@ boundary_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   flag_column: ch_ecig_dental_items_present
   notes: "structurally NA in ch07a-ch13g; presence flag only; the 266 count/milliliter unit break within this window is handled by B01"
 - rule_id: B09
@@ -870,6 +899,7 @@ boundary_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   flag_column: ch_years_not_working_present
   notes: "structurally NA in ch07a-ch18k; presence flag only"
 - rule_id: B10
@@ -888,6 +918,7 @@ boundary_rules:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   flag_column: ch_covid_n2o_items_present
   notes: "structurally NA before ch20m; presence flag only; the 270/271 prevalence-versus-frequency distinction is an A-15 ambiguity assumed from the substance-item pattern"
 - rule_id: B11
@@ -905,6 +936,7 @@ boundary_rules:
   - '277'
   present_in_waves:
   - ch24q
+  - ch25r
   flag_column: ch_menopause_module_present
   notes: "structurally NA before ch24q; presence flag only; complements CHK09 which asserts the all-NA pattern"
 - rule_id: B12
@@ -935,6 +967,7 @@ boundary_rules:
     - ch23p
     reworded_with_examples:
     - ch24q
+    - ch25r
   comparability:
     status: partial
     method: pool_with_flags
@@ -1062,6 +1095,7 @@ validation_checks:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
 - check_id: CHK02
   anomaly_ref: A-05
   description: insurance items must be 100% NA in ch19l+
@@ -1104,6 +1138,7 @@ validation_checks:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
 - check_id: CHK03
   anomaly_ref: A-03
   description: suffix 228 endorsement rate should not jump >10pp at ch11e->ch12f
@@ -1133,6 +1168,7 @@ validation_checks:
   - ch22o
   - ch23p
   - ch24q
+  - ch25r
   notes: "confirmed against codebook_ch22o_EN_1_0 (the gender preload lists 1 male, 2 female, 3 other) and the ch22o/ch23p value-label metadata; A-17's ch24q-only premise is superseded; severity retained at error given the codebook confirmation"
 - check_id: CHK06
   anomaly_ref: null
