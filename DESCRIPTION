@@ -1,6 +1,6 @@
 Package: lissr
 Title: View, Download, and Merge LISS Panel Data
-Version: 1.2.0
+Version: 1.2.1
 Authors@R: person("Siard", "van den Bosch", email = "siardvandenbosch@me.com", role = c("aut", "cre", "cph"))
 Description: Programmatic access to the LISS Data Archive
     (<https://www.lissdata.nl/>). Authenticate with two-factor
@@ -19,7 +19,7 @@ Depends:
     R (>= 4.1.0)
 Imports:
     cli,
-    dplyr,
+    dplyr (>= 1.1.0),
     haven,
     httr,
     jsonlite,

@@ -1,3 +1,25 @@
+#' parse interactive wave input without eval() (internal)
+#'
+#' accepts comma-separated integers and a:b ranges (e.g. "1:5", "1,3,7",
+#' "2:4, 9"); anything else returns NULL. replaces the former
+#' eval(parse(text = ...)) on raw user input.
+#' @noRd
+parse_wave_input <- function(x) {
+  x <- gsub("[[:space:]]", "", x %||% "")
+  if (!nzchar(x)) return(integer(0))
+  parts <- strsplit(x, ",", fixed = TRUE)[[1]]
+  if (!length(parts) || !all(grepl("^[0-9]+(:[0-9]+)?$", parts))) return(NULL)
+  out <- unlist(lapply(parts, function(p) {
+    if (grepl(":", p, fixed = TRUE)) {
+      ab <- as.integer(strsplit(p, ":", fixed = TRUE)[[1]])
+      seq.int(ab[1], ab[2])
+    } else {
+      as.integer(p)
+    }
+  }))
+  sort(unique(out))
+}
+
 #' interactively select modules, waves, and file types
 #'
 #' presents a series of interactive menus to choose which modules, waves,
@@ -42,13 +64,10 @@ liss_select <- function() {
   if (tolower(wave_clean) == "all") {
     sel_waves <- available_waves
   } else {
-    sel_waves <- tryCatch(
-      eval(parse(text = paste0("c(", wave_input, ")"))),
-      error = function(e) {
-        cli::cli_alert_danger("Could not parse wave input.")
-        NULL
-      }
-    )
+    sel_waves <- parse_wave_input(wave_clean)
+    if (is.null(sel_waves)) {
+      cli::cli_alert_danger("Could not parse wave input (use e.g. 1:5 or 1,3,7).")
+    }
   }
   if (is.null(sel_waves) || length(sel_waves) == 0) {
     cli::cli_alert_info("No waves selected.")

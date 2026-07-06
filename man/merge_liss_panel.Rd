@@ -20,9 +20,9 @@ directly. names should be module codes (e.g. \code{"ch"}, \code{"cv"}).}
 \item{join_by}{character vector of columns to join on. defaults to
 \code{c("nomem_encr", "wave_year")}.}
 
-\item{shared_cols}{character vector of additional columns to keep unprefixed
-(carried from the first module that has them). defaults to
-\code{c("nohouse_encr")}.}
+\item{shared_cols}{character vector of additional columns to keep
+unprefixed, coalesced across modules in list order (first non-NA wins).
+defaults to \code{c("nohouse_encr")}.}
 
 \item{join_type}{character. type of join: \code{"full"} (default), \code{"inner"},
 or \code{"left"} (keeps all rows from the first module).}
@@ -37,7 +37,9 @@ a tibble with all modules joined side by side.
 takes the output of \code{\link[=merge_liss_modules]{merge_liss_modules()}} (or a list of per-module
 data frames) and joins them into one wide dataset keyed by respondent
 and wave year. module-specific columns are prefixed with the module
-code (e.g. \code{ch_s004}, \code{cv_s004}) to avoid name collisions.
+code (e.g. \code{ch_s004}, \code{cv_s004}) to avoid name collisions. every module
+must be one row per join key; the joins are performed with
+\code{relationship = "one-to-one"} and abort otherwise.
 }
 \examples{
 \dontrun{
