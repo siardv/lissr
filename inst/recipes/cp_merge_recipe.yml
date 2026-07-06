@@ -28,6 +28,7 @@ meta:
   - cp22n
   - cp23o
   - cp24p
+  - cp25q
   notes: >-
     removed item 135 from V04 (present and populated in period B) and added
     V14 period-B range check (1-7) on 135; restored the rename machinery as
@@ -206,6 +207,21 @@ wave_index:
   n_vars_expected: 159
   period: B
   role_map: *id001
+- id: cp25q
+  year: 2025
+  file_pattern: cp25q_*
+  notes: structurally and label-identical to cp24p (159 vars); fieldwork 2025-05
+  order: 17
+  label: Wave 17
+  n_vars_expected: 159
+  period: B
+  role_map:
+    wave_order: wave_order
+    period: period
+    dk_unavailable: dk_unavailable
+    lotr_198_wording: lotr_198_wording
+    ios_experiment_wave: ios_experiment_wave
+    questionnaire_version: questionnaire_version
 variable_rules:
 # REEXPRESSED_FROM: rename_map
 # mappings are written against post-strip names: the engine strips the wave
@@ -298,6 +314,7 @@ harmonization_rules:
   - cp22n
   - cp23o
   - cp24p
+  - cp25q
   suffixes:
   - '010'
   - '011'
@@ -361,6 +378,7 @@ boundary_rules:
     value: certainly
   - waves:
     - cp24p
+    - cp25q
     value: certainly_explicit_234
   comparability:
     status: partial
@@ -446,6 +464,7 @@ derived_variables:
     cp22n: 14
     cp23o: 15
     cp24p: 16
+    cp25q: 17
   if_absent: warn_and_create_na
   log: true
 - var_name: wave_year
@@ -479,6 +498,7 @@ derived_variables:
     cp22n: B
     cp23o: B
     cp24p: B
+    cp25q: B
   if_absent: warn_and_create_na
   log: true
 - var_name: dk_unavailable
@@ -612,6 +632,7 @@ validation_checks:
   - cp22n
   - cp23o
   - cp24p
+  - cp25q
   threshold: 1.0
   direction: above
 - check_id: V14_item135_period_b_range
@@ -628,6 +649,7 @@ validation_checks:
   - cp22n
   - cp23o
   - cp24p
+  - cp25q
   min: 1
   max: 7
 - check_id: V05_lotr_structural_na_pre_cp12e

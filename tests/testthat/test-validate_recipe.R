@@ -83,3 +83,20 @@ test_that("recipe with duplicate rule_id fails", {
   )
   expect_error(validate_recipe(bad, "bad.yml"), "duplicate rule_id")
 })
+
+test_that("covered_waves and wave_index agree in every bundled recipe", {
+  # onboarding touches both lists; this pins them together so a wave can
+  # never be declared covered without an index entry, or vice versa
+  modules <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")
+  for (mod in modules) {
+    path <- system.file(
+      "recipes", paste0(mod, "_merge_recipe.yml"),
+      package = "lissr"
+    )
+    recipe <- yaml::yaml.load_file(path)
+    ids <- vapply(recipe$wave_index, function(w) w$id, character(1))
+    covered <- unlist(recipe$meta$covered_waves)
+    expect_true(setequal(ids, covered), info = mod)
+    expect_false(anyDuplicated(ids) > 0, info = mod)
+  }
+})

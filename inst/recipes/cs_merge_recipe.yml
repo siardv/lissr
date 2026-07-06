@@ -29,6 +29,7 @@ meta:
   - cs22o
   - cs23p
   - cs24q
+  - cs25r
   notes: >-
     All rule IDs are prefixed A1-A6 to match the six anomaly categories. Rules
     are applied in the order: rename -> type_coercion -> recode -> boundary ->
@@ -187,6 +188,15 @@ wave_index:
   fieldwork_var: cs24q_m
   period: post_reorganization
   role_map: *id001
+- id: cs25r
+  year: 2025
+  file_pattern: cs25r_*
+  notes: structurally and label-identical to cs24q; fieldwork 2025-10
+  fieldwork_var: cs25r_m
+  period: post_reorganization
+  role_map:
+    instrument_period: instrument_period
+    any_dk: any_dk
 variable_rules:
 - rule_id: TC01
   anomaly_ref: null
@@ -499,6 +509,7 @@ boundary_rules:
   - cs22o
   - cs23p
   - cs24q
+  - cs25r
   stems:
   - '160'
   - '161'
@@ -603,6 +614,7 @@ boundary_rules:
   waves_new:
   - cs23p
   - cs24q
+  - cs25r
   flag_column: org_membership_period
   old_label: no_connection
   new_label: none_of_these
@@ -649,6 +661,7 @@ boundary_rules:
     - cs22o
     - cs23p
     - cs24q
+    - cs25r
   flag_column: stem166_scope
   pool: false
   log: true
@@ -692,6 +705,7 @@ boundary_rules:
     waves:
     - cs23p
     - cs24q
+    - cs25r
   flag_column: stem131_wording
   pool: false
   log: true
@@ -805,6 +819,7 @@ boundary_rules:
     waves:
     - cs23p
     - cs24q
+    - cs25r
   flag_column: stem476_platform
   pool: false
   log: true
@@ -850,6 +865,7 @@ drop_retain_rules:
   - cs22o
   - cs23p
   - cs24q
+  - cs25r
   fill_missing_waves: NA
   log: true
 - rule_id: DR01_open_text
@@ -924,6 +940,7 @@ derived_variables:
       waves:
       - cs23p
       - cs24q
+      - cs25r
   if_absent: warn_and_create_na
   log: true
 - name: any_dk
@@ -1025,6 +1042,7 @@ validation_checks:
   - cs22o
   - cs23p
   - cs24q
+  - cs25r
   threshold: 0.05
 - check_id: V05_no_duplicate_ids
   anomaly_ref: null
@@ -1098,6 +1116,7 @@ validation_checks:
   - cs22o
   - cs23p
   - cs24q
+  - cs25r
 - check_id: V09_nohouse_absent_post_cs12e
   anomaly_ref: A-06
   description: nohouse_encr should be all-NA in waves cs13f-cs24q.
@@ -1117,6 +1136,7 @@ validation_checks:
   - cs22o
   - cs23p
   - cs24q
+  - cs25r
 logging:
   log_file: cs_merge_log.jsonl
   report_file: cs_merge_report.txt
