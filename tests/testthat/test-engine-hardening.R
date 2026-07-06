@@ -54,7 +54,9 @@ test_that("safe_eval_condition rejects everything outside the grammar", {
 
 test_that("a malicious condition has no side effects", {
   df <- data.frame(s001 = 1:3)
-  sentinel <- tempfile(fileext = ".touched")
+  # windows tempdir paths carry backslashes; keep the condition parseable so
+  # the whitelist, not the parser, is what rejects the call on every platform
+  sentinel <- gsub("\\\\", "/", tempfile(fileext = ".touched"))
   cond <- sprintf("file.create('%s')", sentinel)
   expect_error(lissr:::safe_eval_condition(cond, df), "disallowed")
   expect_false(file.exists(sentinel))
@@ -76,7 +78,7 @@ test_that("run_validations gates na_rate rows via the safe evaluator", {
   expect_equal(v$error_count, 0)
 
   # a condition outside the grammar is reported, not executed
-  sentinel <- tempfile(fileext = ".touched")
+  sentinel <- gsub("\\\\", "/", tempfile(fileext = ".touched"))
   bad <- chk
   bad$condition <- sprintf("file.create('%s')", sentinel)
   v2 <- lissr:::run_validations(df, list(bad), list())
@@ -84,6 +86,14 @@ test_that("run_validations gates na_rate rows via the safe evaluator", {
   expect_match(v2$results[[1]]$detail, "condition not evaluable")
   expect_false(file.exists(sentinel))
   expect_equal(v2$error_count, 0)
+
+  # a condition that does not even parse is reported the same way
+  bad2 <- chk
+  bad2$condition <- "s001 == 'C:\\Users'"
+  v3 <- lissr:::run_validations(df, list(bad2), list())
+  expect_true(is.na(v3$results[[1]]$passed))
+  expect_match(v3$results[[1]]$detail, "condition not evaluable")
+  expect_equal(v3$error_count, 0)
 })
 
 # ---- wave-input parser (T1.1, liss_select) ---------------------------------
