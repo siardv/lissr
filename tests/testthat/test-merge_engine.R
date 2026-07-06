@@ -66,3 +66,37 @@ test_that("liss_recipe loads bundled recipe", {
   expect_equal(recipe$meta$module, "ch")
   expect_true(length(recipe$wave_index) > 0)
 })
+
+
+test_that("crosswalk_map maps named codes and NAs the rest", {
+  m <- list(`1` = 10, `2` = 20)
+  expect_identical(lissr:::crosswalk_map(c(1, 2, 3, NA), m), c(10, 20, NA, NA))
+  expect_identical(lissr:::crosswalk_map(c(1, 2), list()), c(NA_real_, NA_real_))
+})
+
+test_that("crosswalk_map_scheme routes rows through their scheme's mapping", {
+  cw <- list(scheme_1 = list(`1` = 100), scheme_2 = list(`1` = 200))
+  out <- lissr:::crosswalk_map_scheme(c(1, 1, 1, 2), c(1, 2, NA, 1), cw)
+  expect_identical(out, c(100, 200, NA, NA))
+})
+
+test_that("crosswalk_coverage reports excess and the unmapped codes", {
+  cov <- lissr:::crosswalk_coverage(c(1, 2, NA, 3), c(10, NA, NA, NA))
+  expect_equal(cov$excess, 2)
+  expect_identical(cov$unmapped_codes, c(2, 3))
+  expect_identical(cov$severity, "error")
+  ok <- lissr:::crosswalk_coverage(c(1, NA), c(10, NA))
+  expect_equal(ok$excess, 0)
+  expect_identical(ok$severity, "ok")
+})
+
+test_that("dv_aggregate honors method and missing_as_zero", {
+  src <- list(c(1, NA, NA), c(2, 3, NA))
+  expect_identical(lissr:::dv_aggregate(src, "sum"), c(3, 3, NA))
+  expect_identical(lissr:::dv_aggregate(src, "sum", missing_as_zero = TRUE),
+                   c(3, 3, 0))
+  expect_identical(lissr:::dv_aggregate(src, "coalesce"), c(1, 3, NA))
+  expect_identical(lissr:::dv_aggregate(src, "presence"), c(1, 1, 0))
+  expect_identical(lissr:::dv_aggregate(src, "max"), c(2, 3, NA))
+  expect_error(lissr:::dv_aggregate(src, "median"), "unknown")
+})

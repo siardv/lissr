@@ -976,6 +976,12 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
     return(list(df = df, log = log_entries))
   }
 
+  # atomic execution: on any error inside the switch the rule rolls back to
+  # this snapshot and contributes exactly one ERROR log entry, so a failed
+  # rule is a logged no-op rather than a half-applied mutation
+  df_before  <- df
+  log_before <- log_entries
+
   tryCatch({
     switch(action,
       "strip_value_labels" = {
@@ -1142,13 +1148,12 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
                    duration_ms = elapsed_ms(t0))))
       }
     )
+    list(df = df, log = log_entries)
   }, error = function(e) {
-    cli::cli_warn("rule {.val {rid}} failed on wave {.val {wave_id}}: {e$message}")
-    log_entries <<- append(log_entries, list(
-      make_log(rid, wave_id, "*", paste0("ERROR:", action), 0L)))
+    cli::cli_warn("rule {.val {rid}} failed on wave {.val {wave_id}}: {e$message}; rolled back, logged as a no-op")
+    list(df = df_before, log = append(log_before, list(
+      make_log(rid, wave_id, "*", paste0("ERROR:", action), 0L))))
   })
-
-  list(df = df, log = log_entries)
 }
 
 #' execute a harmonization rule (internal)
@@ -1169,6 +1174,12 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
                duration_ms = elapsed_ms(t0))))
     return(list(df = df, log = log_entries))
   }
+
+  # atomic execution: on any error inside the switch the rule rolls back to
+  # this snapshot and contributes exactly one ERROR log entry, so a failed
+  # rule is a logged no-op rather than a half-applied mutation
+  df_before  <- df
+  log_before <- log_entries
 
   tryCatch({
     switch(action,
@@ -1574,13 +1585,12 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
                    duration_ms = elapsed_ms(t0))))
       }
     )
+    list(df = df, log = log_entries)
   }, error = function(e) {
-    cli::cli_warn("harmonization rule {.val {rid}} failed on {.val {wave_id}}: {e$message}")
-    log_entries <<- append(log_entries, list(
-      make_log(rid, wave_id, "*", paste0("ERROR:", action), 0L)))
+    cli::cli_warn("harmonization rule {.val {rid}} failed on {.val {wave_id}}: {e$message}; rolled back, logged as a no-op")
+    list(df = df_before, log = append(log_before, list(
+      make_log(rid, wave_id, "*", paste0("ERROR:", action), 0L))))
   })
-
-  list(df = df, log = log_entries)
 }
 
 #' execute a boundary rule on the full stacked data frame (internal)
@@ -1596,6 +1606,12 @@ exec_boundary_rule <- function(df, rule, all_wave_ids, log_entries) {
                duration_ms = elapsed_ms(t0))))
     return(list(df = df, log = log_entries))
   }
+
+  # atomic execution: on any error inside the switch the rule rolls back to
+  # this snapshot and contributes exactly one ERROR log entry, so a failed
+  # rule is a logged no-op rather than a half-applied mutation
+  df_before  <- df
+  log_before <- log_entries
 
   tryCatch({
     switch(action,
@@ -1810,13 +1826,12 @@ exec_boundary_rule <- function(df, rule, all_wave_ids, log_entries) {
                    duration_ms = elapsed_ms(t0))))
       }
     )
+    list(df = df, log = log_entries)
   }, error = function(e) {
-    cli::cli_warn("boundary rule {.val {rid}} failed: {e$message}")
-    log_entries <<- append(log_entries, list(
-      make_log(rid, "*", "*", paste0("ERROR:", action), 0L)))
+    cli::cli_warn("boundary rule {.val {rid}} failed: {e$message}; rolled back, logged as a no-op")
+    list(df = df_before, log = append(log_before, list(
+      make_log(rid, "*", "*", paste0("ERROR:", action), 0L))))
   })
-
-  list(df = df, log = log_entries)
 }
 
 #' emit comparability warning when contract says no_pool (internal)
@@ -1981,6 +1996,54 @@ resolve_check_cols <- function(cols, df_names) {
   }, character(1), USE.NAMES = FALSE)
 }
 
+# ---- restricted evaluation of recipe `condition` expressions ---------------
+# recipes are declarative data; a condition may only reference columns,
+# literals, comparison and logical operators, %in%, is.na(), c(), and unary
+# sign. the expression is rejected before evaluation if anything else appears
+# in its syntax tree, and evaluation is enclosed in a sandbox environment
+# whose parent is emptyenv(), so base functions such as system() or unlink()
+# are unreachable even in principle.
+.CONDITION_ALLOWED_CALLS <- c(
+  "==", "!=", "<", "<=", ">", ">=",
+  "&", "|", "!", "(", "%in%", "is.na", "c", "-", "+"
+)
+
+.condition_sandbox <- local({
+  e <- new.env(parent = emptyenv())
+  for (f in .CONDITION_ALLOWED_CALLS)
+    assign(f, get(f, envir = baseenv()), envir = e)
+  e
+})
+
+#' walk a condition syntax tree; reject anything outside the grammar (internal)
+#' @noRd
+.assert_condition_ast <- function(expr) {
+  if (is.call(expr)) {
+    fn <- expr[[1]]
+    if (!is.name(fn) || !(as.character(fn) %in% .CONDITION_ALLOWED_CALLS))
+      stop("disallowed call in condition: ", deparse(fn), call. = FALSE)
+    for (arg in as.list(expr)[-1]) .assert_condition_ast(arg)
+  } else if (!is.name(expr) && !is.atomic(expr) && !is.null(expr)) {
+    stop("disallowed element in condition: ", typeof(expr), call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' safely evaluate a recipe condition against a data frame (internal)
+#'
+#' replacement for eval(parse(text = cond), envir = df, enclos = baseenv()),
+#' which exposed the whole of base to recipe text. bare symbols must resolve
+#' as columns of `df`; unknown symbols and non-whitelisted calls error, and
+#' the caller's tryCatch turns that into "condition not evaluable".
+#' @noRd
+safe_eval_condition <- function(cond, df) {
+  exprs <- parse(text = cond, keep.source = FALSE)
+  if (length(exprs) != 1L)
+    stop("condition must be a single expression", call. = FALSE)
+  .assert_condition_ast(exprs[[1]])
+  eval(exprs[[1]], envir = df, enclos = .condition_sandbox)
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
@@ -2110,7 +2173,7 @@ run_validations <- function(df, checks, log_entries) {
           cond <- chk$condition %||% NULL
           cond_ok <- TRUE
           if (!is.null(cond) && nzchar(as.character(cond))) {
-            cmask <- tryCatch(eval(parse(text = cond), envir = df, enclos = baseenv()),
+            cmask <- tryCatch(safe_eval_condition(cond, df),
                               error = function(e) NULL)
             if (is.logical(cmask) && length(cmask) == nrow(df)) {
               keep <- keep & !is.na(cmask) & cmask
@@ -2810,16 +2873,18 @@ liss_recipe <- function(module) {
 #' takes the output of [merge_liss_modules()] (or a list of per-module
 #' data frames) and joins them into one wide dataset keyed by respondent
 #' and wave year. module-specific columns are prefixed with the module
-#' code (e.g. `ch_s004`, `cv_s004`) to avoid name collisions.
+#' code (e.g. `ch_s004`, `cv_s004`) to avoid name collisions. every module
+#' must be one row per join key; the joins are performed with
+#' `relationship = "one-to-one"` and abort otherwise.
 #'
 #' @param results either the named list returned by [merge_liss_modules()]
 #'   (where each element has a `$data` tibble), or a named list of data frames
 #'   directly. names should be module codes (e.g. `"ch"`, `"cv"`).
 #' @param join_by character vector of columns to join on. defaults to
 #'   `c("nomem_encr", "wave_year")`.
-#' @param shared_cols character vector of additional columns to keep unprefixed
-#'   (carried from the first module that has them). defaults to
-#'   `c("nohouse_encr")`.
+#' @param shared_cols character vector of additional columns to keep
+#'   unprefixed, coalesced across modules in list order (first non-NA wins).
+#'   defaults to `c("nohouse_encr")`.
 #' @param join_type character. type of join: `"full"` (default), `"inner"`,
 #'   or `"left"` (keeps all rows from the first module).
 #' @param write_to optional file path. if provided, the merged panel is written
@@ -2863,8 +2928,23 @@ merge_liss_panel <- function(results,
     "left"  = dplyr::left_join
   )
 
-  # prefix columns and collect shared columns
-  shared_pool <- NULL
+  # pre-join duplicate-key guard: every module must be one row per join key,
+  # otherwise a full/left join multiplies rows silently through the whole
+  # chain. named per module so the offending input is identifiable.
+  for (mod in names(dfs)) {
+    d <- dfs[[mod]]
+    have_keys <- intersect(join_by, names(d))
+    if (length(have_keys) < length(join_by)) next  # missing keys warned below
+    dup_n <- sum(duplicated(d[have_keys]))
+    if (dup_n > 0) {
+      cli::cli_abort(c(
+        "module {.val {mod}}: {dup_n} row(s) carry a duplicated join key on {.val {join_by}}",
+        "i" = "deduplicate the module output (one row per key) before the panel merge"))
+    }
+  }
+
+  # prefix columns and pool shared columns from every module
+  shared_frames <- list()
   prefixed <- list()
 
   for (mod in names(dfs)) {
@@ -2877,13 +2957,11 @@ merge_liss_panel <- function(results,
       next
     }
 
-    # extract shared columns from first module that has them
-    if (is.null(shared_pool)) {
-      avail_shared <- intersect(shared_cols, names(df))
-      if (length(avail_shared) > 0) {
-        shared_pool <- df[, c(join_by, avail_shared), drop = FALSE]
-        shared_pool <- dplyr::distinct(shared_pool)
-      }
+    # collect shared columns from this module; coalesced across modules below
+    avail_shared <- intersect(shared_cols, names(df))
+    if (length(avail_shared) > 0) {
+      shared_frames[[mod]] <-
+        dplyr::distinct(df[, c(join_by, avail_shared), drop = FALSE])
     }
 
     # columns to prefix: everything except join keys and shared cols
@@ -2908,17 +2986,42 @@ merge_liss_panel <- function(results,
     cli::cli_abort("no modules had valid join keys")
   }
 
-  # sequential join
+  # coalesce shared columns across modules in list order (first non-NA wins),
+  # so e.g. nohouse_encr is populated wherever any joined module carries it,
+  # instead of staying NA when the first module lacked it
+  shared_pool <- NULL
+  if (length(shared_frames) > 0) {
+    pool <- dplyr::bind_rows(shared_frames)
+    sc   <- intersect(shared_cols, names(pool))
+    grouped <- dplyr::group_by(pool, dplyr::across(dplyr::all_of(join_by)))
+    n_conflict <- sum(as.matrix(dplyr::summarise(grouped,
+      dplyr::across(dplyr::all_of(sc), ~ dplyr::n_distinct(.x[!is.na(.x)])),
+      .groups = "drop")[, sc, drop = FALSE]) > 1L)
+    if (n_conflict > 0) {
+      cli::cli_warn(paste0(
+        "{n_conflict} shared-column value(s) disagree across modules on the ",
+        "same join key; keeping the first module's value"))
+    }
+    shared_pool <- dplyr::summarise(grouped,
+      dplyr::across(dplyr::all_of(sc), ~ .x[which(!is.na(.x))[1]]),
+      .groups = "drop")
+  }
+
+  # sequential join, enforced one-to-one (dplyr >= 1.1.0) so a duplicate-key
+  # regression in any module surfaces loudly instead of multiplying rows
   panel <- prefixed[[1]]
   if (length(prefixed) > 1) {
     for (i in 2:length(prefixed)) {
-      panel <- join_fn(panel, prefixed[[i]], by = join_by)
+      panel <- join_fn(panel, prefixed[[i]], by = join_by,
+                       relationship = "one-to-one")
     }
   }
 
-  # attach shared columns
+  # attach shared columns: always a left join, so attaching metadata can never
+  # add rows; one-to-one because shared_pool is unique per key by construction
   if (!is.null(shared_pool)) {
-    panel <- join_fn(panel, shared_pool, by = join_by)
+    panel <- dplyr::left_join(panel, shared_pool, by = join_by,
+                              relationship = "one-to-one")
     # move shared cols right after join keys
     col_order <- c(join_by, intersect(shared_cols, names(panel)),
                    setdiff(names(panel), c(join_by, shared_cols)))

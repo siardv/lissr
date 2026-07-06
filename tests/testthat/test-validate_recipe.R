@@ -1,14 +1,25 @@
-test_that("valid built-in recipe passes validation", {
-  # all bundled recipes should pass schema validation
-  modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci")
+test_that("all ten bundled recipes pass validation with no unexpected warnings", {
+  # every bundled recipe must load and validate error-free. one warning class
+  # is allowlisted: the "unrecognized rule-level key(s)" drift between the
+  # recipes and RECOGNIZED_RULE_KEYS, which belongs to the vocabulary
+  # reconciliation work (roadmap T2.4). anything else fails the test, and
+  # tightening to zero warnings later means deleting the allowlist line.
+  modules <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")
   for (mod in modules) {
     path <- system.file(
       "recipes", paste0(mod, "_merge_recipe.yml"),
       package = "lissr"
     )
-    skip_if(path == "", message = paste0("recipe not found: ", mod))
+    expect_true(nzchar(path), info = paste0("recipe not found: ", mod))
     recipe <- yaml::yaml.load_file(path)
-    expect_no_error(suppressWarnings(validate_recipe(recipe, path)))
+    warns <- testthat::capture_warnings(
+      expect_no_error(suppressMessages(validate_recipe(recipe, path))))
+    unexpected <- warns[!grepl("unrecognized rule-level key", warns)]
+    expect_length(unexpected, 0)
+    if (length(unexpected) > 0) {
+      cat("module", mod, "unexpected warning(s):\n",
+          paste(unexpected, collapse = "\n"), "\n")
+    }
   }
 })
 

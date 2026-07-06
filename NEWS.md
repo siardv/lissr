@@ -1,3 +1,52 @@
+# lissr 1.2.1
+
+Correctness patch: three guarantees the package documents are now enforced by
+the engine. No recipe format or output format changes.
+
+## Engine hardening
+
+* Recipe `condition` expressions no longer pass through `eval(parse())` with
+  `enclos = baseenv()`. Conditions are parsed, their syntax tree is checked
+  against a whitelist grammar (column references, literals, comparison and
+  logical operators, `%in%`, `is.na()`, `c()`, unary sign), and evaluation is
+  enclosed in a sandbox whose parent is the empty environment. A condition
+  such as `system("...")` is rejected before evaluation and the check reports
+  "condition not evaluable"; recipes are declarative data again.
+  `liss_select()` wave input is parsed by a regex-guarded expander accepting
+  the `1:5` and `1,3,7` forms instead of being evaluated.
+* Rule execution is atomic on failure. Every executor snapshots the frame and
+  the log before its dispatch; on error the rule rolls back to the snapshot
+  and contributes exactly one `ERROR:` entry, so the JSONL log now means a
+  rule either fully applied or did nothing. The `<<-` accumulation in the
+  error handlers is retired.
+* `merge_liss_panel()` asserts per module that inputs are unique on the join
+  keys (naming the module and the duplicate count), performs every join with
+  `relationship = "one-to-one"`, attaches shared columns with a left join so
+  metadata can never add rows, and coalesces `shared_cols` (by default
+  `nohouse_encr`) across modules in list order instead of taking them from
+  the first module only, warning when modules disagree on a key.
+
+## Tests
+
+* A synthetic end-to-end module merge now runs everywhere including CI: two
+  generated `.sav` waves pass through a snapshot recode, a boundary flag, a
+  derived variable, and uniqueness plus condition-gated na_rate checks, with
+  assertions on the merged frame, the JSONL log, the text report, and the
+  summary artifact.
+* Kernel unit tests cover `crosswalk_map`, `crosswalk_map_scheme`,
+  `crosswalk_coverage`, and `dv_aggregate`.
+* The recipe-load test covers all ten bundled recipes (previously eight,
+  omitting ca and cr) and fails on any warning outside the known
+  unrecognized-rule-key class.
+* Regression tests pin the restricted condition grammar, the wave-input
+  parser, atomic rollback, the duplicate-key guard, and the shared-column
+  coalescing.
+
+## Dependencies
+
+* `dplyr (>= 1.1.0)` is now the declared minimum (the `relationship`
+  argument of the join functions).
+
 # lissr 1.2.0
 
 Feature release: a rule-driven income-cleaning framework for merged LISS
