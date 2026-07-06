@@ -73,7 +73,9 @@ global:
       note: externalize dk_scheme into versioned reference file
     party_scheme:
       source: taxonomies/cv_party_scheme.yml
-      note: externalize party_scheme into versioned reference file
+      note: >-
+        schemes 4-5 catalogued in taxonomies/cv_party_scheme.yml (1.0.0),
+        schemes 1-3 pending; engine consumption still pending
 wave_index:
 - id: cv08a
   year: 2008
@@ -337,10 +339,10 @@ wave_index:
     Struijs); removed 306 (Baudet), 341/343 (NSC), 344 (Timmermans), 345
     (Omtzigt). election-date labels updated on 053/307 (29 October 2025
     parliamentary elections); punctuation-only label touches on 047-052 and
-    104. party_scheme 5 marks the new post-election ballot mapping (codes not
-    comparable with scheme 4; catalogue cv26r value labels of 307/308 into the
-    pending taxonomies externalization). no _m fieldwork variable (absent in
-    cv since cv20l)
+    104. party_scheme 5 names the post-election code set, catalogued in
+    taxonomies/cv_party_scheme.yml: identical to scheme 4 on every shared
+    code (stable party registry), plus 50PLUS (307:10, 308:11), minus NSC
+    (307:21, 308:22). no _m fieldwork variable (absent in cv since cv20l)
   era: 5
   file_version: '1.0'
   admin_structure: three_part
