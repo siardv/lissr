@@ -51,7 +51,7 @@ latest_health
 #> # A tibble: 1 × 8
 #>   module module_id  wave wave_id type  name       file              path
 #>   <chr>      <int> <int>   <int> <chr> <chr>      <chr>             <chr>
-#> 1 Health        18    17    1054 spss  ch24q 1.0p ch24q_1_0p_EN.sav /down…
+#> 1 Health        18    18    1102 spss  ch25r 1.0p ch25r_1_0p_EN.sav /down…
 
 # download just that one file
 liss_download(latest_health, .dir = "data/ch")
@@ -70,7 +70,7 @@ library(haven)
 library(dplyr)
 
 # option A: read raw and clean yourself
-raw <- haven::read_sav("data/ch/ch24q_1_0p_EN.sav")
+raw <- haven::read_sav("data/ch/ch25r_1_0p_EN.sav")
 dim(raw)
 #> [1] 4892  271
 
@@ -81,7 +81,7 @@ recipe <- liss_recipe("ch")
 # temporarily trim the recipe to just the wave you need
 recipe$wave_index <- purrr::keep(
   recipe$wave_index,
-  ~ .x$id == "ch24q"
+  ~ .x$id == "ch25r"
 )
 
 result <- merge_liss_module(recipe, data_dir = "data/ch", output_dir = "output")
@@ -97,8 +97,8 @@ column appended.
 ## Step 3 — attach background variables
 
 Most cross-sectional analyses need demographics: age, sex, education,
-income. These live in the Background Variables module (CA), not in the
-survey module itself.
+income. These live in the Background Variables file (`avars`, a
+separate monthly release), not in the survey module itself.
 
 **Critical rule**: join on `nomem_encr` only. Never use `nohouse_encr` —
 household assignments change over time. Match the fieldwork month, not
@@ -106,17 +106,18 @@ the calendar year.
 
 ```{r attach-demographics}
 # download the background variables file for the same fieldwork period
-# (health wave 24q was fielded around November 2024)
+# (check fieldwork_ym in the merged output for the exact month)
 bg_files <- bp |>
   dplyr::filter(
     module == "Background Variables",
     type   == "spss",
-    wave   == 202411  # YYYYMM matching fieldwork period
+    wave   == 202511  # YYYYMM matching the fieldwork period
   )
 
 liss_download(bg_files, .dir = "data/avars")
 
-avars <- haven::read_sav("data/avars/avars_202411_EN_1_0p.sav") |>
+# each avars file also carries this period as its `wave` column
+avars <- haven::read_sav("data/avars/avars_202511_EN_1_0p.sav") |>
   haven::zap_labels() |>
   dplyr::select(
     nomem_encr,
@@ -175,7 +176,7 @@ Before submitting results from a cross-sectional LISS analysis, verify:
 - [ ] Sentinel codes (-9 = don't know, -8 = prefer not to say, 999, etc.)
   have been recoded to `NA` — the merge engine does this automatically,
   but check if you loaded raw SPSS directly.
-- [ ] You report the wave identifier (e.g. ch24q) and the LISS data
+- [ ] You report the wave identifier (e.g. ch25r) and the LISS data
   version number in your methods section so results are reproducible.
 - [ ] If you selected a single wave from a module with instrument changes
   (boundary rules), note that in your limitations.

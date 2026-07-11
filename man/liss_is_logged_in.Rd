@@ -10,9 +10,13 @@ liss_is_logged_in()
 logical scalar.
 }
 \description{
-verifies the cached session by attempting to download a random data file
-from the archive. returns \code{FALSE} if the session has expired or was
-never established.
+probes the cached session cheaply: when a cached blueprint offers a
+known protected file path, a HEAD request against it (deterministic
+first entry, no body transfer) decides; otherwise the login page is
+requested once and inspected. the probe never scrapes the archive,
+never downloads a data file, and never touches the random number
+generator (the previous implementation did all three). returns
+\code{FALSE} if the session has expired or was never established.
 }
 \examples{
 \dontrun{

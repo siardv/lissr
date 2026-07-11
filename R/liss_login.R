@@ -27,14 +27,6 @@ liss_login <- function(username = NULL) {
     return(invisible(NULL))
   }
 
-  if (!requireNamespace("keyring", quietly = TRUE)) {
-    stop(
-      "The 'keyring' package is required to retrieve stored credentials.\n",
-      "Install it with: install.packages(\"keyring\")",
-      call. = FALSE
-    )
-  }
-
   saved_creds <- keyring::key_list("LISS_Data_Archive")
   creds_from_keyring <- FALSE
 
@@ -65,7 +57,14 @@ liss_login <- function(username = NULL) {
 
   has_key <- nrow(saved_creds) > 0 && username %in% saved_creds$username
   if (has_key) {
-    password <- keyring::key_get("LISS_Data_Archive", username)
+    password <- tryCatch(keyring::key_get("LISS_Data_Archive", username),
+                         error = function(e) NULL)
+    if (is.null(password) || !nzchar(password)) {
+      cli::cli_alert_danger(
+        "The stored password for {.val {username}} is empty or unreadable; re-store it with {.code liss_store_credentials(\"{username}\")}."
+      )
+      return(invisible(NULL))
+    }
     cli::cli_alert_success("Using secure password from keychain.")
     creds_from_keyring <- TRUE
   } else {
@@ -80,27 +79,37 @@ liss_login <- function(username = NULL) {
     }
   }
 
-  masked_password <- paste0(
-    substr(password, 1, 1),
-    strrep("*", nchar(password) - 1)
-  )
-
   login_url <- "https://www.dataarchive.lissdata.nl/login"
   session <- rvest::session(login_url)
   login_forms <- rvest::html_form(session)
 
-  selected_login_form <- login_forms[[
-    which(sapply(login_forms, function(form) form$action == login_url))
-  ]]
+  # guarded form discovery: a layout drift on the login page must fail
+  # with a diagnosis, not a subscript-out-of-bounds error
+  form_hits <- which(vapply(login_forms,
+                            function(form) identical(form$action, login_url),
+                            logical(1)))
+  if (length(login_forms) == 0 || length(form_hits) == 0) {
+    cli::cli_abort(c(
+      "could not find a login form posting to {.url {login_url}}",
+      "x" = "forms found on the page: {length(login_forms)}",
+      "i" = "the archive's login page layout may have changed; please report this on the lissr issue tracker"
+    ))
+  }
+  selected_login_form <- login_forms[[form_hits[[1]]]]
 
   fields_names <- names(selected_login_form$fields)
-  login_field_names <- sapply(
-    c("user", "pass"),
-    grep,
-    x = fields_names, value = TRUE, USE.NAMES = FALSE
-  )
+  user_field <- grep("user", fields_names, value = TRUE)
+  pass_field <- grep("pass", fields_names, value = TRUE)
+  if (length(user_field) != 1 || length(pass_field) != 1) {
+    cli::cli_abort(c(
+      "could not identify the username and password fields on the login form",
+      "x" = "fields present: {paste(fields_names, collapse = ', ')}",
+      "i" = "the archive's login page layout may have changed; please report this on the lissr issue tracker"
+    ))
+  }
 
-  login_args <- setNames(list(username, password), login_field_names)
+  login_args <- stats::setNames(list(username, password),
+                                c(user_field, pass_field))
   filled_login_form <- rvest::html_form_set(selected_login_form, !!!login_args)
 
   cli::cli_progress_step(
@@ -108,16 +117,14 @@ liss_login <- function(username = NULL) {
     msg_failed = "Login failed \u2014 check your credentials."
   )
   initial_session <- rvest::session_submit(session, filled_login_form)
-  whitespace <- paste("\n", strrep(cli::style_hidden(cli::symbol$info), 2))
 
   if (!grepl("verify", initial_session$url)) {
-    cli::cli_alert_info(c(
-      "Credentials entered:",
-      whitespace,
-      "i" = "Username: {username}",
-      whitespace,
-      "i" = "Password: {masked_password}"
-    ))
+    cli::cli_alert_danger(
+      "Login failed for username {.val {username}}; the password is not echoed for security."
+    )
+    cli::cli_alert_info(
+      "Check the credentials and, if they changed, re-store them with {.code liss_store_credentials(\"{username}\")}."
+    )
     return(invisible(NULL))
   }
 

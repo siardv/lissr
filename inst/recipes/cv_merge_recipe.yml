@@ -8,7 +8,7 @@
 meta:
   module: cv
   module_label: Politics and Values
-  recipe_version: "1.1.0"
+  recipe_version: "1.2.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -48,8 +48,9 @@ meta:
     documented as coalesce(maandnr, maandnr_lang). (9) DV03 var_name filled
     (completed_parts); _mN == -9 counts as not completed. (10) DV05
     description documents vote_hypo codes 1/2 as would-not-vote /
-    not-eligible. (11) DV06-DV09 marked TODO_REEXPRESS (duplicates of
-    BR01-BR03/VR06 flags).
+    not-eligible. (11) 1.2.0: DV06-DV08 deleted (all-NA duplicates of the
+    BR01-BR03 flag columns); DV09 re-expressed as an executable
+    fieldwork_ym mod-100 derivation (NA where a wave carries no _m).
   schema_version: 1.1.0
 global:
   id_variable: nomem_encr
@@ -383,7 +384,8 @@ variable_rules:
 - rule_id: VR03_nohouse
   anomaly_ref: A-10
   description: nohouse_encr present only in cv08a–cv12e
-  action: ensure_column
+  action: note_only
+  # stacking fills absent columns with NA; documentation only (1.3.2.9000)
   target: nohouse_encr
   waves_present:
   - cv08a
@@ -397,15 +399,17 @@ variable_rules:
   anomaly_ref: A-17
   description: rename or drop the non-prefixed Total column in cv17i
   action: rename
-  wave: cv17i
-  from: Total
-  to: cv17i_Total
+  waves: [cv17i]
+  mapping:
+    Total: cv17i_Total
   if_absent: warn_and_skip
   log: true
 - rule_id: VR05_vote_confidence
   anomaly_ref: A-20
   description: suffixes 060–064 present only in cv08a–cv11d (dropped at cv12e)
-  action: ensure_column
+  action: note_only
+  # stacking fills absent columns with NA, so the ensure step is redundant;
+  # re-expressed as documentation in 1.3.2.9000 (targets list preserved below)
   targets:
   - '060'
   - '061'
@@ -437,14 +441,16 @@ variable_rules:
 - rule_id: VR07_cv09b_types
   anomaly_ref: A-14
   description: attempt integer cast for cv09b float columns after NA recoding
-  action: safe_integer_cast
+  action: note_only
+  # cross-wave numeric type drift is resolved by the stacking-time
+  # harmonizer; documentation only (1.3.2.9000)
   wave: cv09b
   log: true
 - rule_id: VR08_age_type
   anomaly_ref: A-16
   description: 'suffix 160 (age): coerce to numeric; structural -9 ("did not participate") is retained here and retargeted to -7 by HR00 per the -7 convention'
   action: coerce_numeric
-  suffix: '160'
+  suffixes: ['160']
   log: true
 harmonization_rules:
 - rule_id: HR00_age160_structural_na7
@@ -972,45 +978,21 @@ derived_variables:
   - wave
   if_absent: warn_and_create_na
   log: true
-- name: post_stem_reversal
-  rule_id: DV06_post_stem_reversal  # TODO_REEXPRESS: duplicate of BR01 flag;
-  # engine materializes derived_variables as all-NA columns and never
-  # evaluates sources, so this either shadows or collides with BR01 output.
-  # fold into BR01 or delete once derived_variables gains an executor.
-  anomaly_ref: A-05
-  description: ''
-  type: character
-  source: ''
-  if_absent: warn_and_create_na
-  log: true
-- name: participation_wording_version
-  rule_id: DV07_participation_wording  # TODO_REEXPRESS: duplicate of BR02 flag;
-  # same shadowing risk as DV06
-  anomaly_ref: A-06
-  description: ''
-  type: character
-  source: ''
-  if_absent: warn_and_create_na
-  log: true
-- name: news_battery_era
-  rule_id: DV08_news_battery_era  # TODO_REEXPRESS: duplicate of BR03 flag;
-  # same shadowing risk as DV06
-  anomaly_ref: A-07
-  description: ''
-  type: character
-  source: ''
-  if_absent: warn_and_create_na
-  log: true
 - name: fieldwork_month
-  rule_id: DV09_fieldwork_month  # TODO_REEXPRESS: duplicate of VR06 target;
-  # the warn_and_create_na pre-creation here is exactly the mechanism that
-  # suppresses VR06/auto-derivation downstream. engine-side
-  # fix scheduled; do not delete from recipe until then.
+  rule_id: DV09_fieldwork_month
   anomaly_ref: A-11
-  description: ''
-  type: character
-  source: ''
-  if_absent: warn_and_create_na
+  description: calendar month of fieldwork, derived as fieldwork_ym mod 100.
+    fieldwork_ym auto-derives from the per-wave _m variable (engine phase 1,
+    since 1.3.2.9000 stage 1); recent cv waves carry no _m, so the month is
+    NA there pending archive-metadata backfill (tracked in TODO.md). the
+    DV06/DV07/DV08 entries that duplicated the BR01/BR02/BR03 flag columns
+    as all-NA shadows are deleted in the same pass.
+  method: direct
+  sources: [fieldwork_ym]
+  transform:
+    op: modulo
+    value: 100
+  output_type: integer
   log: true
 validation_checks:
 - check_id: VC01_no_raw_dk

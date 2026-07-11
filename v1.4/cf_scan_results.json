@@ -1,0 +1,5863 @@
+{
+  "cf08a": {
+    "wave": "cf08a",
+    "file": "cf08a_2p_EN.sav",
+    "n_rows": 7110,
+    "n_cols": 403,
+    "dup_ids": 0,
+    "fieldwork_m": [200803, 200806],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 72,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 109,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 49,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "397",
+            "n": 3
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 498,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 324,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 45,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 127,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 149,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 11,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 34,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 88,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 246,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 72,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 109,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 49,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": false
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 498,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": false
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 324,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 45,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 127,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 149,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 11,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 34,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 88,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 246,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "I don't know": 7
+      }
+    },
+    "school_new_434_448": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "partially_labelled": {
+      "n": 41,
+      "suffixes": ["001", "005", "009", "012", "166", "167", "168", "169", "170", "171", "172", "173", "174", "175", "176", "177", "178", "179", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf09b": {
+    "wave": "cf09b",
+    "file": "cf09b_EN_2.2p.sav",
+    "n_rows": 5712,
+    "n_cols": 421,
+    "dup_ids": 0,
+    "fieldwork_m": [200903, 200904],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 70,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 75,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 48,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "9999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 31,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "Ik weet het niet",
+            "n": 19,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 26,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 7,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 111,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 142,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 4,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 36,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 63,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 199,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 70,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 75,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 48,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 31,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "Ik weet het niet",
+        "n_at_code": 19,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 26,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 7,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 111,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 142,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 4,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 36,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 63,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 199,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "I don't know": 7
+      }
+    },
+    "school_new_434_448": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "partially_labelled": {
+      "n": 28,
+      "suffixes": ["005", "008", "009", "012", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf10c": {
+    "wave": "cf10c",
+    "file": "cf10c_EN_1.0p.sav",
+    "n_rows": 6106,
+    "n_cols": 398,
+    "dup_ids": 0,
+    "fieldwork_m": 201003,
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 87,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 87,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 58,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "397",
+            "n": 2
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 128,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "Ik weet het niet",
+            "n": 46,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 85,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 26,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 105,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 144,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 3,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 31,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 45,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 190,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 10,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 6,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 0,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 87,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 87,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 58,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 128,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "Ik weet het niet",
+        "n_at_code": 46,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 85,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 26,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 105,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 144,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 3,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 31,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 45,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 190,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "I don't know": 7
+      }
+    },
+    "school_new_434_448": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf11d": {
+    "wave": "cf11d",
+    "file": "cf11d_EN_1.1p.sav",
+    "n_rows": 5439,
+    "n_cols": 422,
+    "dup_ids": 0,
+    "fieldwork_m": [201103, 201104],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 63,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 52,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 37,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "251",
+            "n": 1
+          },
+          {
+            "suffix": "339",
+            "n": 1
+          },
+          {
+            "suffix": "381",
+            "n": 1
+          },
+          {
+            "suffix": "387",
+            "n": 1
+          },
+          {
+            "suffix": "397",
+            "n": 4
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 48,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 15,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 37,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 10,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 87,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 114,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 4,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 27,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 29,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 10,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "398",
+            "n": 1
+          }
+        ]
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 11,
+            "declared_missing": false
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 6,
+            "declared_missing": false
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 9,
+            "declared_missing": false
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 63,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 52,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 37,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 48,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 15,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 37,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 10,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 87,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 114,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 4,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 27,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 29,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 10,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf12e": {
+    "wave": "cf12e",
+    "file": "cf12e_EN_2.1p.sav",
+    "n_rows": 6111,
+    "n_cols": 392,
+    "dup_ids": 0,
+    "fieldwork_m": [201203, 201204],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 73,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 55,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 13,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "397",
+            "n": 3
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 191,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 39,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 147,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 22,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 16,
+            "declared_missing": false
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 12,
+            "declared_missing": false
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 0,
+            "declared_missing": false
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 73,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 55,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 13,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 191,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 39,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 147,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 22,
+        "declared_missing": true
+      },
+      "251": {
+        "present": false
+      },
+      "339": {
+        "present": false
+      },
+      "381": {
+        "present": false
+      },
+      "382": {
+        "present": false
+      },
+      "384": {
+        "present": false
+      },
+      "387": {
+        "present": false
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": false
+      },
+      "339": {
+        "present": false
+      },
+      "381": {
+        "present": false
+      },
+      "382": {
+        "present": false
+      },
+      "384": {
+        "present": false
+      },
+      "387": {
+        "present": false
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamitic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 25,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf13f": {
+    "wave": "cf13f",
+    "file": "cf13f_EN_1.1p.sav",
+    "n_rows": 5826,
+    "n_cols": 421,
+    "dup_ids": 0,
+    "fieldwork_m": [201303, 201304],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 72,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 68,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 18,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "251",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 134,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 10,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 105,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 8,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 85,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 113,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 3,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 25,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 19,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 170,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 43,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 121,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 80,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 72,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 68,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 18,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 134,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 10,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 105,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 8,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 85,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 113,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 3,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 25,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 19,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 170,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = definitely no": 1,
+          "5 = definitely yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 30,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf14g": {
+    "wave": "cf14g",
+    "file": "cf14g_EN_1.1p.sav",
+    "n_rows": 6863,
+    "n_cols": 398,
+    "dup_ids": 0,
+    "fieldwork_m": [201403, 201404],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 75,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 91,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 26,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "251",
+            "n": 1
+          },
+          {
+            "suffix": "339",
+            "n": 2
+          },
+          {
+            "suffix": "387",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 288,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 50,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 196,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 27,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 84,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 134,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 4,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 27,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 25,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 188,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 23,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 37,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 27,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 75,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 91,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 26,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 288,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 50,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 196,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 27,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 84,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 134,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 4,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 27,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 25,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 188,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf15h": {
+    "wave": "cf15h",
+    "file": "cf15h_EN_1.0p.sav",
+    "n_rows": 6101,
+    "n_cols": 397,
+    "dup_ids": 0,
+    "fieldwork_m": [201509, 201510],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 47,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 78,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 17,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "387",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 158,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 17,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 120,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 7,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 77,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 91,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 6,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 21,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 19,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 171,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 23,
+            "declared_missing": false
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 111,
+            "declared_missing": false
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 62,
+            "declared_missing": false
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 47,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 78,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 17,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 158,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 17,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 120,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 7,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 77,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 91,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 6,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 21,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 19,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 171,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 49,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "504", "505", "506", "507", "508", "509", "510", "511", "512", "513", "514", "515", "516", "517", "518", "519", "520", "521", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf16i": {
+    "wave": "cf16i",
+    "file": "cf16i_EN_1.0p.sav",
+    "n_rows": 5527,
+    "n_cols": 397,
+    "dup_ids": 0,
+    "fieldwork_m": [201609, 201610],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 29,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 53,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 13,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "339",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 162,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 19,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 122,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 9,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 84,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 85,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 3,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 25,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 14,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 148,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 63,
+            "declared_missing": false
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 40,
+            "declared_missing": false
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 37,
+            "declared_missing": false
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 29,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 53,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 13,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 162,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 19,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 122,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 9,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 84,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 85,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 3,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 25,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 14,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 148,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf17j": {
+    "wave": "cf17j",
+    "file": "cf17j_EN_1.0p.sav",
+    "n_rows": 6452,
+    "n_cols": 397,
+    "dup_ids": 0,
+    "fieldwork_m": [201709, 201710],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 49,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 73,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 19,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "397",
+            "n": 2
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 274,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 54,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 193,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 33,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 95,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 108,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 2,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 27,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 42,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 162,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 21,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 39,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 27,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 49,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 73,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 19,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 274,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 54,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 193,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 33,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 95,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 108,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 2,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 27,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 42,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 162,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf18k": {
+    "wave": "cf18k",
+    "file": "cf18k_EN_1.0p.sav",
+    "n_rows": 5676,
+    "n_cols": 397,
+    "dup_ids": 0,
+    "fieldwork_m": [201809, 201810],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 36,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 60,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 19,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "251",
+            "n": 2
+          },
+          {
+            "suffix": "339",
+            "n": 1
+          },
+          {
+            "suffix": "387",
+            "n": 1
+          },
+          {
+            "suffix": "397",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 123,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 5,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 95,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 3,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 67,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 93,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 1,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 22,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 23,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 148,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 16,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 36,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 32,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 36,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 60,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 19,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 123,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 5,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 95,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 3,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 67,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 93,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 1,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 22,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 23,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 148,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf19l": {
+    "wave": "cf19l",
+    "file": "cf19l_EN_1.0p.sav",
+    "n_rows": 5265,
+    "n_cols": 401,
+    "dup_ids": 0,
+    "fieldwork_m": [201909, 201910],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 37,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 57,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 20,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "251",
+            "n": 1
+          },
+          {
+            "suffix": "339",
+            "n": 1
+          },
+          {
+            "suffix": "384",
+            "n": 2
+          },
+          {
+            "suffix": "387",
+            "n": 2
+          },
+          {
+            "suffix": "397",
+            "n": 2
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 98,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 6,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 78,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 2,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 65,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 71,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 1,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 19,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 15,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 142,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 15,
+            "declared_missing": false
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 25,
+            "declared_missing": false
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 22,
+            "declared_missing": false
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 37,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 57,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 20,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 98,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 6,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 78,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 2,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 65,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 71,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 1,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 19,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 15,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 142,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F8.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 31,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "166", "180", "181", "202", "203", "204", "205", "206", "213", "214", "215", "216", "217", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf20m": {
+    "wave": "cf20m",
+    "file": "cf20m_EN_1.0p.sav",
+    "n_rows": 6076,
+    "n_cols": 400,
+    "dup_ids": 0,
+    "fieldwork_m": [202009, 202010],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 35,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 70,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 17,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "251",
+            "n": 1
+          },
+          {
+            "suffix": "339",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 151,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 21,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 113,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 14,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 65,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 84,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 6,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 18,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 28,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 130,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 8,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 4,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 1,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 35,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 70,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 17,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 151,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 21,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 113,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 14,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 65,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 84,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 6,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 18,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 28,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 130,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F10.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 18,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf21n": {
+    "wave": "cf21n",
+    "file": "cf21n_EN_1.0p.sav",
+    "n_rows": 5262,
+    "n_cols": 401,
+    "dup_ids": 0,
+    "fieldwork_m": [202109, 202110],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 34,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 55,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 25,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 69,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 1,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 63,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 1,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 76,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 84,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 7,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 22,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 18,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 128,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 18,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 24,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 39,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 34,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 55,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 25,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 69,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 1,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 63,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 1,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 76,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 84,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 7,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 22,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 18,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 128,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 = certainly not": 1,
+          "5 = certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F10.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 18,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf22o": {
+    "wave": "cf22o",
+    "file": "cf22o_EN_1.0p.sav",
+    "n_rows": 5941,
+    "n_cols": 402,
+    "dup_ids": 0,
+    "fieldwork_m": [202209, 202210],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 45,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 61,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 19,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 109,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 19,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 86,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 9,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 86,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 97,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 7,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 25,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 24,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 154,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 16,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 25,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 44,
+            "declared_missing": true
+          },
+          {
+            "suffix": "535",
+            "label": "I don't know",
+            "n": 97,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [
+          {
+            "suffix": "535",
+            "label": "I prefer not to say",
+            "n": 129,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 45,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 61,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 19,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 109,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 19,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 86,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 9,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 86,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 97,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 7,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 25,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 24,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 154,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F10.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 18,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf23p": {
+    "wave": "cf23p",
+    "file": "cf23p_EN_1.0p.sav",
+    "n_rows": 5206,
+    "n_cols": 402,
+    "dup_ids": 0,
+    "fieldwork_m": [202309, 202310],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 29,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 46,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 16,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": [
+          {
+            "suffix": "397",
+            "n": 1
+          }
+        ]
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 62,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 1,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 48,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 3,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 54,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 76,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 6,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 14,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 22,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 122,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 10,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 10,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 20,
+            "declared_missing": true
+          },
+          {
+            "suffix": "535",
+            "label": "I don't know",
+            "n": 79,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [
+          {
+            "suffix": "535",
+            "label": "I prefer not to say",
+            "n": 98,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 29,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 46,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 16,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 62,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 1,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 48,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 3,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 54,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 76,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 6,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 14,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 22,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 122,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F10.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 18,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  },
+  "cf24q": {
+    "wave": "cf24q",
+    "file": "cf24q_EN_1.1p.sav",
+    "n_rows": 5546,
+    "n_cols": 405,
+    "dup_ids": 0,
+    "fieldwork_m": [202409, 202410],
+    "sentinel_census": {
+      "999": {
+        "labelled": [
+          {
+            "suffix": "166",
+            "label": "I don’t know",
+            "n": 27,
+            "declared_missing": true
+          },
+          {
+            "suffix": "180",
+            "label": "I don’t know",
+            "n": 44,
+            "declared_missing": true
+          },
+          {
+            "suffix": "181",
+            "label": "I don’t know",
+            "n": 19,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "9999": {
+        "labelled": [
+          {
+            "suffix": "005",
+            "label": "I don't know",
+            "n": 151,
+            "declared_missing": true
+          },
+          {
+            "suffix": "008",
+            "label": "I don't know",
+            "n": 18,
+            "declared_missing": true
+          },
+          {
+            "suffix": "009",
+            "label": "I don't know",
+            "n": 103,
+            "declared_missing": true
+          },
+          {
+            "suffix": "012",
+            "label": "I don't know",
+            "n": 7,
+            "declared_missing": true
+          },
+          {
+            "suffix": "251",
+            "label": "I don't know",
+            "n": 87,
+            "declared_missing": true
+          },
+          {
+            "suffix": "339",
+            "label": "I don't know",
+            "n": 96,
+            "declared_missing": true
+          },
+          {
+            "suffix": "381",
+            "label": "I don't know",
+            "n": 5,
+            "declared_missing": true
+          },
+          {
+            "suffix": "382",
+            "label": "I don't know",
+            "n": 23,
+            "declared_missing": true
+          },
+          {
+            "suffix": "384",
+            "label": "I don't know",
+            "n": 28,
+            "declared_missing": true
+          },
+          {
+            "suffix": "387",
+            "label": "I don't know",
+            "n": 147,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "99999": {
+        "labelled": [],
+        "unlabelled_occurrences": []
+      },
+      "-9": {
+        "labelled": [
+          {
+            "suffix": "554",
+            "label": "I don't know",
+            "n": 8,
+            "declared_missing": true
+          },
+          {
+            "suffix": "398",
+            "label": "unknown",
+            "n": 0,
+            "declared_missing": true
+          },
+          {
+            "suffix": "555",
+            "label": "I don't know",
+            "n": 21,
+            "declared_missing": true
+          },
+          {
+            "suffix": "399",
+            "label": "unknown",
+            "n": 0,
+            "declared_missing": true
+          },
+          {
+            "suffix": "556",
+            "label": "I don't know",
+            "n": 11,
+            "declared_missing": true
+          },
+          {
+            "suffix": "400",
+            "label": "unknown",
+            "n": 0,
+            "declared_missing": true
+          },
+          {
+            "suffix": "535",
+            "label": "I don't know",
+            "n": 77,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      },
+      "-8": {
+        "labelled": [
+          {
+            "suffix": "535",
+            "label": "I prefer not to say",
+            "n": 112,
+            "declared_missing": true
+          }
+        ],
+        "unlabelled_occurrences": []
+      }
+    },
+    "harm005_999": {
+      "166": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 27,
+        "declared_missing": true
+      },
+      "180": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 44,
+        "declared_missing": true
+      },
+      "181": {
+        "present": true,
+        "label_at_code": "I don’t know",
+        "n_at_code": 19,
+        "declared_missing": true
+      }
+    },
+    "harm006_9999": {
+      "005": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 151,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 18,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 103,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 7,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 87,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 96,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 5,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 23,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 28,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": "I don't know",
+        "n_at_code": 147,
+        "declared_missing": true
+      }
+    },
+    "harm007_99999": {
+      "005": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "008": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "009": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "012": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "251": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "339": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "381": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "382": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "384": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      },
+      "387": {
+        "present": true,
+        "label_at_code": null,
+        "n_at_code": 0,
+        "declared_missing": true
+      }
+    },
+    "eval_items": {
+      "388": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "389": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "390": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "391": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "392": {
+        "present": true,
+        "format": "F1.0",
+        "labels": {
+          "1 certainly not": 1,
+          "5 certainly yes": 5
+        }
+      },
+      "397": {
+        "present": true,
+        "format": "F10.0",
+        "labels": null
+      }
+    },
+    "school_old_282_296": {
+      "n_present": 0,
+      "labels_first": null
+    },
+    "school_new_434_448": {
+      "n_present": 15,
+      "labels_first": {
+        "public": 1,
+        "Roman Catholic": 2,
+        "Christian Protestant": 3,
+        "Christian Ecumenical (combination of Catholic and Protestant)": 4,
+        "Neutral Special (or General Special)": 5,
+        "other nature, including cooperative schools": 6,
+        "Islamic": 7,
+        "I don't know": 8
+      }
+    },
+    "partially_labelled": {
+      "n": 18,
+      "suffixes": ["005", "008", "009", "012", "398", "399", "400", "251", "339", "381", "382", "384", "387", "388", "389", "390", "391", "392"]
+    }
+  }
+}

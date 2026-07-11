@@ -15,7 +15,7 @@
 
 meta:
   ruleset: income_cleaning
-  ruleset_version: "1.0.0"
+  ruleset_version: "1.1.0"
   schema_version: "1.0.0"
   target_module: ci
   created: "2026-07-02"
@@ -68,6 +68,7 @@ variables:
     - wave
   personal_net: nettoink
   personal_gross: brutoink
+  household_size: aantalhh
   category_code: nethh_min
   category_min: nethh_min
   category_max: nethh_max
@@ -157,10 +158,16 @@ preparation_rules:
       Several waves store the income bracket as a 1-7 code. Correction
       candidates and bound checks operate in euros, so codes are
       expanded to bracket bounds. Columns already holding euro bounds
-      pass through unchanged. The decision is taken per column, keyed
-      on whether the maximum finite value is at most max_code.
+      pass through unchanged. The column is classified on the share of
+      nonzero finite values inside 1..max_code: at least code_share
+      means bracket codes (mapped per value, with stray codes warned
+      about and treated as missing brackets), zero means euro bounds
+      (pass through), and anything in between is ambiguous and declined
+      with a loud warning. The pre-1.1.0 max()-based gate let a single
+      stray sentinel silently disable mapping for the whole column.
     params:
       max_code: 7
+      code_share: 0.9
 
   - rule_id: P05
     action: backfill_age
@@ -242,12 +249,15 @@ detection_rules:
     log: true
     description: >-
       Void target values at or below a contextual floor (default 100)
-      when a gross personal income is present for the same row.
+      when a positive gross personal income is present for the same
+      row.
     rationale: >-
       A household reporting at most 100 euros a year while a member
-      reports gross personal income is internally inconsistent; the
-      household figure is the implausible one. Comparison uses the
-      absolute value of the personal figure.
+      reports positive gross personal income is internally
+      inconsistent; the household figure is the implausible one. A
+      gross personal income of exactly 0 does not contradict a
+      near-zero household figure, so such rows are spared (1.1.0).
+      Comparison uses the absolute value of the personal figure.
     params:
       threshold: 100
 
@@ -259,15 +269,21 @@ detection_rules:
     log: true
     description: >-
       Void low household values that echo a personal income figure
-      within a small tolerance.
+      within a small tolerance, in households known to hold at least
+      min_household_size members.
     rationale: >-
       Respondents sometimes enter their personal income in the
       household field. A household total under `ceiling` that sits
       within `tolerance` of the personal net or gross figure is treated
-      as such an echo. Comparison uses absolute personal values.
+      as such an echo. In a single-person household that equality is
+      expected rather than an error, so the rule requires a known
+      household size of at least min_household_size (from
+      variables.household_size); rows with unknown size are spared
+      (1.1.0). Comparison uses absolute personal values.
     params:
       ceiling: 10000
       tolerance: 100
+      min_household_size: 2
 
   - rule_id: D05
     action: low_magnitude_scale
@@ -500,6 +516,15 @@ correction_rules:
       routed cell, so no correction silently falls through.
 
 # ---- candidate selection -----------------------------------------------
+# `anchor` is executed, not merely reported: the engine dispatches the
+# selection statistic from this block (household_median or
+# household_mean), so the generated report cannot drift from the code.
+# when a flagged cell has no other observed household value, the
+# fallback anchor (the midpoint of its valid range) is used. since
+# 1.1.0 the range_midpoint CORRECTION fallback (C06) additionally
+# requires the anchor itself to lie inside the admissible range;
+# otherwise the cell is voided rather than imputed against the
+# household's own evidence.
 selection:
   anchor: household_median
   fallback_anchor: range_midpoint
@@ -508,15 +533,23 @@ selection:
 finalization_rules:
   - rule_id: F01
     action: hard_cap_to_na
+    disposition: void
     enabled: true
     log: true
     description: >-
-      Set to NA any value that, after all corrections, remains
-      non-positive or above the income cap.
+      Handle values that, after all corrections, remain non-positive or
+      above the income cap. Disposition `void` (default) sets them to
+      NA; `winsorise` clamps over-cap values to the cap (non-positive
+      values are still voided, carrying no magnitude to clamp to);
+      `flag` only ledgers them and leaves every value in place.
     rationale: >-
       Values the constrained correction stage could not bring inside
-      the plausible range are unrecoverable; retaining them would leak
-      implausible magnitudes into analyses.
+      the plausible range are unrecoverable as reported; but genuine
+      top incomes exist, and hard-voiding them biases the right tail
+      and inequality estimates downward. The disposition makes that
+      trade-off explicit: void for conservative analyses, winsorise to
+      retain the observation at a bounded magnitude, flag to delegate
+      the decision to the researcher.
 
 # ---- logging and report configuration ----------------------------------
 logging:

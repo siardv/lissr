@@ -4,7 +4,8 @@
 \alias{merge_liss_module}
 \title{run the full merge pipeline for a single module}
 \usage{
-merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE)
+merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE,
+  overwrite = TRUE)
 }
 \arguments{
 \item{recipe}{a parsed recipe list (from \code{\link[=load_recipe]{load_recipe()}}), or a path to a recipe file.}
@@ -14,12 +15,19 @@ merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE)
 \item{output_dir}{character. directory for output files.}
 
 \item{strict}{logical. if \code{TRUE}, abort before writing any outputs when a
-validation check with \code{severity: error} fails; the default \code{FALSE}
-preserves the historical report-and-continue behavior.}
+validation check with \code{severity: error} fails or cannot be evaluated,
+or when a wave's selected file violates its \code{expected_release} pin; the
+default \code{FALSE} preserves the historical report-and-continue behavior.}
+
+\item{overwrite}{logical. if \code{FALSE}, abort instead of overwriting an
+existing merged output file. default \code{TRUE} preserves prior behavior.}
 }
 \value{
 a list (invisibly) with elements \code{data}, \code{log}, \code{validation},
-\code{summary}, and \code{recipe}.
+\code{summary}, \code{recipe}, \code{provenance} (package and recipe versions, input
+file md5 hashes, release decisions, strictness, timestamp), and
+\code{valid_for_analysis} (\code{TRUE} when no error-severity check failed or was
+unevaluable and all release pins matched).
 }
 \description{
 loads wave files, applies all rules (variable, harmonization, boundary,

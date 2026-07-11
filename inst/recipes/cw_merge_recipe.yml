@@ -8,7 +8,7 @@
 meta:
   module: cw
   module_label: Work and Schooling
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -227,8 +227,8 @@ wave_index:
 variable_rules:
 - rule_id: VR01_strip_prefix
   anomaly_ref: null
-  description: strip wave prefix (e.g. cw11d005 -> q005) to create canonical names
-  action: rename
+  description: strip wave prefix (engine-side; the engine strips {wave_id} prefixes unconditionally in phase 1 and q-form targets resolve through find_col's candidate ladder, so this rule is documentation of the naming convention, not an executed rename)
+  action: note_only
   pattern: ^cw\d{2}[a-z]
   replacement: q
   applies_to: all_variables
@@ -449,16 +449,12 @@ harmonization_rules:
   - q177
   - q181
   - q185
-  wave_specific:
-    cw25r:
-      recode_map:
-        1: 2023
-        2: 2024
-  target_type: numeric
-  valid_range:
-  - 1990
-  - 2030
-  waves: all
+  mapping:
+    "1": 2023
+    "2": 2024
+  waves:
+  - cw25r
+  notes: "cw25r offers the pension-date items as two categorical options (1 = 2023, 2 = 2024); earlier waves carry calendar years directly, so the recode is scoped to cw25r only. plausible year range 1990-2030 (was an unread valid_range key; re-expressed as a note pending check support)"
   if_absent: warn_and_create_na
   log: true
 - rule_id: HR04_label_case

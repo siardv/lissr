@@ -41,19 +41,19 @@ actions:
   - {name: na_recode,                 sections: [harmonization_rules], status: implemented}
   - {name: recode,                    sections: [harmonization_rules], status: implemented}
   - {name: value_recode,              sections: [harmonization_rules], status: implemented}
-  - {name: fix_label,                 sections: [harmonization_rules, boundary_rules], status: implemented, notes: "keys label_find/label_replace; old_fragment/new_fragment are legacy aliases; inert until label round-trip"}
+  - {name: fix_label,                 sections: [harmonization_rules, boundary_rules], status: implemented, notes: "canonical keys old_fragment/new_fragment (the engine reads these); label_find/label_replace are NOT read; value-label edits are inert under to_numeric, variable-label edits execute"}
   - {name: strip_question_stem,       sections: [harmonization_rules], status: implemented, notes: "label-only; inert under to_numeric"}
   - {name: lowercase_labels,          sections: [harmonization_rules], status: implemented, notes: "label-only; inert under to_numeric"}
   - {name: normalize_labels,          sections: [harmonization_rules], status: implemented, notes: "label-only; inert under to_numeric"}
   - {name: flag_only,                 sections: [harmonization_rules, drop_retain_rules], status: implemented}
   - {name: flag_absence,              sections: [harmonization_rules, drop_retain_rules], status: implemented}
   - {name: subtract,                  sections: [harmonization_rules], status: deprecated, notes: "folds into transform op:subtract; one offset mechanism"}
-  - {name: crosswalk,                 sections: [harmonization_rules], status: stub, notes: "executor + coverage check at error severity; unmapped -> NA"}
-  - {name: conditional_label_swap,    sections: [harmonization_rules], status: stub, notes: "label-only executor"}
-  - {name: label_to_string,           sections: [harmonization_rules], status: stub, notes: "needs value-labels input; unmapped policy = crosswalk"}
-  - {name: derive_combined_party,     sections: [harmonization_rules, boundary_rules], status: stub, notes: "runs after label_to_string"}
+  - {name: crosswalk,                 sections: [harmonization_rules], status: implemented, notes: "single-map and multi-scheme executors with coverage check at error severity; unmapped -> NA"}
+  - {name: conditional_label_swap,    sections: [harmonization_rules], status: implemented, notes: "label-only executor; inert under to_numeric"}
+  - {name: label_to_string,           sections: [harmonization_rules], status: implemented, notes: "reads live labels, or the _original_labels stash under to_numeric; unmapped policy = crosswalk"}
+  - {name: derive_combined_party,     sections: [harmonization_rules, boundary_rules], status: implemented, notes: "runs after label_to_string"}
   - {name: extend_categories,         sections: [harmonization_rules], status: note_no_op}
-  - {name: transform,                 sections: [harmonization_rules], status: new, notes: "per-wave offset; op subtract/add/identity"}
+  - {name: transform,                 sections: [harmonization_rules], status: implemented, notes: "per-wave offset; op subtract/add/int_divide/modulo/identity"}
 
   # ---- boundary_rules ----
   - {name: add_era_flag,              sections: [boundary_rules], status: implemented}
@@ -77,3 +77,63 @@ actions:
 
   # ---- all sections ----
   - {name: note_only,                 sections: [variable_rules, harmonization_rules, boundary_rules, drop_retain_rules], status: note_no_op}
+
+# ---------------------------------------------------------------------------
+# per-action payload specification (v1.4, consumed by validate_recipe)
+#
+# reads:       keys the executor actually consults for this action
+# annotations: action-specific documentation keys accepted without warning
+#
+# universal rule keys (rule_id, action, description, anomaly_ref, waves,
+# if_absent, log, comparability) and the global sanctioned annotation set in
+# the engine are always accepted. actions whose status is note_no_op,
+# pending_spec, or stub, plus the flag_only/flag_absence no-ops, skip payload
+# checking entirely: their payloads are documentation by definition. a key on
+# an implemented action that appears in neither list is reported per action
+# ("key X is not read by action Y"), which is a sharper signal than the old
+# global recognized-key scan (a key read by one action no longer passes
+# silently on an action that ignores it).
+payloads:
+  strip_prefix:              {reads: [], annotations: [strip_regex, exceptions, pattern]}
+  rename_to_suffix:          {reads: [], annotations: [pattern, replacement, applies_to]}
+  type_coerce:               {reads: [target_type, suffixes, variables, variable], annotations: [coerce_from_hms]}
+  coerce_type:               {reads: [target_type, suffixes, variables, variable], annotations: []}
+  coerce_numeric:            {reads: [target_type, suffixes, variables, variable], annotations: []}
+  strip_labels_coerce_numeric: {reads: [suffixes, variables, variable], annotations: []}
+  rename:                    {reads: [mapping], annotations: [wave]}
+  set_label:                 {reads: [suffixes, variables, set_label, corrected_label], annotations: [target_type]}
+  apply_labelled_policy:     {reads: [], annotations: []}
+  strip_value_labels:        {reads: [], annotations: []}
+  ensure_column:             {reads: [variable, column, default], annotations: []}
+  use_global_policy:         {reads: [], annotations: [apply_to]}
+  identity:                  {reads: [], annotations: []}
+  safe_integer_cast:         {reads: [suffixes, variables], annotations: []}
+  derive_fieldwork_month:    {reads: [target_column, target, source_column, sources], annotations: []}
+  parse_time:                {reads: [target_column, target, source_column, sources, variables, suffixes], annotations: [target_format]}
+  recode_to_na:              {reads: [mapping, recode, scope, suffixes, variables, codes, sentinel_values, recodes, exclude], annotations: [applies_to]}
+  recode_sentinels_to_na:    {reads: [mapping, recode, scope, suffixes, variables, codes, sentinel_values, recodes, exclude], annotations: []}
+  na_recode:                 {reads: [mapping, scope, suffixes, variables], annotations: []}
+  recode:                    {reads: [mapping, scope, suffixes, variables], annotations: []}
+  value_recode:              {reads: [mapping, from_value, to_value, suffixes, stems, variables], annotations: []}
+  fix_label:                 {reads: [suffixes, stems, variables, old_fragment, new_fragment, corrected_label], annotations: []}
+  crosswalk:                 {reads: [variables, suffixes, output_variable, crosswalk, scheme_column, output_scheme_flag], annotations: []}
+  transform:                 {reads: [transforms, variables, suffixes], annotations: []}
+  subtract:                  {reads: [variables, suffixes, value, offset], annotations: []}
+  lowercase_labels:          {reads: [scope], annotations: []}
+  normalize_labels:          {reads: [scope], annotations: [transform]}
+  strip_question_stem:       {reads: [suffixes, variables, stem, prefix], annotations: []}
+  conditional_label_swap:    {reads: [variables, suffixes, swap, label_map], annotations: []}
+  label_to_string:           {reads: [variables, suffixes, target_variables, output_variable, derived_suffix], annotations: []}
+  derive_combined_party:     {reads: [variables, sources, output_variable, source_variable, source, target_variable, party_names_to_pool, parties_to_pool, combined_label], annotations: []}
+  add_era_flag:              {reads: [flag_name, flag_variable, eras, assignments, waves_pre, waves_post, flag_value_pre, flag_value_post], annotations: [suffix, boundary, targets, target]}
+  add_flag:                  {reads: [flag_name, flag_variable, eras, assignments, waves_pre, waves_post, flag_value_pre, flag_value_post], annotations: [suffix, boundary, targets, target]}
+  add_period_flag:           {reads: [flag_column, phases, waves_early, waves_late, early_label, late_label], annotations: [suffix, boundary, targets, items, stems, crosswalk]}
+  split_variable:            {reads: [output_vars], annotations: [suffix, boundary, pooling_allowed]}
+  structural_na:             {reads: [flag_column, flag_true_waves, present_in_waves], annotations: [suffix, boundary, suffixes, variables, variable]}
+  filter_rows:               {reads: [wave, variable, keep_values], annotations: []}
+  crosswalk_rename:          {reads: [crosswalk, post_recode], annotations: [boundary]}
+  drop:                      {reads: [columns, variables, pattern, variables_pattern, variable_pattern], annotations: [wave, keep_exceptions, stems]}
+  drop_outside:              {reads: [suffixes, suffixes_range, retain_in, keep, retain, pattern, variables_pattern], annotations: []}
+  retain:                    {reads: [], annotations: [columns, variables, variable, suffixes]}
+  retain_if_present:         {reads: [], annotations: [columns, variables, variable, suffixes]}
+  retain_as_metadata_only:   {reads: [], annotations: [columns, variables, variable, suffixes]}

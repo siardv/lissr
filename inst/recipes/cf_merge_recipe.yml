@@ -8,7 +8,7 @@
 meta:
   module: cf
   module_label: Family and Household
-  recipe_version: "1.0.0"
+  recipe_version: "1.2.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -49,7 +49,7 @@ global:
   id_variable: nomem_encr
   wave_variable: wave_id
   year_variable: wave_year
-  labelled_policy: to_factor
+  labelled_policy: to_numeric
   missing_variable_policy: warn_and_skip
   strip_label_whitespace: true
   expected_presence:
@@ -64,7 +64,7 @@ global:
 wave_index:
 - id: cf08a
   year: 2008
-  file_pattern: cf08a_*p*.csv
+  file_pattern: "cf08a_*"
   notes: ''
   var_prefix: cf08a
   role_map: &id001
@@ -76,97 +76,97 @@ wave_index:
     gender_partner_binary: gender_partner_binary
 - id: cf09b
   year: 2009
-  file_pattern: cf09b_*p*.csv
+  file_pattern: "cf09b_*"
   notes: ''
   var_prefix: cf09b
   role_map: *id001
 - id: cf10c
   year: 2010
-  file_pattern: cf10c_*p*.csv
+  file_pattern: "cf10c_*"
   notes: ''
   var_prefix: cf10c
   role_map: *id001
 - id: cf11d
   year: 2011
-  file_pattern: cf11d_*p*.csv
+  file_pattern: "cf11d_*"
   notes: ''
   var_prefix: cf11d
   role_map: *id001
 - id: cf12e
   year: 2012
-  file_pattern: cf12e_*p*.csv
+  file_pattern: "cf12e_*"
   notes: ''
   var_prefix: cf12e
   role_map: *id001
 - id: cf13f
   year: 2013
-  file_pattern: cf13f_*p*.csv
+  file_pattern: "cf13f_*"
   notes: ''
   var_prefix: cf13f
   role_map: *id001
 - id: cf14g
   year: 2014
-  file_pattern: cf14g_*p*.csv
+  file_pattern: "cf14g_*"
   notes: ''
   var_prefix: cf14g
   role_map: *id001
 - id: cf15h
   year: 2015
-  file_pattern: cf15h_*p*.csv
+  file_pattern: "cf15h_*"
   notes: ''
   var_prefix: cf15h
   role_map: *id001
 - id: cf16i
   year: 2016
-  file_pattern: cf16i_*p*.csv
+  file_pattern: "cf16i_*"
   notes: ''
   var_prefix: cf16i
   role_map: *id001
 - id: cf17j
   year: 2017
-  file_pattern: cf17j_*p*.csv
+  file_pattern: "cf17j_*"
   notes: ''
   var_prefix: cf17j
   role_map: *id001
 - id: cf18k
   year: 2018
-  file_pattern: cf18k_*p*.csv
+  file_pattern: "cf18k_*"
   notes: ''
   var_prefix: cf18k
   role_map: *id001
 - id: cf19l
   year: 2019
-  file_pattern: cf19l_*p*.csv
+  file_pattern: "cf19l_*"
   notes: ''
   var_prefix: cf19l
   role_map: *id001
 - id: cf20m
   year: 2020
-  file_pattern: cf20m_*p*.csv
+  file_pattern: "cf20m_*"
   notes: ''
   var_prefix: cf20m
   role_map: *id001
 - id: cf21n
   year: 2021
-  file_pattern: cf21n_*p*.csv
+  file_pattern: "cf21n_*"
   notes: ''
   var_prefix: cf21n
   role_map: *id001
 - id: cf22o
   year: 2022
-  file_pattern: cf22o_*p*.csv
+  file_pattern: "cf22o_*"
   notes: ''
   var_prefix: cf22o
   role_map: *id001
 - id: cf23p
   year: 2023
-  file_pattern: cf23p_*p*.csv
+  file_pattern: "cf23p_*"
   notes: ''
   var_prefix: cf23p
   role_map: *id001
 - id: cf24q
   year: 2024
-  file_pattern: cf24q_*p*.csv
+  file_pattern: "cf24q_*"
   notes: ''
   var_prefix: cf24q
   role_map: *id001
@@ -181,17 +181,21 @@ variable_rules:
   log: true
 - rule_id: VAR-002
   anomaly_ref: null
-  description: coerce fieldwork-month column to integer
+  description: coerce the fieldwork-month column to integer (numeric yyyymm in
+    all 17 archive waves; re-keyed from the unread target_suffixes form in 1.4)
   action: type_coerce
-  target_suffixes:
+  suffixes:
   - _m
   target_type: integer
   if_absent: warn_and_skip
   log: true
 - rule_id: VAR-003
   anomaly_ref: A-08
-  description: coerce evaluation items to integer (type inconsistency in cf11d)
-  action: type_coerce
+  description: evaluation items 388-392 are F1.0 numeric in ALL 17 archive waves
+    (cf_scan_results, 2026-07-11); the recorded cf11d type inconsistency does not
+    reproduce, so no coercion is needed. the stacking-time type harmonizer covers
+    any future drift. retired to documentation in 1.4.
+  action: note_only
   target_suffixes:
   - '388'
   - '389'
@@ -203,9 +207,11 @@ variable_rules:
   log: true
 - rule_id: VAR-004
   anomaly_ref: A-08
-  description: coerce completion time to numeric (format widens from F8 to F10 at cf20m)
+  description: coerce completion time (397) to numeric. the spss format widens
+    from F8.0 to F10.0 exactly at cf20m, verified against all 17 archive waves;
+    re-keyed from the unread target_suffixes form in 1.4
   action: type_coerce
-  target_suffixes:
+  suffixes:
   - '397'
   target_type: numeric
   if_absent: warn_and_skip
@@ -226,48 +232,63 @@ variable_rules:
 harmonization_rules:
 - rule_id: HARM-001
   anomaly_ref: null
-  description: recode LISS standard missing code -9 (not asked / don't know) to NA across
-    all numeric columns. -1 is excluded because it occurs in no value label and no
+  description: recode the 'unknown' / DK code -9 to NA on the columns that carry it.
+    scope verified against all 17 archive waves (cf_scan_results, 2026-07-11); -9
+    occurs ONLY on the imputation-flag trio 398/399/400 (label 'unknown', from
+    cf10c; their spss user-missing declarations are inconsistent across waves, so
+    this recode is load-bearing), on 535 from cf22o, and on 554/555/556 in cf24q.
+    the pre-1.4 form targeted every numeric column via an unread 'target' key and
+    never executed. -1 is excluded because it occurs in no value label and no
     sampled data for this module.
-  action: na_recode
-  codes:
-  - -9
-  target: all_numeric
-  waves: all
+  action: recode_to_na
+  recodes:
+  - waves: [cf10c, cf11d, cf12e, cf13f, cf14g, cf15h, cf16i, cf17j, cf18k, cf19l,
+            cf20m, cf21n, cf22o, cf23p, cf24q]
+    codes: [-9]
+    scope: ["398", "399", "400"]
+  - waves: [cf22o, cf23p, cf24q]
+    codes: [-9]
+    scope: ["535"]
+  - waves: [cf24q]
+    codes: [-9]
+    scope: ["554", "555", "556"]
   if_absent: warn_and_skip
   log: true
 - rule_id: HARM-002
   anomaly_ref: A-02
-  description: 'standardise evaluation-scale labels across three translation eras: cf08a-cf13f ''definitely'', cf14g-cf21n
-    ''certainly'', cf22o+ dropped ''=''. all assumed comparable (translation artefact, not instrument change).
+  description: 'evaluation items 388-392 carry three endpoint-label translation eras,
+    verified against all 17 archive waves (cf_scan_results, 2026-07-11): cf08a-cf13f
+    "1 = definitely no/5 = definitely yes", cf14g-cf21n "1 = certainly not/5 =
+    certainly yes", cf22o+ the same wording without the "=". codes 1-5 are stable
+    throughout, so the eras are a translation artifact, not an instrument change,
+    and pooling on raw codes is sound. the pre-1.4 form was a value_recode with
+    string targets, which never executed (unread target_suffixes) and, if
+    re-keyed naively, would have coerced every response to NA; re-expressed as
+    documentation.
 
     '
-  action: value_recode
+  action: note_only
   target_suffixes:
   - '388'
   - '389'
   - '390'
   - '391'
   - '392'
-  waves: all
-  mapping:
-    1: strongly_disagree
-    2: disagree
-    3: neither
-    4: agree
-    5: strongly_agree
-  if_absent: warn_and_skip
   log: true
 - rule_id: HARM-003
   anomaly_ref: A-10
-  description: 'harmonise school denomination (new numbering 434-448) to its 8-category scheme.
-    code 7 (Islamic) was added at cf11d, which pushed "I don''t know" from code 7 to code 8.
-    labels follow the cf11d+ codebook. the old numbering 282-296 (cf08a-cf10c) is a 7-category
-    scheme where code 7 means "I don''t know"; it is documented separately (DROP-004, NOTE-001-style
-    note below, VAL-006) and is NOT pooled with this block on raw codes.
+  description: 'school denomination, new numbering 434-448 (cf11d+): 8-category
+    scheme with code 7 Islamic and code 8 "I don''t know", verified against all
+    cf11d-cf24q waves (cf_scan_results, 2026-07-11; cf12e labels code 7
+    "Islamitic", a spelling variant of the same category). the old numbering
+    282-296 (cf08a-cf10c) is the 7-category scheme where code 7 means "I don''t
+    know" and is NOT pooled with this block on raw codes (DROP-004, VAL-006).
+    codes are kept as the codebook scheme; the pre-1.4 form was a value_recode
+    to category-name strings, which never executed and would have coerced the
+    items to NA if re-keyed; re-expressed as documentation.
 
     '
-  action: value_recode
+  action: note_only
   target_suffixes:
   - '434'
   - '435'
@@ -284,26 +305,16 @@ harmonization_rules:
   - '446'
   - '447'
   - '448'
-  waves: all
-  mapping:
-    1: public
-    2: Roman Catholic
-    3: Christian Protestant
-    4: Christian Ecumenical
-    5: Neutral or General Special
-    6: other including cooperative
-    7: Islamic
-    8: I don't know
-  if_absent: warn_and_skip
   log: true
 - rule_id: HARM-004
   anomaly_ref: A-09
-  description: recode -8 (prefer not to say) to NA. occurs only on suffix 535 (sexual
-    preference), introduced at cf22o; scoped na_recode mirroring HARM-001's payload shape.
-  action: na_recode
+  description: recode -8 ('I prefer not to say') to NA on suffix 535 (sexual
+    preference), introduced at cf22o. verified against cf22o/cf23p/cf24q; -8
+    occurs on no other column in any archive wave.
+  action: recode_to_na
   codes:
   - -8
-  target: all_numeric
+  suffixes: ["535"]
   waves:
   - cf22o
   - cf23p
@@ -317,7 +328,7 @@ harmonization_rules:
   action: recode_to_na
   codes:
   - 999
-  target_suffixes:
+  suffixes:
   - '166'
   - '180'
   - '181'
@@ -332,7 +343,7 @@ harmonization_rules:
   action: recode_to_na
   codes:
   - 9999
-  target_suffixes:
+  suffixes:
   - '005'
   - '008'
   - '009'
@@ -368,7 +379,7 @@ harmonization_rules:
   action: recode_to_na
   codes:
   - 99999
-  target_suffixes:
+  suffixes:
   - '005'
   - '008'
   - '009'
