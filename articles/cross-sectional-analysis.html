@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -75,7 +76,7 @@
       <h1>Cross-Sectional Analysis with a Single Wave</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/vignettes/cross-sectional-analysis.Rmd" class="external-link"><code>vignettes/cross-sectional-analysis.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/vignettes/cross-sectional-analysis.Rmd" class="external-link"><code>vignettes/cross-sectional-analysis.Rmd</code></a></small>
       <div class="d-none name"><code>cross-sectional-analysis.Rmd</code></div>
     </div>
 
@@ -119,7 +120,7 @@ analysis-ready data instead of raw SPSS.</p>
 <span><span class="co">#&gt; # A tibble: 1 × 8</span></span>
 <span><span class="co">#&gt;   module module_id  wave wave_id type  name       file              path</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;      &lt;int&gt; &lt;int&gt;   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;             &lt;chr&gt;</span></span>
-<span><span class="co">#&gt; 1 Health        18    17    1054 spss  ch24q 1.0p ch24q_1_0p_EN.sav /down…</span></span>
+<span><span class="co">#&gt; 1 Health        18    18    1102 spss  ch25r 1.0p ch25r_1_0p_EN.sav /down…</span></span>
 <span></span>
 <span><span class="co"># download just that one file</span></span>
 <span><span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">latest_health</span>, .dir <span class="op">=</span> <span class="st">"data/ch"</span><span class="op">)</span></span></code></pre></div>
@@ -137,7 +138,7 @@ otherwise do by hand with a codebook open.</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># option A: read raw and clean yourself</span></span>
-<span><span class="va">raw</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/ch/ch24q_1_0p_EN.sav"</span><span class="op">)</span></span>
+<span><span class="va">raw</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/ch/ch25r_1_0p_EN.sav"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">raw</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 4892  271</span></span>
 <span></span>
@@ -148,7 +149,7 @@ otherwise do by hand with a codebook open.</p>
 <span><span class="co"># temporarily trim the recipe to just the wave you need</span></span>
 <span><span class="va">recipe</span><span class="op">$</span><span class="va">wave_index</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/keep.html" class="external-link">keep</a></span><span class="op">(</span></span>
 <span>  <span class="va">recipe</span><span class="op">$</span><span class="va">wave_index</span>,</span>
-<span>  <span class="op">~</span> <span class="va">.x</span><span class="op">$</span><span class="va">id</span> <span class="op">==</span> <span class="st">"ch24q"</span></span>
+<span>  <span class="op">~</span> <span class="va">.x</span><span class="op">$</span><span class="va">id</span> <span class="op">==</span> <span class="st">"ch25r"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span><span class="va">recipe</span>, data_dir <span class="op">=</span> <span class="st">"data/ch"</span>, output_dir <span class="op">=</span> <span class="st">"output"</span><span class="op">)</span></span>
@@ -164,24 +165,25 @@ column appended.</p>
 <h2 id="step-3-attach-background-variables">Step 3 — attach background variables<a class="anchor" aria-label="anchor" href="#step-3-attach-background-variables"></a>
 </h2>
 <p>Most cross-sectional analyses need demographics: age, sex, education,
-income. These live in the Background Variables module (CA), not in the
-survey module itself.</p>
+income. These live in the Background Variables file (<code>avars</code>,
+a separate monthly release), not in the survey module itself.</p>
 <p><strong>Critical rule</strong>: join on <code>nomem_encr</code> only.
 Never use <code>nohouse_encr</code> — household assignments change over
 time. Match the fieldwork month, not the calendar year.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># download the background variables file for the same fieldwork period</span></span>
-<span><span class="co"># (health wave 24q was fielded around November 2024)</span></span>
+<span><span class="co"># (check fieldwork_ym in the merged output for the exact month)</span></span>
 <span><span class="va">bg_files</span> <span class="op">&lt;-</span> <span class="va">bp</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
 <span>    <span class="va">module</span> <span class="op">==</span> <span class="st">"Background Variables"</span>,</span>
 <span>    <span class="va">type</span>   <span class="op">==</span> <span class="st">"spss"</span>,</span>
-<span>    <span class="va">wave</span>   <span class="op">==</span> <span class="fl">202411</span>  <span class="co"># YYYYMM matching fieldwork period</span></span>
+<span>    <span class="va">wave</span>   <span class="op">==</span> <span class="fl">202511</span>  <span class="co"># YYYYMM matching the fieldwork period</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">bg_files</span>, .dir <span class="op">=</span> <span class="st">"data/avars"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">avars</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars/avars_202411_EN_1_0p.sav"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="co"># each avars file also carries this period as its `wave` column</span></span>
+<span><span class="va">avars</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars/avars_202511_EN_1_0p.sav"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/zap_labels.html" class="external-link">zap_labels</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
 <span>    <span class="va">nomem_encr</span>,</span>
@@ -244,7 +246,7 @@ matches the fieldwork month, not the calendar year.</label></li>
 the merge engine does this automatically, but check if you loaded raw
 SPSS directly.</label></li>
 <li><label><input type="checkbox">You report the wave identifier
-(e.g. ch24q) and the LISS data version number in your methods section so
+(e.g. ch25r) and the LISS data version number in your methods section so
 results are reproducible.</label></li>
 <li><label><input type="checkbox">If you selected a single wave from a
 module with instrument changes (boundary rules), note that in your

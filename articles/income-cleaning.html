@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -75,7 +76,7 @@
       <h1>Income Cleaning</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/vignettes/income-cleaning.Rmd" class="external-link"><code>vignettes/income-cleaning.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/vignettes/income-cleaning.Rmd" class="external-link"><code>vignettes/income-cleaning.Rmd</code></a></small>
       <div class="d-none name"><code>income-cleaning.Rmd</code></div>
     </div>
 
@@ -117,9 +118,12 @@ rules (D01 to D11) identify implausible cells, from unrecoverable
 placeholder values through household-level scale errors and robust
 statistical outliers to dataset-level extremes. Correction rules (C01 to
 C06) generate candidate replacement values. The finalization rule (F01)
-voids anything still outside the plausible range. Each rule carries an
-id, a description, a rationale, optional literature references,
-parameters, and an <code>enabled</code> switch.</p>
+handles anything still outside the plausible range according to its
+<code>disposition</code>: <code>void</code> (the default) sets such
+values to NA, <code>winsorise</code> clamps over-cap values to the cap,
+and <code>flag</code> only ledgers them. Each rule carries an id, a
+description, a rationale, optional literature references, parameters,
+and an <code>enabled</code> switch.</p>
 </div>
 <div class="section level2">
 <h2 id="quick-start-dry-run-first-then-correct">Quick start: dry run first, then correct<a class="anchor" aria-label="anchor" href="#quick-start-dry-run-first-then-correct"></a>
@@ -226,6 +230,11 @@ OECD-modified and square-root alternatives:</p>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    stand_inc <span class="op">=</span> <span class="fu"><a href="../reference/liss_equivalise_income.html">liss_equivalise_income</a></span><span class="op">(</span><span class="va">nethh</span>, <span class="va">aantalhh</span>, <span class="va">aantalki</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
+<p>One definitional caveat for the OECD-modified scale: it defines
+children as household members under 14, while <code>aantalki</code>
+counts children living at home of any age, so passing
+<code>aantalki</code> approximates that scale; see
+<code><a href="../reference/liss_equivalise_income.html">?liss_equivalise_income</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="where-the-rules-came-from">Where the rules came from<a class="anchor" aria-label="anchor" href="#where-the-rules-came-from"></a>

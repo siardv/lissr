@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -75,7 +76,7 @@
       <h1>Custom Merge Recipes</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/vignettes/custom-recipes.Rmd" class="external-link"><code>vignettes/custom-recipes.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/vignettes/custom-recipes.Rmd" class="external-link"><code>vignettes/custom-recipes.Rmd</code></a></small>
       <div class="d-none name"><code>custom-recipes.Rmd</code></div>
     </div>
 
@@ -84,11 +85,11 @@
 <div class="section level2">
 <h2 id="when-to-write-a-custom-recipe">When to write a custom recipe<a class="anchor" aria-label="anchor" href="#when-to-write-a-custom-recipe"></a>
 </h2>
-<p>The built-in recipes cover the eight core LISS modules as distributed
+<p>The built-in recipes cover the ten core LISS modules as distributed
 by the archive. You might need a custom recipe when:</p>
 <ul>
 <li>You are working with a <strong>special-purpose LISS study</strong>
-(not one of the eight core modules) that has no built-in recipe.</li>
+(not one of the ten core modules) that has no built-in recipe.</li>
 <li>You want to <strong>subset waves</strong> or <strong>add
 project-specific harmonization</strong> on top of the standard
 recipe.</li>
@@ -186,15 +187,15 @@ it.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">recipe</span>, max.level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co">#&gt; List of 10</span></span>
 <span><span class="co">#&gt;  $ meta               :List of 8</span></span>
-<span><span class="co">#&gt;  $ global             :List of 6</span></span>
-<span><span class="co">#&gt;  $ wave_index         :List of 17</span></span>
-<span><span class="co">#&gt;  $ variable_rules     :List of 5</span></span>
-<span><span class="co">#&gt;  $ harmonization_rules:List of 8</span></span>
-<span><span class="co">#&gt;  $ boundary_rules     :List of 4</span></span>
+<span><span class="co">#&gt;  $ global             :List of 7</span></span>
+<span><span class="co">#&gt;  $ wave_index         :List of 18</span></span>
+<span><span class="co">#&gt;  $ variable_rules     :List of 17</span></span>
+<span><span class="co">#&gt;  $ harmonization_rules:List of 4</span></span>
+<span><span class="co">#&gt;  $ boundary_rules     :List of 12</span></span>
 <span><span class="co">#&gt;  $ drop_retain_rules  :List of 3</span></span>
-<span><span class="co">#&gt;  $ derived_variables  :List of 2</span></span>
-<span><span class="co">#&gt;  $ validation_checks  :List of 4</span></span>
-<span><span class="co">#&gt;  $ logging            :List of 3</span></span></code></pre></div>
+<span><span class="co">#&gt;  $ derived_variables  :List of 6</span></span>
+<span><span class="co">#&gt;  $ validation_checks  :List of 10</span></span>
+<span><span class="co">#&gt;  $ logging            :List of 5</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="subset-to-specific-waves">Subset to specific waves<a class="anchor" aria-label="anchor" href="#subset-to-specific-waves"></a>
 </h3>
@@ -375,7 +376,8 @@ know about, annotate it with a comparability contract:</p>
 <span>    waves_early <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"cs08a"</span>, <span class="st">"cs09b"</span>, <span class="st">"cs10c"</span>, <span class="st">"cs11d"</span>, <span class="st">"cs12e"</span>,</span>
 <span>                       <span class="st">"cs13f"</span>, <span class="st">"cs14g"</span>, <span class="st">"cs15h"</span>, <span class="st">"cs16i"</span>, <span class="st">"cs17j"</span>,</span>
 <span>                       <span class="st">"cs18k"</span>, <span class="st">"cs19l"</span><span class="op">)</span>,</span>
-<span>    waves_late  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"cs20m"</span>, <span class="st">"cs21n"</span>, <span class="st">"cs22o"</span>, <span class="st">"cs23p"</span>, <span class="st">"cs24q"</span><span class="op">)</span>,</span>
+<span>    waves_late  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"cs20m"</span>, <span class="st">"cs21n"</span>, <span class="st">"cs22o"</span>, <span class="st">"cs23p"</span>, <span class="st">"cs24q"</span>,</span>
+<span>                       <span class="st">"cs25r"</span><span class="op">)</span>,</span>
 <span>    early_label <span class="op">=</span> <span class="st">"open_numeric"</span>,</span>
 <span>    late_label  <span class="op">=</span> <span class="st">"categorical"</span>,</span>
 <span>    comparability <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -401,24 +403,45 @@ The validator rejects any action not in this vocabulary:</p>
 <code class="sourceCode R"><span><span class="co"># inspect the vocabulary programmatically</span></span>
 <span><span class="fu">lissr</span><span class="fu">:::</span><span class="va">VALID_ACTIONS</span></span>
 <span><span class="co">#&gt; $variable_rules</span></span>
-<span><span class="co">#&gt; [1] "strip_prefix"         "type_coerce"          "rename"</span></span>
-<span><span class="co">#&gt; [4] "set_label"            "apply_labelled_policy" "strip_value_labels"</span></span>
-<span><span class="co">#&gt; [7] "note_only"</span></span>
+<span><span class="co">#&gt;  [1] "strip_prefix"                "type_coerce"</span></span>
+<span><span class="co">#&gt;  [3] "coerce_type"                 "coerce_numeric"</span></span>
+<span><span class="co">#&gt;  [5] "rename"                      "rename_to_suffix"</span></span>
+<span><span class="co">#&gt;  [7] "set_label"                   "apply_labelled_policy"</span></span>
+<span><span class="co">#&gt;  [9] "strip_value_labels"          "strip_labels_coerce_numeric"</span></span>
+<span><span class="co">#&gt; [11] "ensure_column"               "use_global_policy"</span></span>
+<span><span class="co">#&gt; [13] "identity"                    "safe_integer_cast"</span></span>
+<span><span class="co">#&gt; [15] "derive_fieldwork_month"      "parse_time"</span></span>
+<span><span class="co">#&gt; [17] "note_only"</span></span>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; $harmonization_rules</span></span>
-<span><span class="co">#&gt; [1] "recode_to_na"        "value_recode"        "fix_label"</span></span>
-<span><span class="co">#&gt; [4] "crosswalk"           "strip_question_stem" "lowercase_labels"</span></span>
-<span><span class="co">#&gt; [7] "flag_only"           "note_only"</span></span>
+<span><span class="co">#&gt;  [1] "type_coerce"            "derive_fieldwork_month" "parse_time"</span></span>
+<span><span class="co">#&gt;  [4] "recode_to_na"           "recode_sentinels_to_na" "na_recode"</span></span>
+<span><span class="co">#&gt;  [7] "recode"                 "value_recode"           "fix_label"</span></span>
+<span><span class="co">#&gt; [10] "strip_question_stem"    "lowercase_labels"       "normalize_labels"</span></span>
+<span><span class="co">#&gt; [13] "flag_only"              "flag_absence"           "subtract"</span></span>
+<span><span class="co">#&gt; [16] "crosswalk"              "conditional_label_swap" "label_to_string"</span></span>
+<span><span class="co">#&gt; [19] "derive_combined_party"  "extend_categories"      "transform"</span></span>
+<span><span class="co">#&gt; [22] "note_only"</span></span>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; $boundary_rules</span></span>
-<span><span class="co">#&gt; [1] "add_era_flag"     "add_flag"         "add_period_flag"</span></span>
-<span><span class="co">#&gt; [4] "split_variable"   "structural_na"    "filter_rows"</span></span>
-<span><span class="co">#&gt; [7] "crosswalk_rename" "stack_aux_files"  "note_only"</span></span>
+<span><span class="co">#&gt;  [1] "safe_integer_cast"     "fix_label"             "derive_combined_party"</span></span>
+<span><span class="co">#&gt;  [4] "add_era_flag"          "add_flag"              "add_period_flag"</span></span>
+<span><span class="co">#&gt;  [7] "split_variable"        "structural_na"         "filter_rows"</span></span>
+<span><span class="co">#&gt; [10] "drop_outside"          "crosswalk_rename"      "structural_note"</span></span>
+<span><span class="co">#&gt; [13] "stack_aux_files"       "retain_where_present"  "retain_but_flag"</span></span>
+<span><span class="co">#&gt; [16] "note_only"</span></span>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; $drop_retain_rules</span></span>
-<span><span class="co">#&gt; [1] "drop"                    "retain"</span></span>
-<span><span class="co">#&gt; [3] "retain_if_present"       "retain_as_metadata_only"</span></span>
-<span><span class="co">#&gt; [5] "note_only"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "flag_only"               "flag_absence"</span></span>
+<span><span class="co">#&gt; [3] "drop_outside"            "retain_but_flag"</span></span>
+<span><span class="co">#&gt; [5] "drop"                    "retain"</span></span>
+<span><span class="co">#&gt; [7] "retain_if_present"       "retain_as_metadata_only"</span></span>
+<span><span class="co">#&gt; [9] "note_only"</span></span></code></pre></div>
+<p>The per-action payload contract (which keys each action reads, and
+which it sanctions as documentation) lives in
+<code>inst/extdata/action_vocabulary.yml</code>;
+<code><a href="../reference/audit_liss_recipes.html">audit_liss_recipes()</a></code> checks a whole recipe corpus against
+it.</p>
 </div>
 <div class="section level2">
 <h2 id="sharing-recipes-with-collaborators">Sharing recipes with collaborators<a class="anchor" aria-label="anchor" href="#sharing-recipes-with-collaborators"></a>

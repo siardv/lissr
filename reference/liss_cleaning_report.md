@@ -10,7 +10,7 @@ the engine-shaped audit log as JSONL.
 ## Usage
 
 ``` r
-liss_cleaning_report(result, output_dir = ".", verbose = TRUE)
+liss_cleaning_report(result, output_dir, verbose = TRUE)
 ```
 
 ## Arguments
@@ -22,7 +22,8 @@ liss_cleaning_report(result, output_dir = ".", verbose = TRUE)
 
 - output_dir:
 
-  directory for the artifacts (created if needed).
+  directory for the artifacts (created if needed). Required, so three
+  files are never written into the working directory by accident.
 
 - verbose:
 

@@ -27,3 +27,5 @@
   Recipes](https://siardv.github.io/lissr/articles/custom-recipes.md):
 - [Reproducible Research
   Pipelines](https://siardv.github.io/lissr/articles/reproducible-pipelines.md):
+- [The Canonical Recipe
+  Schema](https://siardv.github.io/lissr/articles/canonical-schema.md):

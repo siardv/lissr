@@ -3,12 +3,18 @@
 required metadata and variable mappings, sane global constraints,
 unique rule ids, actions drawn from the controlled vocabulary,
 non-empty descriptions, resolvable reference keys, and numeric
-parameter sanity. Unrecognized rule keys draw a warning only,
+parameter sanity. Controlled values are enforced for detection-rule
+disposition, scope, and stage, the finalization disposition,
+the selection anchors, consensus-detector methods, and nested
+per-method thresholds. Unrecognized rule keys draw a warning only,
 mirroring the merge engine's authoring check."><meta property="og:description" content="Checks a parsed ruleset against the income-cleaning schema v1.0.0:
 required metadata and variable mappings, sane global constraints,
 unique rule ids, actions drawn from the controlled vocabulary,
 non-empty descriptions, resolvable reference keys, and numeric
-parameter sanity. Unrecognized rule keys draw a warning only,
+parameter sanity. Controlled values are enforced for detection-rule
+disposition, scope, and stage, the finalization disposition,
+the selection anchors, consensus-detector methods, and nested
+per-method thresholds. Unrecognized rule keys draw a warning only,
 mirroring the merge engine's authoring check."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -17,7 +23,7 @@ mirroring the merge engine's authoring check."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,6 +50,7 @@ mirroring the merge engine's authoring check."></head><body>
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -59,7 +66,7 @@ mirroring the merge engine's authoring check."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Validate an income-cleaning ruleset</h1>
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/R/liss_clean_income.R" class="external-link"><code>R/liss_clean_income.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/R/liss_clean_income.R" class="external-link"><code>R/liss_clean_income.R</code></a></small>
       <div class="d-none name"><code>validate_cleaning_ruleset.Rd</code></div>
     </div>
 
@@ -68,7 +75,10 @@ mirroring the merge engine's authoring check."></head><body>
 required metadata and variable mappings, sane global constraints,
 unique rule ids, actions drawn from the controlled vocabulary,
 non-empty descriptions, resolvable reference keys, and numeric
-parameter sanity. Unrecognized rule keys draw a warning only,
+parameter sanity. Controlled values are enforced for detection-rule
+<code>disposition</code>, <code>scope</code>, and <code>stage</code>, the finalization disposition,
+the <code>selection</code> anchors, consensus-detector <code>methods</code>, and nested
+per-method <code>thresholds</code>. Unrecognized rule keys draw a warning only,
 mirroring the merge engine's authoring check.</p>
     </div>
 

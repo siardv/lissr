@@ -20,13 +20,13 @@ person-wave level.
 
 ## Architecture of a multi-module analysis
 
-    Background Variables (CA) ──── demographics, income, education
+    Background Variables (avars, monthly) ── demographics, income, education
               │
-              ├── Health (CH) ──── self-rated health, BMI, smoking
+              ├── Health (ch) ──── self-rated health, smoking
               │
-              ├── Income (CI) ──── employment status, labour income
+              ├── Income (ci) ──── employment status, labour income
               │
-              └── Politics (CV) ── voting, political trust
+              └── Politics (cv) ── voting, political trust
 
 Each module is merged independently using its own recipe (different
 sentinel codes, different boundary rules, different variable numbering),
@@ -42,12 +42,16 @@ library(purrr)
 
 liss_login()
 
-# download all waves for three modules
+# download all waves for three modules. map each module code to a
+# distinctive fragment of its archive display name; matching by
+# fragment is robust to small display-name changes, and the code (not
+# the display name) names the directory the recipes expect
 bp <- liss_blueprint()
-for (mod in c("Health", "Economic Integration: Income", "Politics and Values")) {
-  files <- bp |> filter(module == mod, type == "spss")
-  mod_dir <- file.path("data", tolower(substr(mod, 1, 2)))
-  liss_download(files, .dir = mod_dir)
+mods <- c(ch = "Health", ci = "Income", cv = "Politics")
+for (code in names(mods)) {
+  files <- bp |>
+    filter(grepl(mods[[code]], module, ignore.case = TRUE), type == "spss")
+  liss_download(files, .dir = file.path("data", code))
 }
 
 # merge each module with its own recipe
@@ -82,19 +86,18 @@ column-name collisions.
 
 ``` r
 
-# health: self-rated health (s001) and BMI (s038)
+# the suffixes below are illustrative; the same suffix means different
+# things in different modules, so confirm each one against the module
+# codebook or the merge report before analysis
 health <- results$ch$data |>
   select(nomem_encr, wave_year,
-         srh = s001,
-         bmi = s038)
+         srh = s001)
 
-# income: main employment status (s001 in CI = net personal income)
 income <- results$ci$data |>
   select(nomem_encr, wave_year,
          net_income = s001,
          employed   = s006)
 
-# politics: voted in last election (s012 in CV)
 politics <- results$cv$data |>
   select(nomem_encr, wave_year,
          voted_last_election = s012,
@@ -104,9 +107,10 @@ politics <- results$cv$data |>
 ## Step 3 — align wave years
 
 Not all modules are fielded in exactly the same year. The Health module
-skipped 2014 (there is no ch14 wave); the Work module has 15 waves while
-Health has 17. When joining on `wave_year`, you get `NA` in modules that
-did not have a wave that year. This is expected, not an error.
+skipped 2014 (there is no ch14 wave) and Politics and Values skipped
+2015; the Work module has 15 waves while Health has 18. When joining on
+`wave_year`, you get `NA` in modules that did not have a wave that year.
+This is expected, not an error.
 
 ``` r
 
@@ -114,15 +118,15 @@ did not have a wave that year. This is expected, not an error.
 purrr::map(results, ~ sort(unique(.x$data$wave_year)))
 #> $ch
 #>  [1] 2007 2008 2009 2010 2011 2012 2013 2015 2016 2017 2018 2019 2020 2021
-#>      2022 2023 2024
+#>      2022 2023 2024 2025
 #>
 #> $ci
-#>  [1] 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020
-#>      2021 2022 2023 2024
+#>  [1] 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021
+#>      2022 2023 2024 2025
 #>
 #> $cv
-#>  [1] 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021
-#>      2022 2023 2024
+#>  [1] 2008 2009 2010 2011 2012 2013 2014 2016 2017 2018 2019 2020 2021 2022
+#>      2023 2024 2025 2026
 
 # find the overlapping years
 common_years <- Reduce(
@@ -130,8 +134,8 @@ common_years <- Reduce(
   purrr::map(results, ~ unique(.x$data$wave_year))
 )
 common_years
-#> [1] 2008 2009 2010 2011 2012 2013 2015 2016 2017 2018 2019 2020 2021 2022
-#>     2023 2024
+#> [1] 2008 2009 2010 2011 2012 2013 2016 2017 2018 2019 2020 2021 2022 2023
+#>     2024 2025
 ```
 
 ## Step 4 — join modules
@@ -232,13 +236,13 @@ purrr::map(results, ~ {
 })
 ```
 
-## Scaling to all eight modules
+## Scaling to all ten modules
 
 If you need variables from every module, the batch merge handles it:
 
 ``` r
 
-all_modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci")
+all_modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci", "ca", "cr")
 recipe_paths <- purrr::map_chr(all_modules, ~ {
   system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
 })

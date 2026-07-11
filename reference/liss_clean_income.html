@@ -23,7 +23,7 @@ and a plain-language justification."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,6 +50,7 @@ and a plain-language justification."></head><body>
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -65,7 +66,7 @@ and a plain-language justification."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Detect and correct implausible household-income values</h1>
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/R/liss_clean_income.R" class="external-link"><code>R/liss_clean_income.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/R/liss_clean_income.R" class="external-link"><code>R/liss_clean_income.R</code></a></small>
       <div class="d-none name"><code>liss_clean_income.Rd</code></div>
     </div>
 
@@ -132,7 +133,11 @@ plausibility constraints.</p></dd>
 
 <dt id="arg-disable-enable-only">disable, enable_only<a class="anchor" aria-label="anchor" href="#arg-disable-enable-only"></a></dt>
 <dd><p>optional character vectors of rule ids to
-switch off, or to run exclusively.</p></dd>
+switch off, or to run exclusively. <code>enable_only</code> is scoped per
+ruleset section: only sections that contain a named rule are
+restricted to the named set, so <code>enable_only = "D06"</code> isolates one
+detection rule while the preparation, correction, and finalization
+machinery keeps running.</p></dd>
 
 
 <dt id="arg-params">params<a class="anchor" aria-label="anchor" href="#arg-params"></a></dt>
