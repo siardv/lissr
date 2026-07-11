@@ -9,7 +9,10 @@ liss_download(
   .dir = "liss",
   .modules = NULL,
   .waves = NULL,
-  .unzip = TRUE
+  .unzip = TRUE,
+  .skip_existing = FALSE,
+  .timeout = 300,
+  .retries = 2
 )
 }
 \arguments{
@@ -25,16 +28,38 @@ automatically if it does not exist.}
 \item{.waves}{optional integer vector to filter by wave number.}
 
 \item{.unzip}{logical. if \code{TRUE} (the default), ZIP files are extracted
-and the archive is removed.}
+and the archive is removed once extraction is verified; a failed
+extraction keeps the archive and reports \code{unzip_failed_archive_kept}.}
+
+\item{.skip_existing}{logical. if \code{TRUE}, files whose listed name is
+already present in \code{.dir} are skipped without a network request
+(status \code{skipped_existing}). the check uses the archive's listed
+file name, not the name a content-disposition header may assign.}
+
+\item{.timeout}{numeric. per-file download timeout in seconds.}
+
+\item{.retries}{integer. how many times a failed request (curl error
+or HTTP 5xx) is retried before giving up on that file.}
 }
 \value{
 a tibble of download results with columns \code{file} and \code{status}
-(invisibly).
+(invisibly). \code{status} is one of \code{"ok"}, \code{"skipped_existing"},
+\code{"session_expired"}, \code{"skipped_batch_aborted"}, \code{"http_<code>"},
+\code{"unzip_failed_archive_kept"}, or \code{"error: <message>"}.
 }
 \description{
 downloads the files described in a selection tibble (typically produced
 by \code{\link[=liss_select]{liss_select()}}) to a local directory. requires an active session
 established by \code{\link[=liss_login]{liss_login()}}.
+}
+\details{
+downloads stream to disk through the authenticated session with a
+per-file timeout, and transient failures (network errors, HTTP 5xx)
+are retried. HTTP error responses are never written to disk as data
+files, ZIP archives are only removed after their extraction has been
+verified, and the first session expiry aborts the remaining batch
+(each remaining file is reported as \code{skipped_batch_aborted} instead
+of failing one by one).
 }
 \examples{
 \dontrun{

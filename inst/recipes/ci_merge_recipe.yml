@@ -8,7 +8,7 @@
 meta:
   module: ci
   module_label: Economic Integration (Income)
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -61,7 +61,7 @@ global:
 wave_index:
 - id: ci08a
   year: 2008
-  file_pattern: ci08a_1_0p_EN.csv
+  file_pattern: "ci08a_*"
   notes: fieldwork months 200806 and 200809 (June and September 2008); see codebook_ci08a_EN.pdf p. 6 (document page 4/89)
   month_range: Jun & Sep
   wave_number: 1
@@ -73,119 +73,119 @@ wave_index:
     prepension_receipt: prepension_receipt
 - id: ci09b
   year: 2009
-  file_pattern: ci09b_EN_1_1p.csv
+  file_pattern: "ci09b_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 2
   role_map: *id001
 - id: ci10c
   year: 2010
-  file_pattern: ci10c_EN_1_0p.csv
+  file_pattern: "ci10c_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 3
   role_map: *id001
 - id: ci11d
   year: 2011
-  file_pattern: ci11d_EN_1_0p.csv
+  file_pattern: "ci11d_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 4
   role_map: *id001
 - id: ci12e
   year: 2012
-  file_pattern: ci12e_1_0p_EN.csv
+  file_pattern: "ci12e_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 5
   role_map: *id001
 - id: ci13f
   year: 2013
-  file_pattern: ci13f_EN_1_2p.csv
+  file_pattern: "ci13f_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 6
   role_map: *id001
 - id: ci14g
   year: 2014
-  file_pattern: ci14g_1_0p_EN.csv
+  file_pattern: "ci14g_*"
   notes: ''
   month_range: Oct-Nov
   wave_number: 7
   role_map: *id001
 - id: ci15h
   year: 2015
-  file_pattern: ci15h_EN_2_0p.csv
+  file_pattern: "ci15h_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 8
   role_map: *id001
 - id: ci16i
   year: 2016
-  file_pattern: ci16i_EN_3_0p.csv
+  file_pattern: "ci16i_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 9
   role_map: *id001
 - id: ci17j
   year: 2017
-  file_pattern: ci17j_EN_3_0p.csv
+  file_pattern: "ci17j_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 10
   role_map: *id001
 - id: ci18k
   year: 2018
-  file_pattern: ci18k_EN_2_0p.csv
+  file_pattern: "ci18k_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 11
   role_map: *id001
 - id: ci19l
   year: 2019
-  file_pattern: ci19l_EN_2_0p.csv
+  file_pattern: "ci19l_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 12
   role_map: *id001
 - id: ci20m
   year: 2020
-  file_pattern: ci20m_EN_1_0p.csv
+  file_pattern: "ci20m_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 13
   role_map: *id001
 - id: ci21n
   year: 2021
-  file_pattern: ci21n_EN_1_0p.csv
+  file_pattern: "ci21n_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 14
   role_map: *id001
 - id: ci22o
   year: 2022
-  file_pattern: ci22o_EN_1_0p.csv
+  file_pattern: "ci22o_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 15
   role_map: *id001
 - id: ci23p
   year: 2023
-  file_pattern: ci23p_EN_1_0p.csv
+  file_pattern: "ci23p_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 16
   role_map: *id001
 - id: ci24q
   year: 2024
-  file_pattern: ci24q_EN_1_0p.csv
+  file_pattern: "ci24q_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 17
   role_map: *id001
 - id: ci25r
   year: 2025
-  file_pattern: ci25r_EN_1_0p.csv
+  file_pattern: "ci25r_*"
   notes: ''
   month_range: Jun-Jul
   wave_number: 18
@@ -2126,45 +2126,54 @@ boundary_rules:
 - rule_id: A-09
   anomaly_ref: A-09
   description: wave 14g renumbers nine VUT/prepensioen-era variables; question wording is identical on both sides. crosswalk_rename
-    maps the old name to the new canonical name in waves up to old_last_wave so both sides pool into a single column (re-expressed
-    from note_only).
+    coalesces the old and new columns into one harmonized column per pair (h_q363 through h_q371), so both sides pool into a single
+    series (keys realigned to old_suffix/new_suffix in 1.3.2.9000; re-expressed from note_only).
   action: crosswalk_rename
   label: 14g VUT-to-prepensioen renumbering
   crosswalk:
-  - old: Q066
-    new: Q363
+  - old_suffix: Q066
+    new_suffix: Q363
+    harmonized_name: h_q363
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q072
-    new: Q364
+  - old_suffix: Q072
+    new_suffix: Q364
+    harmonized_name: h_q364
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q073
-    new: Q365
+  - old_suffix: Q073
+    new_suffix: Q365
+    harmonized_name: h_q365
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q074
-    new: Q366
+  - old_suffix: Q074
+    new_suffix: Q366
+    harmonized_name: h_q366
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q077
-    new: Q367
+  - old_suffix: Q077
+    new_suffix: Q367
+    harmonized_name: h_q367
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q112
-    new: Q368
+  - old_suffix: Q112
+    new_suffix: Q368
+    harmonized_name: h_q368
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q124
-    new: Q369
+  - old_suffix: Q124
+    new_suffix: Q369
+    harmonized_name: h_q369
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q332
-    new: Q370
+  - old_suffix: Q332
+    new_suffix: Q370
+    harmonized_name: h_q370
     old_last_wave: ci13f
     new_first_wave: ci14g
-  - old: Q335
-    new: Q371
+  - old_suffix: Q335
+    new_suffix: Q371
+    harmonized_name: h_q371
     old_last_wave: ci13f
     new_first_wave: ci14g
   deleted_without_replacement:
@@ -2230,11 +2239,8 @@ drop_retain_rules:
   log: true
 - rule_id: DR03
   anomaly_ref: null
-  description: drop the stray empty h_ column; a crosswalk_rename entry with no resolvable suffix (recipe uses old/new keys, the executor reads old_suffix/new_suffix) creates it all-NA
-  action: drop
-  variables:
-  - h_
-  reason: all-NA artifact of a no-suffix crosswalk_rename
+  description: retired in 1.3.2.9000. A-09 was re-keyed to old_suffix/new_suffix with explicit harmonized_name entries (h_q363 through h_q371), so the stray all-NA h_ column this rule used to drop is no longer produced; kept as documentation of the historical artifact
+  action: note_only
   log: true
 derived_variables:
 - var_name: received_social_assistance

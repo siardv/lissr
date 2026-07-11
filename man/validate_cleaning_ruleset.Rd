@@ -21,6 +21,9 @@ Checks a parsed ruleset against the income-cleaning schema v1.0.0:
 required metadata and variable mappings, sane global constraints,
 unique rule ids, actions drawn from the controlled vocabulary,
 non-empty descriptions, resolvable reference keys, and numeric
-parameter sanity. Unrecognized rule keys draw a warning only,
+parameter sanity. Controlled values are enforced for detection-rule
+\code{disposition}, \code{scope}, and \code{stage}, the finalization disposition,
+the \code{selection} anchors, consensus-detector \code{methods}, and nested
+per-method \code{thresholds}. Unrecognized rule keys draw a warning only,
 mirroring the merge engine's authoring check.
 }

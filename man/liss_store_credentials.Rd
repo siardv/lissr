@@ -11,7 +11,7 @@ liss_store_credentials(username, password = NULL)
 (typically a 5-digit number).}
 
 \item{password}{character. if \code{NULL} (the default), prompts interactively
-via \code{\link[keyring:key_set]{keyring::key_set()}}. supplying the password directly is discouraged
+via \code{\link[keyring:key_get]{keyring::key_set()}}. supplying the password directly is discouraged
 outside of non-interactive environments because the value may be recorded
 in \code{.Rhistory}.}
 }

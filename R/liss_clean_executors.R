@@ -264,20 +264,31 @@ bound_deviation_ratio <- function(val, min_b, max_b) {
 #                   with child_weight 0.8 and elasticity 0.5)
 #   oecd_modified : income / (1 + 0.5 * (adults - 1) + 0.3 * children)
 #   sqrt          : income / sqrt(household_size)
-# rows with household_size < 1, n_children < 0, n_children >
-# household_size, or non-finite sizes yield NA.
+# rows with household_size < 1, n_children < 0, n_children >=
+# household_size (zero adults), or non-finite sizes yield NA: every
+# scale presumes at least one adult, and a zero-adult composition can
+# push the oecd_modified divisor below 1 (equivalised income above the
+# household total). composition vectors must be length 1 or match the
+# income length; silent recycling of intermediate lengths is an error.
 equivalise_income_kernel <- function(income, household_size, n_children = 0,
                                      scale = c("weighted_sqrt",
                                                "oecd_modified", "sqrt"),
                                      child_weight = 0.8, elasticity = 0.5) {
   scale <- match.arg(scale)
   n <- length(income)
+  for (nm in c("household_size", "n_children")) {
+    len <- length(get(nm))
+    if (!len %in% c(1L, n)) {
+      stop("equivalise: ", nm, " has length ", len,
+           "; must be 1 or length(income) = ", n, call. = FALSE)
+    }
+  }
   household_size <- rep_len(as.numeric(household_size), n)
   n_children <- rep_len(as.numeric(n_children), n)
   adults <- household_size - n_children
 
   bad <- !is.finite(household_size) | !is.finite(n_children) |
-    household_size < 1 | n_children < 0 | n_children > household_size
+    household_size < 1 | n_children < 0 | adults < 1
 
   divisor <- switch(scale,
     "weighted_sqrt" = (adults + child_weight * n_children)^elasticity,

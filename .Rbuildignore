@@ -20,3 +20,6 @@
 ^apply_income_cleaning_1\.2\.0\.sh$
 ^lissr_1\.2\.0_income_cleaning\.diff$
 ^CITATION\.cff$
+^v1\.4$
+^lissr\.Rcheck$
+^lissr_.*\.tar\.gz$

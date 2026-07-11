@@ -3,6 +3,7 @@
 S3method(print,liss_clean_result)
 S3method(print,liss_cleaning_ruleset)
 S3method(summary,liss_clean_result)
+export(audit_liss_recipes)
 export(liss_blueprint)
 export(liss_clean_income)
 export(liss_cleaning_report)

@@ -33,6 +33,7 @@ articles:
   contents:
   - custom-recipes
   - reproducible-pipelines
+  - canonical-schema
 
 reference:
 - title: Authentication and credentials
@@ -56,6 +57,7 @@ reference:
   - liss_recipe
   - load_recipe
   - validate_recipe
+  - audit_liss_recipes
   - liss_blueprint
   - onboard_new_wave
 - title: Merge engine

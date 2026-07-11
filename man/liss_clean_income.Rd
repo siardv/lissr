@@ -21,7 +21,7 @@ liss_clean_income(
 }
 \arguments{
 \item{data}{a data frame of merged LISS income data, or a
-\code{\link[=merge_liss_module]{merge_liss_module()}} result (its \code{$data} element is used).}
+\code{\link[=merge_liss_module]{merge_liss_module()}} result (its \verb{$data} element is used).}
 
 \item{background}{optional background/demographics frame attached by
 rule P01 before cleaning (joined on the person id and, when the
@@ -38,7 +38,11 @@ imputation).}
 plausibility constraints.}
 
 \item{disable, enable_only}{optional character vectors of rule ids to
-switch off, or to run exclusively.}
+switch off, or to run exclusively. \code{enable_only} is scoped per
+ruleset section: only sections that contain a named rule are
+restricted to the named set, so \code{enable_only = "D06"} isolates one
+detection rule while the preparation, correction, and finalization
+machinery keeps running.}
 
 \item{params}{optional named list of per-rule parameter overrides,
 e.g. \code{list(D06 = list(volatility_min = 0.7))}.}
@@ -70,17 +74,17 @@ and a plain-language justification.
 }
 \details{
 The returned data always carries the untouched input values in
-\code{<target>_observed}. In \code{"correct"} mode the target column holds the
-cleaned values and \code{<target>_clean_status} marks each modified cell
+\verb{<target>_observed}. In \code{"correct"} mode the target column holds the
+cleaned values and \verb{<target>_clean_status} marks each modified cell
 with its final action and rule. In \code{"flag"} mode the target column is
 left untouched and the fully simulated result is returned in
-\code{<target>_proposed} (with \code{<target>_proposed_status}), so the entire
+\verb{<target>_proposed} (with \verb{<target>_proposed_status}), so the entire
 procedure can be inspected as a dry run. In \code{"na_only"} mode detected
 cells are voided instead of imputed. Dataset-level flags (rule D11)
-are annotations in \code{<target>_dataset_flag} and never modify values.
+are annotations in \verb{<target>_dataset_flag} and never modify values.
 
 Calling the function on already-cleaned data (recognizable by the
-\code{<target>_observed} column) is an error, which prevents accidental
+\verb{<target>_observed} column) is an error, which prevents accidental
 double cleaning.
 }
 \seealso{

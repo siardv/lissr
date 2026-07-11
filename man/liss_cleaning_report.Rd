@@ -4,12 +4,14 @@
 \alias{liss_cleaning_report}
 \title{Write the income-cleaning report and audit artifacts}
 \usage{
-liss_cleaning_report(result, output_dir = ".", verbose = TRUE)
+liss_cleaning_report(result, output_dir, verbose = TRUE)
 }
 \arguments{
 \item{result}{a \code{liss_clean_result} from \code{\link[=liss_clean_income]{liss_clean_income()}}.}
 
-\item{output_dir}{directory for the artifacts (created if needed).}
+\item{output_dir}{directory for the artifacts (created if needed).
+Required, so three files are never written into the working
+directory by accident.}
 
 \item{verbose}{print the written paths.}
 }
