@@ -1,5 +1,5 @@
 # part b harness: end-to-end module merges against the real LISS files.
-# paths are taken from the environment with in-container defaults:
+# paths are taken from the environment with defaults relative to the package root:
 #   LISSR_ENGINE_DIR        directory containing the (patched) R sources to test
 #   LISSR_RECIPE_DIR        directory containing the revised recipe YAMLs
 #   LISSR_VERIFICATION_DIR  the verification bundle root
@@ -8,12 +8,28 @@
 # (user_missing = TRUE) and the wave codebooks; see lissr-verification-report.md
 options(warn = 1)
 suppressPackageStartupMessages({library(haven); library(dplyr)})
-setwd(Sys.getenv("LISSR_ENGINE_DIR", "local/lissr/R"))
+
+# env var wins; else compute a default under the package root, discovered on demand
+resolve_lissr_path <- function(envvar, ...) {
+  v <- Sys.getenv(envvar, "")
+  if (nzchar(v)) return(v)
+  root <- tryCatch(
+    rprojroot::find_root(rprojroot::has_file("DESCRIPTION")),
+    error = function(e) stop(
+      envvar, " not set and package root not found; ",
+      "run from within the lissr checkout or set the env var explicitly",
+      call. = FALSE
+    )
+  )
+  file.path(root, ...)
+}
+
+setwd(resolve_lissr_path("LISSR_ENGINE_DIR", "R"))
 source("liss_merge_engine.R")
 
-B   <- Sys.getenv("LISSR_VERIFICATION_DIR", "local/lissr/tests/verification-bundle")
-REC <- Sys.getenv("LISSR_RECIPE_DIR", "local/lissr/inst/recipes")
-ORI <- Sys.getenv("LISSR_ORIG_RECIPE_DIR", "local/lissr/inst/recipes-orig")
+B   <- resolve_lissr_path("LISSR_VERIFICATION_DIR", "tests", "verification-bundle")
+REC <- resolve_lissr_path("LISSR_RECIPE_DIR",       "inst", "recipes")
+ORI <- resolve_lissr_path("LISSR_ORIG_RECIPE_DIR",  "inst", "recipes-orig")
 ok  <- function(cond, msg) { cat(if (isTRUE(cond)) "PASS " else "FAIL ", msg, "\n"); stopifnot(isTRUE(cond)) }
 num <- function(x) as.numeric(unclass(x))
 mkdir <- function(...) { d <- file.path(tempdir(), ...); dir.create(d, recursive = TRUE, showWarnings = FALSE); d }
