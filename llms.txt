@@ -1,0 +1,301 @@
+# lissr
+
+Programmatic access to the [LISS Data
+Archive](https://www.lissdata.nl/). Authenticate, browse available
+modules and waves, interactively select and download data files, and
+merge longitudinal waves using recipe-driven YAML specifications.
+
+## Installation
+
+``` r
+
+# install from GitHub
+# install.packages("remotes")  # if not already installed
+remotes::install_github("siardv/lissr")
+```
+
+## Quick start
+
+``` r
+
+library(lissr)
+
+# 1. store credentials (once, prompts for password)
+liss_store_credentials("1234")
+
+# 2. log in (credentials retrieved from keyring + 2FA prompt)
+liss_login()
+
+# 3. explore
+liss_modules()
+liss_wave_matrix()
+
+# 4. interactively select modules, waves, file types
+selection <- liss_select()
+
+# 5. download
+liss_download(selection)
+
+# 6. merge a module using the built-in recipe
+recipe <- liss_recipe("ch")
+result <- merge_liss_module(recipe, data_dir = "liss", output_dir = "./output")
+
+# 7. batch merge all core modules
+modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci", "ca", "cr")
+results <- merge_liss_modules(
+  purrr::map_chr(modules, ~ system.file("recipes", paste0(.x, "_merge_recipe.yml"),
+                                         package = "lissr")),
+  data_dir = "liss",
+  output_dir = "./output"
+)
+```
+
+## Vignettes
+
+Worked examples ship with the package. After installing, list them with
+`browseVignettes("lissr")` or open one by its name, for example
+[`vignette("getting-started", package = "lissr")`](https://siardv.github.io/lissr/articles/getting-started.md).
+You can also read the rendered versions in your browser without
+installing:
+
+- [Getting Started with
+  lissr](https://siardv.github.io/lissr/articles/getting-started.html):
+  a short orientation to the package and its workflow.
+- [Merging LISS Panel
+  Data](https://siardv.github.io/lissr/articles/merge-workflow.html):
+  the core single-module merge, from recipe to merged output.
+- [Longitudinal Panel
+  Analysis](https://siardv.github.io/lissr/articles/longitudinal-panel-analysis.html):
+  assembling and analyzing data across multiple waves.
+- [Cross-Sectional Analysis with a Single
+  Wave](https://siardv.github.io/lissr/articles/cross-sectional-analysis.html):
+  working with one wave and attaching the Background Variables.
+- [Multi-Module
+  Linkage](https://siardv.github.io/lissr/articles/multi-module-linkage.html):
+  joining several modules on the respondent id.
+- [Custom Merge
+  Recipes](https://siardv.github.io/lissr/articles/custom-recipes.html):
+  writing or adapting a YAML recipe against the canonical schema.
+- [Reproducible Research
+  Pipelines](https://siardv.github.io/lissr/articles/reproducible-pipelines.html):
+  structuring the workflow as a reproducible pipeline.
+
+## Merge system
+
+The merge engine processes YAML recipes conforming to
+`CANONICAL_SCHEMA.md` (v1.0.0). Each recipe encodes every merge-relevant
+decision for a module: wave file patterns, variable harmonization rules,
+boundary handling, comparability contracts, and validation checks.
+
+Built-in recipes are included for all ten core LISS modules: CH
+(Health), CV (Politics and Values), CD (Housing), CF (Family and
+Household), CW (Work and Schooling), CP (Personality), CS (Culture and
+Sports), CI (Economic Integration), CA (Assets), and CR (Religion and
+Ethnicity).
+
+## Background variables
+
+The merge engine covers the ten core study modules above; it does not
+fetch or attach the LISS Background Variables (the monthly `avars`
+file). Demographics such as age, sex, education, income, and household
+composition live in that separate file, and you join them yourself after
+merging.
+
+Two identifier columns are preserved through every merge: `nomem_encr`
+(the respondent id, used as the merge key) and `nohouse_encr` (the
+encrypted household id). `nohouse_encr` is present only in early waves
+of most modules and is dropped later, so for recent waves the household
+id has to come from the Background Variables file.
+
+To attach demographics, download the Background Variables file for the
+same fieldwork month as your merged data, then left-join on
+`nomem_encr`:
+
+``` r
+
+# the Background Variables file appears as the "Background Variables" module
+# in liss_select() / the blueprint; download it, then read and join
+avars <- haven::read_sav("data/avars/avars_202411_EN_1_0p.sav")
+merged_with_demographics <- dplyr::left_join(result, avars, by = "nomem_encr")
+```
+
+Join on `nomem_encr` only, never `nohouse_encr` (the household id is not
+a stable person-level key and changes when household composition
+changes), and match the Background Variables fieldwork month to your
+wave data. The `cross-sectional-analysis` and `multi-module-linkage`
+vignettes show the full workflow.
+
+## File formats
+
+The package has been developed and tested only with SPSS `.sav` files,
+which is the default format throughout. The downloader can also fetch
+Stata `.dta` files, and the engine includes a read path for them
+([`haven::read_dta`](https://haven.tidyverse.org/reference/read_dta.html)),
+but `.dta` input has never been tested. Treat `.dta` support as
+experimental: there is no guarantee the merge pipeline produces correct
+results from `.dta` sources, so validate any `.dta`-based output
+yourself. The engine can also read `.csv` files via `readr`.
+
+A built-in fallback matches a wave file by its `wave_id` prefix when a
+recipe’s `file_pattern` extension does not match the file on disk (for
+example a recipe written for `.sav` run against a downloaded `.dta`).
+This only locates the file; it does not validate that a non-`.sav`
+format is handled correctly downstream.
+
+## Validate recipes without merging
+
+``` r
+
+recipe <- liss_recipe("ch")
+validate_recipe(recipe, "ch_merge_recipe.yml")
+```
+
+[`validate_recipe()`](https://siardv.github.io/lissr/reference/validate_recipe.md)
+also emits a non-fatal warning listing any rule-level key the engine
+neither consults nor sanctions as documentation, so a mis-named key is
+surfaced at authoring time instead of being silently ignored. The
+recognized and sanctioned key sets are documented in
+`CANONICAL_SCHEMA.md`.
+
+## Onboard a new wave
+
+``` r
+
+onboard_new_wave(
+  recipe_path = system.file("recipes", "ch_merge_recipe.yml", package = "lissr"),
+  new_file    = "ch25r_EN_1_0p.csv",
+  prev_wave_id = "ch24q"
+)
+```
+
+## A note on how this package was built
+
+I started building `lissr` in June 2021, before AI coding assistants
+were a realistic option, and it has been a constant companion project
+ever since. The problem it addresses, the recipe grammar, the merge and
+harmonization logic, and the design decisions grew out of five years of
+reading LISS codebooks, breaking merges, and rebuilding them.
+
+I also want to be open about the fact that AI language models (including
+Anthropic’s Claude) contributed to later versions. I used them as
+assistants, not as authors: to review code, stress-test the merge
+engine, cross-reference recipe rules against codebooks and real data
+files, propose refactorings, draft tests and documentation, and speed up
+the grueling parts of package development. Nothing was accepted on
+trust. Every suggestion was read, questioned, run, and frequently
+rejected or rewritten; for the 1.1.0 release, `lissr-review.md` and
+`lissr-verification-report.md` in this repository document that process
+in detail. Whatever ships has passed the full test suite and R CMD
+check, and responsibility for every line, including the mistakes, is
+mine alone.
+
+`lissr` exists to make merge and harmonization decisions in panel data
+explicit instead of silent. It seems only consistent to be equally
+explicit about how the package itself was made. If you have questions
+about any part of that process, the issue tracker is open.
+
+## License
+
+MIT
+
+# Package index
+
+## Authentication and credentials
+
+- [`liss_store_credentials()`](https://siardv.github.io/lissr/reference/liss_store_credentials.md)
+  : store LISS Data Archive credentials in the system keyring
+- [`liss_login()`](https://siardv.github.io/lissr/reference/liss_login.md)
+  : log in to the LISS Data Archive
+- [`liss_is_logged_in()`](https://siardv.github.io/lissr/reference/liss_is_logged_in.md)
+  : check whether the current session is still authenticated
+- [`liss_list_credentials()`](https://siardv.github.io/lissr/reference/liss_list_credentials.md)
+  : list stored LISS Data Archive credentials
+- [`liss_delete_credentials()`](https://siardv.github.io/lissr/reference/liss_delete_credentials.md)
+  : delete stored LISS Data Archive credentials
+
+## Browse and select
+
+- [`liss_modules()`](https://siardv.github.io/lissr/reference/liss_modules.md)
+  : list available LISS panel modules
+- [`liss_wave_matrix()`](https://siardv.github.io/lissr/reference/liss_wave_matrix.md)
+  : display a module-by-wave availability matrix
+- [`liss_select()`](https://siardv.github.io/lissr/reference/liss_select.md)
+  : interactively select modules, waves, and file types
+- [`liss_server_status()`](https://siardv.github.io/lissr/reference/liss_server_status.md)
+  : check LISS Data Archive availability
+
+## Download
+
+- [`liss_download()`](https://siardv.github.io/lissr/reference/liss_download.md)
+  : download files from the LISS Data Archive
+
+## Recipes
+
+- [`liss_recipe()`](https://siardv.github.io/lissr/reference/liss_recipe.md)
+  : load a built-in merge recipe by module code
+- [`load_recipe()`](https://siardv.github.io/lissr/reference/load_recipe.md)
+  : load and validate a canonical YAML merge recipe
+- [`validate_recipe()`](https://siardv.github.io/lissr/reference/validate_recipe.md)
+  : validate a merge recipe against the canonical schema
+- [`liss_blueprint()`](https://siardv.github.io/lissr/reference/liss_blueprint.md)
+  : build a complete file inventory of the LISS Data Archive
+- [`onboard_new_wave()`](https://siardv.github.io/lissr/reference/onboard_new_wave.md)
+  : onboard a new wave into a merge recipe
+
+## Merge engine
+
+- [`merge_liss_module()`](https://siardv.github.io/lissr/reference/merge_liss_module.md)
+  : run the full merge pipeline for a single module
+- [`merge_liss_modules()`](https://siardv.github.io/lissr/reference/merge_liss_modules.md)
+  : merge multiple modules sequentially
+- [`merge_liss_panel()`](https://siardv.github.io/lissr/reference/merge_liss_panel.md)
+  : merge multiple LISS modules into a single panel dataset
+
+## Income cleaning
+
+- [`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)
+  : Detect and correct implausible household-income values
+- [`liss_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/liss_cleaning_ruleset.md)
+  : Load an income-cleaning ruleset
+- [`validate_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/validate_cleaning_ruleset.md)
+  : Validate an income-cleaning ruleset
+- [`liss_cleaning_report()`](https://siardv.github.io/lissr/reference/liss_cleaning_report.md)
+  : Write the income-cleaning report and audit artifacts
+- [`liss_equivalise_income()`](https://siardv.github.io/lissr/reference/liss_equivalise_income.md)
+  : Equivalise household income
+
+## Package overview
+
+- [`lissr`](https://siardv.github.io/lissr/reference/lissr-package.md)
+  [`lissr-package`](https://siardv.github.io/lissr/reference/lissr-package.md)
+  : lissr: View, Download, and Merge LISS Panel Data
+
+# Articles
+
+### Get started
+
+- [Getting Started with
+  lissr](https://siardv.github.io/lissr/articles/getting-started.md):
+- [Merging LISS Panel
+  Data](https://siardv.github.io/lissr/articles/merge-workflow.md):
+
+### Analysis workflows
+
+- [Cross-Sectional Analysis with a Single
+  Wave](https://siardv.github.io/lissr/articles/cross-sectional-analysis.md):
+- [Longitudinal Panel
+  Analysis](https://siardv.github.io/lissr/articles/longitudinal-panel-analysis.md):
+- [Multi-Module
+  Linkage](https://siardv.github.io/lissr/articles/multi-module-linkage.md):
+
+### Income cleaning
+
+- [Income
+  Cleaning](https://siardv.github.io/lissr/articles/income-cleaning.md):
+
+### Recipes and pipelines
+
+- [Custom Merge
+  Recipes](https://siardv.github.io/lissr/articles/custom-recipes.md):
+- [Reproducible Research
+  Pipelines](https://siardv.github.io/lissr/articles/reproducible-pipelines.md):

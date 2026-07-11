@@ -1,0 +1,398 @@
+# Changelog
+
+## lissr 1.3.2
+
+Completes the party-scheme taxonomy: all five schemes catalogued from
+archive value labels, three of the four vacant registry slots named, and
+the taxonomy schema generalized to carry the pre-registry schemes.
+
+### Full catalogue (taxonomy 2.0.0)
+
+- Schemes 1 (cv08a054/058), 2 (cv13f207/209), and 3 (cv18j307/308) join
+  schemes 4 and 5, catalogued verbatim from SPSS value labels with zero
+  data rows read. The schema generalizes accordingly: suffix-agnostic
+  field names (`code_actual`/`code_hypo`), per-scheme `hypo_offset` and
+  special codes, `verified_waves` per scheme, and separate actual and
+  hypothetical party tables for scheme 1, whose two items carry
+  different party sets (LPF and Een NL only in the actual vote, Trots op
+  Nederland only in the hypothetical).
+- The registry finding is now scoped precisely: schemes 1 and 2 renumber
+  wholesale between schemes (CDA is 1, then 5, then 3) and must never be
+  pooled across schemes; the persistent registry begins at scheme 3,
+  whose 2017 list is carried code-for-code into schemes 4 and 5.
+- Three vacant scheme-4 slots are named with in-archive evidence: 5
+  GroenLinks, 7 PvdA, 10 50PLUS (reoccupied in scheme 5). Code 19
+  remains pending, expected to surface in a cv22n harvest together with
+  the late scheme-3 code sets (the 2021 election falls inside the
+  scheme-3 span), both recorded as open items in the taxonomy.
+- Tests extended: per-scheme offsets, scheme-1 set divergence, the
+  renumbering anchors, registry stability from scheme 3 onward, and
+  named retired codes cross-checked against their evidence scheme.
+
+## lissr 1.3.1
+
+First cut of the party-scheme taxonomy, and a factual correction to the
+cv26r scheme note.
+
+### Party-scheme taxonomy
+
+- New reference file `inst/recipes/taxonomies/cv_party_scheme.yml` (the
+  externalization the cv recipe’s meta has pointed at since the schema
+  was written). Schemes 4 (cv24p, cv25q) and 5 (cv26r) are fully
+  catalogued from the SPSS value labels of the 307/308 vote items,
+  verbatim, including the special codes and the 307-to-308 offset
+  relation; schemes 1 to 3 are declared with their waves and marked
+  pending. Engine consumption remains future work.
+- New tests pin the taxonomy to the recipe’s per-wave scheme
+  declarations and turn the catalogued registry invariants into
+  regressions: unique codes per scheme, `code_308 = code_307 + 1` for
+  every entry, and identity of every code shared between schemes 4 and
+  5.
+
+### Correction
+
+- The 1.3.0 note on cv26r said the post-election mapping was “not
+  code-comparable with scheme 4”. Cataloguing the value labels shows the
+  opposite mechanism: codes form a stable party registry. Every code
+  shared by schemes 4 and 5 denotes the same party; the delta is exactly
+  50PLUS entering at its historical slot (307:10, 308:11) and NSC
+  leaving (307:21, 308:22), with retired codes left unassigned rather
+  than reused. The wave entry and the meta note now state this; the
+  scheme-5 declaration itself stands, since the id names the code set a
+  wave can contain.
+
+## lissr 1.3.0
+
+Wave onboarding release: the four 2025/2026 waves enter the recipes, and
+the onboarding diff is repaired so future onboardings rest on real
+comparisons.
+
+### New waves onboarded
+
+- `ch25r`, `cp25q`, `cs25r`, and `cv26r` are added to their module
+  recipes: `wave_index` entries, `covered_waves`, and every wave-scoped
+  rule whose condition persists into the new wave (46 recipe edits in
+  total). The extensions were decided by a structural and label-level
+  review against the predecessor wave of each module.
+- `ch25r`: 29 new suffixes 278-306 (a two-week symptom-frequency battery
+  and a stress-domain block), no removals; reference-year labels
+  updated.
+- `cp25q` and `cs25r`: structurally and label-identical to their
+  predecessors.
+- `cv26r`: political-item churn after the 29 October 2025 parliamentary
+  elections (added 221/256 for the returning 50PLUS and 353-355 for new
+  politician items; removed 306, 341, 343-345). The wave declares
+  `party_scheme: 5` because the post-election ballot mapping is not
+  code-comparable with scheme 4; the value-label catalogue for the
+  pending party-scheme taxonomy is noted in the wave entry.
+
+### Onboarding diff repaired
+
+- [`onboard_new_wave()`](https://siardv.github.io/lissr/reference/onboard_new_wave.md)
+  step 3 previously reconstructed the previous wave’s variable names
+  from the new wave’s own names, so it always reported zero additions
+  and hardcoded zero removals. It now locates the actual previous wave
+  file through the recipe’s `file_pattern` (with the engine’s fallback
+  and release-version disambiguation), reads it, and reports the real
+  bidirectional suffix diff. A new `prev_file` argument overrides the
+  automatic resolution; when no file can be found the report carries
+  `diff_skipped = TRUE` instead of a silent empty diff.
+- The new-wave reader now goes through the engine’s `read_wave_file()`,
+  so SPSS user-defined missing codes stay visible to the step-6 sentinel
+  scan.
+
+### Tests
+
+- New regression tests cover the bidirectional diff, the skipped-diff
+  path, and the `prev_file` override, plus an invariant test pinning
+  `covered_waves` to `wave_index` across all ten bundled recipes.
+
+## lissr 1.2.1
+
+Correctness patch: three guarantees the package documents are now
+enforced by the engine. No recipe format or output format changes.
+
+### Engine hardening
+
+- Recipe `condition` expressions no longer pass through `eval(parse())`
+  with `enclos = baseenv()`. Conditions are parsed, their syntax tree is
+  checked against a whitelist grammar (column references, literals,
+  comparison and logical operators, `%in%`,
+  [`is.na()`](https://rdrr.io/r/base/NA.html),
+  [`c()`](https://rdrr.io/r/base/c.html), unary sign), and evaluation is
+  enclosed in a sandbox whose parent is the empty environment. A
+  condition such as `system("...")` is rejected before evaluation and
+  the check reports “condition not evaluable”; recipes are declarative
+  data again.
+  [`liss_select()`](https://siardv.github.io/lissr/reference/liss_select.md)
+  wave input is parsed by a regex-guarded expander accepting the `1:5`
+  and `1,3,7` forms instead of being evaluated.
+- Rule execution is atomic on failure. Every executor snapshots the
+  frame and the log before its dispatch; on error the rule rolls back to
+  the snapshot and contributes exactly one `ERROR:` entry, so the JSONL
+  log now means a rule either fully applied or did nothing. The `<<-`
+  accumulation in the error handlers is retired.
+- [`merge_liss_panel()`](https://siardv.github.io/lissr/reference/merge_liss_panel.md)
+  asserts per module that inputs are unique on the join keys (naming the
+  module and the duplicate count), performs every join with
+  `relationship = "one-to-one"`, attaches shared columns with a left
+  join so metadata can never add rows, and coalesces `shared_cols` (by
+  default `nohouse_encr`) across modules in list order instead of taking
+  them from the first module only, warning when modules disagree on a
+  key.
+
+### Tests
+
+- A synthetic end-to-end module merge now runs everywhere including CI:
+  two generated `.sav` waves pass through a snapshot recode, a boundary
+  flag, a derived variable, and uniqueness plus condition-gated na_rate
+  checks, with assertions on the merged frame, the JSONL log, the text
+  report, and the summary artifact.
+- Kernel unit tests cover `crosswalk_map`, `crosswalk_map_scheme`,
+  `crosswalk_coverage`, and `dv_aggregate`.
+- The recipe-load test covers all ten bundled recipes (previously eight,
+  omitting ca and cr) and fails on any warning outside the known
+  unrecognized-rule-key class.
+- Regression tests pin the restricted condition grammar, the wave-input
+  parser, atomic rollback, the duplicate-key guard, and the
+  shared-column coalescing.
+
+### Dependencies
+
+- `dplyr (>= 1.1.0)` is now the declared minimum (the `relationship`
+  argument of the join functions).
+
+## lissr 1.2.0
+
+Feature release: a rule-driven income-cleaning framework for merged LISS
+data. Every behavior below is exercised by the regression tests in
+`tests/testthat/test-clean-income.R` and by a seeded end-to-end smoke
+run (`inst/scripts/verification/income_cleaning_smoke.R`); the
+architecture, rule catalog, and the mapping to the legacy analysis
+scripts live in the repository’s `INCOME_CLEANING_DESIGN.md`.
+
+### Income cleaning
+
+- New
+  [`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)
+  detects, evaluates, and corrects implausible household-income values
+  under a declarative YAML ruleset
+  (`inst/cleaning/income_cleaning_rules.yml`, schema 1.0.0) of 24 rules:
+  six preparation rules (P01-P06), eleven detectors (D01-D11), six
+  correction-candidate generators (C01-C06), and one finalizer (F01).
+  Rules dispatch by action, evaluate in ruleset order, and every rule
+  carries a description, rationale, parameters, and literature
+  references that the generated report reproduces.
+- Full decision transparency. Original values are preserved unchanged in
+  `<target>_observed`; every modified cell is marked in
+  `<target>_clean_status` with its final action and rule; and every
+  decision, applied or proposed, lands in an 18-column typed ledger with
+  the responsible rule, the evidence, the admissible candidate set with
+  sources, the anchor, the valid range, and a plain-language
+  justification.
+  [`liss_cleaning_report()`](https://siardv.github.io/lissr/reference/liss_cleaning_report.md)
+  renders the methodology directly from the ruleset plus a decision
+  appendix, and writes the ledger as CSV and an engine-shaped JSONL
+  audit log.
+- Three modes. `correct` applies corrections; `flag` is a true dry run
+  whose `<target>_proposed` column is identical to what `correct` would
+  write while the data remain untouched; `na_only` voids detected cells
+  without imputing. Re-running on already-cleaned data aborts (the
+  `*_observed` column acts as a double-cleaning guard).
+- Researcher control. `income_cap`, `min_income`, `disable`,
+  `enable_only`, per-rule `params`, a `variables` mapping, and custom
+  ruleset files are honored and recorded in the run metadata and the
+  report, so a reviewer can reproduce any configured run from its report
+  alone.
+- Seeded smoke evidence: on 400 synthetic households (2,168 rows) with
+  158 planted errors across seven families, recovery is 100 percent in
+  every family (65/65 decimal shifts, 33/33 extra zeros, 9/9 cap
+  blowouts, 22/22 personal-income echoes, 11/11 tiny junk values, 11/11
+  sign flips, 7/7 residual sentinels), 0 of 2,010 clean cells are
+  falsely modified, 83 percent of scale corrections land within 10
+  percent of the true value (median relative error 3.8 percent, at the
+  simulation’s noise floor), and the run completes in about half a
+  second.
+- The modified-z detector (D10) gained a `min_relative_deviation` gate
+  (default 0.3) after the smoke run exposed that the ungated legacy
+  criterion rewrote 12.09 percent of clean cells in tight households,
+  where a tiny MAD inflates the z-score of ordinary variation. The gate
+  removes every false positive with recall unchanged; the
+  tight-household case is pinned in the regression suite.
+- [`liss_equivalise_income()`](https://siardv.github.io/lissr/reference/liss_equivalise_income.md)
+  converts household income to a per-equivalent-adult scale
+  (`weighted_sqrt`, matching the source pipelines’ `stand_inc` formula,
+  plus `oecd_modified` and `sqrt`).
+- New exports:
+  [`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md),
+  [`liss_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/liss_cleaning_ruleset.md),
+  [`validate_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/validate_cleaning_ruleset.md),
+  [`liss_cleaning_report()`](https://siardv.github.io/lissr/reference/liss_cleaning_report.md),
+  and
+  [`liss_equivalise_income()`](https://siardv.github.io/lissr/reference/liss_equivalise_income.md),
+  with print and summary methods for run results and rulesets. A new
+  vignette, `income-cleaning`, walks the workflow.
+- No new dependencies. Temporal smoothing uses a native weighted moving
+  average (equivalent to `imputeTS::na_ma` with linear weighting,
+  including window widening), and the numeric kernels are base R.
+
+### Corrections to the source cleaning logic
+
+The framework supersedes the income-cleaning blocks of the two analysis
+scripts it was distilled from. Eleven behaviors were deliberately
+changed, each documented in `INCOME_CLEANING_DESIGN.md` and pinned by a
+regression test, among them: the donor pool no longer offers the flagged
+row as its own donor; the power-of-ten kernel returns a full-length
+vector so zeros and negatives cannot desynchronize magnitudes from rows;
+the target variable resolves by explicit name and alias instead of a
+`net|brut` pattern match that could capture personal-income columns;
+blanket [`abs()`](https://rdrr.io/r/base/MathFun.html) on the target
+became the ledgered sign-rectification rule P03; bound violations rank
+by deviation ratio rather than first index; households process in wave
+order rather than file order; and residual SPSS user-missing codes are
+swept by the declared metadata (P06) rather than trusted to upstream
+reads.
+
+### Tests
+
+- 44 new test blocks in `tests/testthat/test-clean-income.R`: kernel
+  units against hand-computed values, one fixture household per
+  detector, ledger invariants, mode contracts, determinism and row-order
+  independence, override paths, alias and fallback resolution,
+  background attachment, report artifacts, and equivalisation.
+- Full suite in installed-package context: 74 test blocks, 208 passing
+  expectations, 0 failures, 6 skips (5 empirical gates behind
+  `LISSR_VERIFICATION_DIR`, 1 CRAN skip).
+
+## lissr 1.1.0
+
+Correctness release. Every fix below was verified against real LISS
+Panel files; the empirical evidence, per-wave counts, and methodology
+live in the repository’s `lissr-verification-report.md` and in the
+regression tests under `tests/testthat/test-engine-regressions.R`.
+
+### Merge engine
+
+- Value recodes now use snapshot semantics. `value_recode`,
+  `recode_to_na`, and `recode` masks are built against the column as it
+  stood when the rule started, so overlapping maps can no longer chain.
+  On real data the old sequential loop misclassified 86 of 2,992
+  answered respondents (2.9 percent) in cr08a and 312 of 2,222 (14.0
+  percent) in cr14g once the religion crosswalks were made to run; the
+  snapshot engine reproduces the verified target distributions exactly.
+- `recode_to_na` accepts the `recode:` alias for its sentinel map and
+  honors wave-scoped `exclude:` blocks (skip cells whose suffix and wave
+  both match). This activates the cv module’s HR01 through HR04 sentinel
+  rules, which previously validated but never executed.
+- Superseded-release protection. When several primary files match one
+  wave’s `file_pattern`, the engine ranks release versions parsed from
+  the file names, keeps the highest, and warns; unrankable candidates
+  abort. Auxiliary files declared via `aux_files` resolve independently
+  of the primary pattern and must be disjoint from the primary file on
+  the id variable; any shared respondent id aborts. A duplicate-id gate
+  runs on every wave regardless. Previously all pattern matches were
+  stacked, which duplicated all 3,626 cd10c respondents when both the
+  1.0p and the superseding 1.1p release were on disk, and resurrected a
+  field the 1.1p release had redacted.
+- `read_wave_file` reads by extension from a whitelist (.sav, .zsav,
+  .dta, .csv) and aborts on anything else instead of parsing it as CSV.
+  SPSS files are read with `user_na = TRUE`, so declared DK/refusal
+  codes reach the recipes as values instead of being silently converted
+  to NA at read.
+- Value labels and user-missing declarations round-trip under
+  `labelled_policy: to_numeric`. Metadata is stashed per wave at read
+  time and restored at write time where provably safe (identical
+  metadata across waves, every observed value accounted for); columns
+  that cannot be restored pass through a per-wave residual sweep that
+  converts codes their own wave declared user-missing to NA, honoring
+  recipe `exclude` blocks as a veto. Outputs regain their value labels
+  (75 labelled columns in the cv verification merge) and no DK or
+  refusal code can leak into the output as a substantive value.
+- Rules that resolve zero target columns write a `NO_TARGETS` entry to
+  the JSONL log, so mis-keyed or mis-scoped rules are visible in the
+  audit trail.
+- Validation checks that name an unimplemented type report `SKIP` with
+  `passed = NA` instead of PASS; summaries report `n_pass`, `n_fail`,
+  and `n_skip`. New `uniqueness` check family (aliases `assert_unique`,
+  `n_duplicates`).
+- New `strict` argument on
+  [`merge_liss_module()`](https://siardv.github.io/lissr/reference/merge_liss_module.md)
+  and
+  [`merge_liss_modules()`](https://siardv.github.io/lissr/reference/merge_liss_modules.md):
+  failed checks of severity `error` abort before any output is written.
+  Default `FALSE` preserves 1.0.0 behavior.
+- Two-factor authentication returns `NULL` on failure instead of a
+  half-initialized session, so
+  [`liss_login()`](https://siardv.github.io/lissr/reference/liss_login.md)
+  can no longer cache an unauthenticated session as logged in.
+
+### Recipes
+
+- cr: HR10, HR11, HR12, HR20, HR21 scoped with `suffixes` (the singular
+  `suffix` key was not read, so the entire three-era religion
+  harmonization silently never ran). All 40 crosswalk code assignments
+  were verified against the wave value labels and codebooks. HR12’s
+  instrument description corrected to 14 values plus -9.
+- cd: cd10c loads the superseding 1.1p release only; the stacking rule
+  is retired and the overlap claim corrected (both releases contain the
+  identical 3,626 respondents; 1.1p removes the redacted open-text
+  dwelling-location item cd10c059). CHK06 and CHK07 re-pointed at the
+  executable `uniqueness` check.
+- cp: the A1 DK recodes scope with `suffixes: ["010", "011", "019"]`
+  (the `items` key was not read, so the recode fell back to every
+  numeric column, destroying legitimate duration paradata).
+- cs: A1_dk_recode rewritten as an executable `value_recode` (999 to -9)
+  on the verified DK suffixes 001, 002, and 283 for the pre-cs20m waves.
+- cv: schema_version 1.1.0; HR01 through HR04 now execute through the
+  engine’s `recode` alias and `exclude` support (no rule changes needed
+  beyond comments).
+- Revised recipes carry `recipe_version: 1.1.0`.
+
+### Documentation
+
+- `CANONICAL_SCHEMA.md` updated to v1.1.0 (strictly additive; v1.0.0
+  recipes remain valid): `recode_to_na` keys, `aux_files` contract,
+  release-version disambiguation, check execution semantics, `strict`,
+  and the label round-trip are specified.
+
+## lissr 1.0.0
+
+First public release.
+
+- Recipe-driven merge engine. Longitudinal LISS waves are merged from
+  declarative YAML recipes that conform to the canonical schema
+  (`CANONICAL_SCHEMA.md`, schema version 1.0.0). A recipe captures every
+  merge-relevant decision for a module: wave file patterns, variable
+  harmonization, boundary handling, comparability contracts, and
+  validation checks.
+- Controlled action vocabulary with fail-fast validation. Recipes are
+  validated before any merge runs via
+  [`validate_recipe()`](https://siardv.github.io/lissr/reference/validate_recipe.md)
+  (also called by
+  [`load_recipe()`](https://siardv.github.io/lissr/reference/load_recipe.md)
+  and
+  [`merge_liss_module()`](https://siardv.github.io/lissr/reference/merge_liss_module.md));
+  unknown actions and malformed rules are rejected up front.
+- Authoring-time check for unrecognized rule keys.
+  [`validate_recipe()`](https://siardv.github.io/lissr/reference/validate_recipe.md)
+  emits a non-fatal warning listing any rule-level key that the merge
+  engine neither consults nor sanctions as documentation, so mis-named
+  keys are surfaced at load time rather than ignored silently. The check
+  is warning-only; every recipe still loads and merges unchanged. The
+  recognized set and the documentation allow-list are both documented in
+  `CANONICAL_SCHEMA.md`.
+- Audit-grade JSONL logging, with a per-run summary artifact.
+- Ten built-in module recipes: Assets (ca), Housing (cd), Family and
+  Household (cf), Health (ch), Economic Integration (ci), Personality
+  (cp), Religion and Ethnicity (cr), Culture and Sports (cs), Politics
+  and Values (cv), and Work and Schooling (cw).
+- Authentication against the LISS Data Archive with two-factor
+  verification; credentials stored via the system keyring.
+- Interactive browse, select, and download workflow
+  ([`liss_modules()`](https://siardv.github.io/lissr/reference/liss_modules.md),
+  [`liss_wave_matrix()`](https://siardv.github.io/lissr/reference/liss_wave_matrix.md),
+  [`liss_select()`](https://siardv.github.io/lissr/reference/liss_select.md),
+  [`liss_download()`](https://siardv.github.io/lissr/reference/liss_download.md)).
+- New-wave onboarding via
+  [`onboard_new_wave()`](https://siardv.github.io/lissr/reference/onboard_new_wave.md)
+  to extend an existing recipe to a newly released wave.

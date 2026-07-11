@@ -1,0 +1,16 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  cross-sectional-analysis: cross-sectional-analysis.html
+  custom-recipes: custom-recipes.html
+  getting-started: getting-started.html
+  income-cleaning: income-cleaning.html
+  longitudinal-panel-analysis: longitudinal-panel-analysis.html
+  merge-workflow: merge-workflow.html
+  multi-module-linkage: multi-module-linkage.html
+  reproducible-pipelines: reproducible-pipelines.html
+last_built: 2026-07-11T19:04Z
+urls:
+  reference: https://siardv.github.io/lissr/reference
+  article: https://siardv.github.io/lissr/articles
