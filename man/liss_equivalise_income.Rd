@@ -19,7 +19,8 @@ liss_equivalise_income(
 
 \item{household_size}{total household members (LISS \code{aantalhh}).}
 
-\item{n_children}{number of children (LISS \code{aantalki}).}
+\item{n_children}{number of children (LISS \code{aantalki}; see Details
+for the OECD under-14 caveat).}
 
 \item{scale}{equivalence scale, see details.}
 
@@ -39,8 +40,19 @@ divides by \code{(adults + child_weight * children)^elasticity}, the
 scale used by the source analysis pipelines; \code{"oecd_modified"}
 divides by \code{1 + 0.5 * (adults - 1) + 0.3 * children}; \code{"sqrt"}
 divides by the square root of household size. Rows with an invalid
-composition (size below one, negative children, or more children
-than members) yield NA and are counted in a warning.
+composition (size below one, negative children, or zero adults,
+since every scale presumes at least one adult) yield NA and are
+counted in a warning. \code{household_size} and \code{n_children} must have
+length 1 or the length of \code{income}; other lengths are an error
+rather than being silently recycled.
+}
+\details{
+The modified OECD scale defines children as household members under
+14, whereas the LISS \code{aantalki} variable counts children living at
+home of any age. Passing \code{aantalki} therefore approximates the OECD
+scale by treating every at-home child as under 14; when an under-14
+count is available it should be preferred. The \code{"weighted_sqrt"}
+default is calibrated to \code{aantalki} and unaffected.
 }
 \examples{
 liss_equivalise_income(30000, household_size = 3, n_children = 1)

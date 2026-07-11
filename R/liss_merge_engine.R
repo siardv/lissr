@@ -26,15 +26,31 @@
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 .load_action_vocab <- function(path) {
+  .load_action_registry(path)$actions
+}
+
+#' load the full action registry: section vocabularies, per-action payload
+#' specifications, and statuses (internal)
+#' @noRd
+.load_action_registry <- function(path) {
   reg  <- yaml::yaml.load_file(path)
   secs <- c("variable_rules", "harmonization_rules",
             "boundary_rules", "drop_retain_rules")
-  out  <- stats::setNames(vector("list", length(secs)), secs)
+  acts <- stats::setNames(vector("list", length(secs)), secs)
   for (s in secs)
-    out[[s]] <- unique(unlist(lapply(reg$actions, function(a)
+    acts[[s]] <- unique(unlist(lapply(reg$actions, function(a)
       if (s %in% (a$sections %||% character(0))) a$name else NULL)))
-  out
+  stat <- stats::setNames(
+    vapply(reg$actions, function(a) a$status %||% "implemented", character(1)),
+    vapply(reg$actions, function(a) a$name, character(1)))
+  list(actions = acts, payloads = reg$payloads %||% NULL, statuses = stat)
 }
+
+# per-action payload specs and statuses; NULL until a registry is loaded
+# (.onLoad for the installed package; the standalone probe below), in which
+# case validate_recipe falls back to the global recognized-key scan
+.ACTION_PAYLOADS <- NULL
+.ACTION_STATUS   <- NULL
 
 VALID_ACTIONS <- list(
   variable_rules = c(
@@ -68,16 +84,24 @@ VALID_ACTIONS <- list(
   )
 )
 
-# prefer the shared registry on disk; fall back to the superset above. installed
-# it ships in inst/extdata; sourced standalone it sits next to the engine or in
-# the working dir.
-local({
-  cand <- c(system.file("extdata", "action_vocabulary.yml", package = "lissr"),
-            file.path(getwd(), "action_vocabulary.yml"), "action_vocabulary.yml")
-  hit  <- cand[nzchar(cand) & file.exists(cand)]
-  if (length(hit) >= 1)
-    VALID_ACTIONS <<- tryCatch(.load_action_vocab(hit[[1]]),
-                               error = function(e) VALID_ACTIONS)
+# the superset above is the baked-in default. when the package is INSTALLED,
+# .onLoad() (R/zzz.R) refreshes VALID_ACTIONS from the installed
+# inst/extdata/action_vocabulary.yml at load time, so the file on disk is
+# authoritative without any install-time system.file() resolution (which
+# could pick up a previously installed version). when the engine is SOURCED
+# standalone (inst/scripts), the probe below loads a co-located registry.
+if (!isNamespaceLoaded("lissr")) local({
+  cand <- c(file.path(getwd(), "action_vocabulary.yml"),
+            file.path(getwd(), "../extdata/action_vocabulary.yml"))
+  hit  <- cand[file.exists(cand)]
+  if (length(hit) >= 1) {
+    reg <- tryCatch(.load_action_registry(hit[[1]]), error = function(e) NULL)
+    if (!is.null(reg)) {
+      VALID_ACTIONS    <<- reg$actions
+      .ACTION_PAYLOADS <<- reg$payloads
+      .ACTION_STATUS   <<- reg$statuses
+    }
+  }
 })
 
 # rule-level keys the engine and executors actually consult, as a global union
@@ -158,6 +182,35 @@ load_recipe <- function(path) {
   # run pre-flight validation (fail-fast)
   validate_recipe(r, path)
   r
+}
+
+#' scan one rule for payload keys its action does not consult (internal)
+#'
+#' with a loaded payload registry the check is per action (a key read by one
+#' action no longer passes silently on an action that ignores it); without
+#' one it falls back to the global recognized-key scan. documentary and
+#' pending actions (note_no_op, pending_spec, stub statuses, and the
+#' flag_only / flag_absence / note_only no-ops) skip payload checking
+#' entirely: their payloads are documentation by definition.
+#' @noRd
+.scan_rule_keys <- function(rule, act) {
+  rk <- names(rule)
+  if (is.null(rk)) return(character(0))
+  universal <- c("rule_id", "action", "description", "anomaly_ref",
+                 "waves", "if_absent", "log", "comparability")
+  spec <- if (!is.null(.ACTION_PAYLOADS)) .ACTION_PAYLOADS[[act]] else NULL
+  act_status <- if (!is.null(.ACTION_STATUS) && act %in% names(.ACTION_STATUS))
+    .ACTION_STATUS[[act]] else "implemented"
+  skip_payload <- act %in% c("note_only", "flag_only", "flag_absence") ||
+    act_status %in% c("note_no_op", "pending_spec", "stub")
+  if (skip_payload) return(character(0))
+  if (!is.null(spec)) {
+    allowed <- c(universal, SANCTIONED_RULE_KEYS,
+                 unlist(spec$reads %||% list()),
+                 unlist(spec$annotations %||% list()))
+    return(setdiff(rk[nzchar(rk)], allowed))
+  }
+  setdiff(rk[nzchar(rk)], c(RECOGNIZED_RULE_KEYS, SANCTIONED_RULE_KEYS))
 }
 
 #' validate a merge recipe against the canonical schema
@@ -267,17 +320,14 @@ validate_recipe <- function(recipe, path = "<unknown>") {
         seen_ids <- c(seen_ids, rid)
       }
 
-      # flag rule-level keys the engine does not consult and has not sanctioned
-      # as documentation; advisory only, does not affect the validation outcome
-      rk <- names(rule)
-      if (!is.null(rk)) {
-        unk <- setdiff(rk[nzchar(rk)],
-                       c(RECOGNIZED_RULE_KEYS, SANCTIONED_RULE_KEYS))
-        if (length(unk) > 0) {
-          who <- if (nchar(rid) > 0) rid else paste0(section, "[", j, "]")
-          unknown_rule_keys <- c(unknown_rule_keys,
-            paste0(section, " '", who, "': ", paste(unk, collapse = ", ")))
-        }
+      # flag rule-level keys the executor for THIS action does not consult
+      # (shared scan, also used by audit_liss_recipes); advisory only
+      unk <- .scan_rule_keys(rule, act)
+      if (length(unk) > 0) {
+        who <- if (nchar(rid) > 0) rid else paste0(section, "[", j, "]")
+        unknown_rule_keys <- c(unknown_rule_keys,
+          paste0(section, " '", who, "' (", act, "): ",
+                 paste(unk, collapse = ", ")))
       }
     }
   }
@@ -416,6 +466,8 @@ discover_wave_files <- function(recipe, data_dir) {
           "release version '", basename(keep), "' and ignoring: ",
           paste(dropped, collapse = ", "),
           ". remove superseded files or narrow file_pattern to silence this."))
+        release_decision <- list(selected = basename(keep), ignored = dropped,
+                                 rule = "highest parsed release version")
         primary <- keep
       } else {
         cli::cli_abort(c(
@@ -431,8 +483,21 @@ discover_wave_files <- function(recipe, data_dir) {
                            "no primary data file found, skipping wave"))
       return(NULL)
     }
+    if (!exists("release_decision", inherits = FALSE)) release_decision <- NULL
+    # optional per-wave release pin: warn when the selected file does not
+    # carry the expected release fragment (strict mode aborts before write)
+    expected_rel <- w$expected_release %||% NULL
+    release_ok <- TRUE
+    if (!is.null(expected_rel) &&
+        !grepl(expected_rel, basename(primary[[1]]), fixed = TRUE)) {
+      release_ok <- FALSE
+      cli::cli_warn(paste0(
+        "wave '", w$id, "': selected file '", basename(primary[[1]]),
+        "' does not match expected_release '", expected_rel, "'"))
+    }
     list(wave_id = w$id, year = w$year, paths = primary,
-         aux_paths = aux, wave_meta = w)
+         aux_paths = aux, wave_meta = w,
+         release_decision = release_decision, release_ok = release_ok)
   })
   purrr::compact(files)
 }
@@ -493,22 +558,41 @@ harmonize_column_types <- function(dfs) {
   n_conflicts <- length(type_map)
   cli::cli_inform("  resolving {n_conflicts} column type conflict(s) before stacking")
 
+  # factors (and ordered factors) count as character-bearing: as.numeric() on
+  # a factor yields level indices, not values, which silently corrupts codes
+  # when a labelled/factorized wave meets a plain-numeric wave (registry
+  # archetype TD-02). factors are routed through as.character() and force the
+  # shared target to character, so the divergence stays visible downstream
+  # instead of stacking incompatible codes into one column.
+  fac_cols <- names(type_map)[vapply(type_map, function(cl)
+    any(cl %in% c("factor", "ordered")), logical(1))]
+  if (length(fac_cols) > 0) {
+    cli::cli_warn(paste0(
+      "type conflict involves factor column(s): ",
+      paste(fac_cols, collapse = ", "),
+      "; coercing via as.character to avoid level-index corruption. ",
+      "check labelled_policy and type_coerce rules for these variables."))
+  }
+
   for (col in names(type_map)) {
     classes <- type_map[[col]]
-    # determine target: if any is character, use character; otherwise numeric
-    target <- if ("character" %in% classes) "character" else "numeric"
+    # target: character if any wave is character- or factor-typed, else numeric
+    target <- if (any(classes %in% c("character", "factor", "ordered")))
+      "character" else "numeric"
 
     for (i in seq_along(dfs)) {
       if (!(col %in% names(dfs[[i]]))) next
       cur_class <- class(dfs[[i]][[col]])[1]
       if (cur_class == target) next
 
+      x <- dfs[[i]][[col]]
+      if (is.factor(x)) x <- as.character(x)
       dfs[[i]][[col]] <- tryCatch(
-        if (target == "character") as.character(dfs[[i]][[col]])
-        else as.numeric(dfs[[i]][[col]]),
+        if (target == "character") as.character(x)
+        else as.numeric(x),
         error = function(e) {
           cli::cli_warn("could not coerce {.var {col}} from {cur_class} to {target}")
-          as.character(dfs[[i]][[col]])
+          as.character(x)
         }
       )
     }
@@ -735,9 +819,12 @@ sweep_user_missing <- function(merged, registry, cols,
   wave_col <- if (wave_var %in% names(merged)) merged[[wave_var]] else NULL
   col_vetoed <- function(col, sfx_waves) {
     # a column is veto-covered for a wave when a recipe exclude block named
-    # its suffix for that wave; matching mirrors the harmonization-time names
+    # its suffix for that wave; matching mirrors find_col's full candidate
+    # ladder (s/stem_/bare plus the q/Q forms), so a veto written against a
+    # q-prefixed column name is honored the same way rule targeting is
     for (sfx in names(sfx_waves)) {
-      if (col %in% c(paste0("s", sfx), paste0("stem_", sfx), sfx))
+      if (col %in% c(paste0("s", sfx), paste0("stem_", sfx), sfx,
+                     paste0("q", sfx), paste0("Q", sfx)))
         return(sfx_waves[[sfx]])
     }
     character(0)
@@ -1280,6 +1367,25 @@ exec_harmonization_rule <- function(df, rule, wave_id, wave_meta,
         }
         for (sfx in suffixes) {
           col <- resolve_var_target(sfx, wave_meta, df)
+          if (is.null(col)) {
+            # unresolved target: honor if_absent and leave an audit trace
+            # instead of vanishing from the log
+            handle_absent(rule, sfx, wave_id)
+            log_entries <- append(log_entries, list(
+              make_log(rid, wave_id, paste0(as.character(sfx), collapse = ""),
+                       paste0(action, ":TARGET_ABSENT"), 0L,
+                       duration_ms = elapsed_ms(t0))))
+            next
+          }
+          if (!is.numeric(df[[col]])) {
+            # resolved but non-numeric (character column, or a factor under
+            # labelled_policy to_factor): numeric recodes cannot apply; log it
+            log_entries <- append(log_entries, list(
+              make_log(rid, wave_id, col,
+                       paste0(action, ":SKIPPED_non_numeric"), 0L,
+                       duration_ms = elapsed_ms(t0))))
+            next
+          }
           if (!is.null(col) && is.numeric(df[[col]])) {
             if (-7 %in% .to_vals && any(df[[col]] == -7, na.rm = TRUE))
               stop(sprintf("-7 collision in '%s': column already contains -7 (rule %s)", col, rid))
@@ -2044,37 +2150,159 @@ safe_eval_condition <- function(cond, df) {
   eval(exprs[[1]], envir = df, enclos = .condition_sandbox)
 }
 
+# ---- check-type registry ----------------------------------------------------
+# canonical check types have executors below. aliases normalize recipe-specific
+# names onto canonical executors at evaluation time. documentary types are
+# declared diagnostics with no executor by design: they report status DOC and
+# never warn. anything else reports SKIP; a SKIPped check with severity error
+# is escalated (loud warning, and strict mode refuses to write outputs).
+.CHECK_ALIASES <- c(
+  # uniqueness family
+  "assert_unique" = "uniqueness", "n_duplicates" = "uniqueness",
+  "unique_key" = "uniqueness", "no_duplicate_ids" = "uniqueness",
+  "unique_per_wave" = "uniqueness", "assert_identifier" = "uniqueness",
+  # value_absence family
+  "assert_absent_values" = "value_absence", "none_equal" = "value_absence",
+  "sentinel_absence" = "value_absence", "no_residual_sentinels" = "value_absence",
+  "assert_no_values" = "value_absence", "value_absence_check" = "value_absence",
+  "value_restriction" = "value_absence",
+  # value_range family
+  "range_check" = "value_range", "value_in_range" = "value_range",
+  "assert_range" = "value_range",
+  # value_in_set family
+  "value_set" = "value_in_set", "assert_values" = "value_in_set",
+  # na_rate family
+  "na_rate_check" = "na_rate", "na_rate_above" = "na_rate",
+  "na_rate_below" = "na_rate", "not_missing" = "na_rate",
+  # structural_missingness family
+  "structural_absence" = "structural_missingness", "all_na" = "structural_missingness",
+  "structural_na_count" = "structural_missingness", "missingness_check" = "structural_missingness",
+  # wave / row counts
+  "n_distinct_wave" = "wave_count",
+  "assert_row_count_range" = "row_count",
+  # presence of a specific value
+  "value_present_per_wave" = "value_present"
+)
+
+.CANONICAL_CHECK_TYPES <- c(
+  "structural_missingness", "uniqueness", "value_absence", "value_in_set",
+  "value_present", "expected_presence", "value_range", "na_rate",
+  "wave_count", "row_count", "per_wave_mean"
+)
+
+.DOCUMENTARY_CHECK_TYPES <- c(
+  # declared diagnostics that need distributional testing, cross-file inputs,
+  # or per-wave source counts unavailable at phase 6; kept as documentation
+  "distribution_shift", "distribution_check", "distribution_comparison",
+  "distribution_continuity", "boundary_distribution", "compare_distributions",
+  "compare_dk_rates", "conditional_missingness", "prevalence_check",
+  "nonresponse_comparison", "sentinel_completeness", "panel_consistency",
+  "panel_overlap", "presence_matrix", "assert_presence", "skip_logic",
+  "mutually_exclusive_na", "assert_missingness_alignment", "assert_type",
+  "assert_bijective", "na_parity", "sample_for_audit",
+  "row_count_match", "row_count_sum", "crosstab"
+)
+
+#' resolve the suffix/variable scope of a check to column names (internal)
+#' @noRd
+.check_cols <- function(df, chk, keys = c("suffixes", "variables", "scope",
+                                          "applies_to", "items", "stems",
+                                          "variable", "column")) {
+  vals <- NULL
+  for (k in keys) {
+    v <- chk[[k]]
+    if (!is.null(v)) { vals <- v; break }
+  }
+  if (is.null(vals)) return(character(0))
+  if (is.character(vals) && length(vals) == 1 &&
+      vals %in% c("all_numeric", "numeric"))
+    return(names(df)[vapply(df, is.numeric, logical(1))])
+  vals <- unlist(vals)
+  found <- vapply(as.character(vals),
+                  function(s) find_col(df, s) %||% NA_character_, character(1))
+  unname(found[!is.na(found)])
+}
+
+#' row filter from a check's wave scope (internal)
+#' @noRd
+.check_rows <- function(df, chk, keys = c("in_waves", "waves", "wave_filter",
+                                          "must_be_na_in")) {
+  for (k in keys) {
+    w <- chk[[k]]
+    if (!is.null(w) && !identical(w, "all"))
+      return(as.character(df$wave_id) %in% as.character(unlist(w)))
+  }
+  rep(TRUE, nrow(df))
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
+  error_skips <- character(0)
 
   for (chk in checks) {
     cid  <- chk$check_id %||% "?"
     sev  <- chk$severity %||% "warning"
-    type <- chk$type %||% ""
+    type_raw <- paste0(chk$type %||% "", collapse = "")
+    type <- if (type_raw %in% names(.CHECK_ALIASES))
+      unname(.CHECK_ALIASES[[type_raw]]) else type_raw
 
     result <- tryCatch({
       switch(type,
         "structural_missingness" = {
-          suffixes <- chk$suffixes %||% list()
-          na_waves <- chk$waves_must_be_all_na %||% chk$waves %||% list()
+          suffixes <- chk$suffixes %||% chk$variables %||% chk$variable %||%
+                      chk$scope %||% list()
+          na_waves <- as.character(unlist(
+            chk$waves_must_be_all_na %||% chk$must_be_na_in %||%
+            chk$expected_na_waves %||% chk$wave_filter %||% chk$waves %||% list()))
+          present_waves <- as.character(unlist(chk$waves_expected_present %||% list()))
+          # missingness_check shorthand: expected-present waves plus all-NA
+          # everywhere else (cf VAL-005 shape)
+          if (length(present_waves) > 0 &&
+              identical(chk$expect_elsewhere %||% chk$expect, "all_na"))
+            na_waves <- setdiff(unique(as.character(df$wave_id)), present_waves)
           passed <- TRUE
-          for (sfx in suffixes) {
-            col <- find_col(df, sfx)
-            if (!is.null(col) && col %in% names(df)) {
-              subset <- df[df$wave_id %in% na_waves, col, drop = TRUE]
-              if (any(!is.na(subset))) { passed <- FALSE; break }
+          detail <- NULL
+          for (sfx in unlist(suffixes)) {
+            col <- find_col(df, as.character(sfx))
+            if (is.null(col) || !(col %in% names(df))) next
+            if (length(na_waves) > 0) {
+              subset <- df[as.character(df$wave_id) %in% na_waves, col, drop = TRUE]
+              if (any(!is.na(subset))) {
+                passed <- FALSE
+                detail <- paste0(sum(!is.na(subset)), " non-NA value(s) in ",
+                                 col, " within all-NA waves")
+                break
+              }
             }
+            for (w in present_waves) {
+              subset <- df[as.character(df$wave_id) == w, col, drop = TRUE]
+              if (length(subset) > 0 && all(is.na(subset))) {
+                passed <- FALSE
+                detail <- paste0(col, " all-NA in expected-present wave ", w)
+                break
+              }
+            }
+            if (!passed) break
           }
-          list(check_id = cid, passed = passed, severity = sev)
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
-        "uniqueness" = , "assert_unique" = , "n_duplicates" = {
-          col <- chk$column %||% chk$key %||% "nomem_encr"
-          group <- chk$within %||% chk$group_by %||% "wave_id"
-          # resolve shorthand column names
+        "uniqueness" = {
+          # exact [[ ]] indexing throughout: $ partial matching would let an
+          # unrelated key like scope_wave hijack the scope lookup
+          kc <- unlist(chk[["key_columns"]] %||% list())
+          vv <- unlist(chk[["variables"]] %||% list())
+          col <- chk[["column"]] %||% chk[["key"]] %||% chk[["variable"]] %||%
+                 (if (length(kc) >= 1) kc[[1]] else NULL) %||%
+                 (if (length(vv) >= 1) vv[[1]] else NULL) %||%
+                 (if (is.character(chk[["scope"]] %||% NULL)) chk[["scope"]] else NULL) %||%
+                 "nomem_encr"
+          group <- chk[["within"]] %||% chk[["group_by"]] %||%
+                   (if (length(kc) >= 2) kc[[2]] else NULL) %||%
+                   (if (length(vv) >= 2) vv[[2]] else NULL) %||%
+                   "wave_id"
           group <- resolve_check_cols(group, names(df))
           col <- resolve_check_cols(col, names(df))
-          # group by key + grouping var, then find duplicates
           keys <- unique(c(col, group))
           keys <- intersect(keys, names(df))
           if (length(keys) == 0) {
@@ -2088,40 +2316,133 @@ run_validations <- function(df, checks, log_entries) {
                  detail = paste0("duplicates: ", dupes))
           }
         },
-        "value_absence" = , "assert_absent_values" = {
-          suffixes <- chk$suffixes %||% chk$variables %||% NULL
-          if (is.null(suffixes)) suffixes <- expand_items(chk$items)
-          # single-variable fallback
-          if (length(suffixes) == 0) {
-            single <- chk$column %||% chk$variable %||% NULL
-            if (!is.null(single)) suffixes <- single
-          }
-          forbidden <- chk$forbidden_values %||% list()
-          forbidden <- unlist(forbidden)
-          # optional wave scoping: restrict the forbidden-value scan to in_waves
-          # (e.g. cw V01 allows scheme-3 codes 56/57 only in cw24q/cw25r)
-          in_w <- chk$in_waves %||% NULL
-          row_keep <- if (!is.null(in_w) && "wave_id" %in% names(df))
-            as.character(df$wave_id) %in% as.character(unlist(in_w)) else TRUE
+        "value_absence" = {
+          # block form: `targets` is a list of scoped sub-checks (ci V-01 /
+          # cs V06 shape); each block resolves its own columns, waves, values
+          blocks <- chk$targets %||% chk$checks %||% NULL
+          if (is.null(blocks)) blocks <- list(chk)
           passed <- TRUE
           detail <- NULL
-          for (sfx in suffixes) {
-            col <- find_col(df, sfx)
-            if (!is.null(col) && col %in% names(df)) {
-              vals <- df[[col]][row_keep]
-              if (any(vals %in% forbidden, na.rm = TRUE)) {
-                n_bad <- sum(vals %in% forbidden, na.rm = TRUE)
+          all_waves <- unique(as.character(df$wave_id %||% character(0)))
+          for (bl in blocks) {
+            if (!is.list(bl)) next
+            forbidden <- unlist(bl$forbidden_values %||% bl$forbidden_value %||%
+                                bl$sentinel_values %||% bl$codes %||%
+                                bl$value %||% chk$forbidden_values %||%
+                                chk$sentinel_values %||% chk$value %||% list())
+            if (length(forbidden) == 0) next
+            forbidden_chr <- as.character(forbidden)
+            forbidden <- suppressWarnings(as.numeric(forbidden))
+            forbidden <- forbidden[!is.na(forbidden)]
+            cols <- .check_cols(df, bl)
+            if (length(cols) == 0) cols <- .check_cols(df, chk)
+            if (length(cols) == 0 && !is.null(chk$items))
+              cols <- vapply(expand_items(chk$items),
+                             function(s) find_col(df, s) %||% NA_character_,
+                             character(1))
+            cols <- cols[!is.na(cols)]
+            excl <- unlist(chk$exclude_variables %||% chk$exclude_suffixes %||%
+                           bl$exclude_variables %||% list())
+            if (length(excl) > 0) {
+              excl_cols <- vapply(as.character(excl),
+                                  function(s) find_col(df, s) %||% NA_character_,
+                                  character(1))
+              cols <- setdiff(cols, excl_cols[!is.na(excl_cols)])
+            }
+            # value_restriction: a value allowed ONLY in waves_allowed means
+            # it is forbidden in the complement
+            row_keep <- if (!is.null(chk$waves_allowed))
+              !(as.character(df$wave_id) %in% as.character(unlist(chk$waves_allowed)))
+            else .check_rows(df, bl) & .check_rows(df, chk)
+            for (col in cols) {
+              raw <- df[[col]][row_keep]
+              vals <- suppressWarnings(as.numeric(raw))
+              # match numerically where possible and on the character form
+              # otherwise, so string-valued codes (e.g. a forbidden wave_id)
+              # are compared correctly instead of collapsing to NA
+              hit_num <- !is.na(vals) & vals %in% forbidden
+              hit_chr <- !is.na(raw) & as.character(raw) %in% forbidden_chr
+              n_bad <- sum(hit_num | hit_chr, na.rm = TRUE)
+              if (n_bad > 0) {
                 passed <- FALSE
                 detail <- paste0(n_bad, " forbidden value(s) in ", col)
                 break
               }
             }
+            if (!passed) break
           }
-          list(check_id = cid, passed = passed, severity = sev,
-               detail = detail)
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
+        },
+        "value_in_set" = {
+          # either one allowed set for several columns, or per-variable sets
+          # via variables: [{name, allowed}] (ci V-04 shape)
+          per_var <- NULL
+          if (is.list(chk$variables) && length(chk$variables) > 0 &&
+              is.list(chk$variables[[1]]) && !is.null(chk$variables[[1]]$name)) {
+            per_var <- chk$variables
+          }
+          allow_na <- !isFALSE(chk$allow_na)
+          row_keep <- .check_rows(df, chk)
+          passed <- TRUE
+          detail <- NULL
+          test_col <- function(col, allowed) {
+            vals <- df[[col]][row_keep]
+            vals <- suppressWarnings(as.numeric(vals))
+            bad <- !(vals %in% suppressWarnings(as.numeric(unlist(allowed))))
+            if (allow_na) bad <- bad & !is.na(vals)
+            sum(bad, na.rm = TRUE)
+          }
+          if (!is.null(per_var)) {
+            for (v in per_var) {
+              col <- find_col(df, as.character(v$name))
+              if (is.null(col)) next
+              n_bad <- test_col(col, v$allowed %||% v$allowed_values)
+              if (n_bad > 0) {
+                passed <- FALSE
+                detail <- paste0(n_bad, " out-of-set value(s) in ", col)
+                break
+              }
+            }
+          } else {
+            allowed <- chk$allowed_values %||% chk$allowed %||% chk$values
+            for (col in .check_cols(df, chk)) {
+              n_bad <- test_col(col, allowed)
+              if (n_bad > 0) {
+                passed <- FALSE
+                detail <- paste0(n_bad, " out-of-set value(s) in ", col)
+                break
+              }
+            }
+          }
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
+        },
+        "value_present" = {
+          # asserts a specific value occurs at least once, per wave in scope
+          target_val <- suppressWarnings(as.numeric(chk$value %||% chk$values))
+          cols <- .check_cols(df, chk)
+          waves <- unique(as.character(df$wave_id))
+          wf <- chk[["wave_filter"]] %||% chk[["waves"]] %||% NULL
+          if (!is.null(wf) && !identical(wf, "all"))
+            waves <- intersect(waves, as.character(unlist(wf)))
+          passed <- TRUE
+          detail <- NULL
+          for (w in waves) {
+            rows <- as.character(df$wave_id) == w
+            hit <- FALSE
+            for (col in cols) {
+              vals <- suppressWarnings(as.numeric(df[[col]][rows]))
+              if (any(vals %in% target_val, na.rm = TRUE)) { hit <- TRUE; break }
+            }
+            if (!hit) {
+              passed <- FALSE
+              detail <- paste0("value ", paste(target_val, collapse = "/"),
+                               " absent in wave ", w)
+              break
+            }
+          }
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "expected_presence" = {
-          # validate specific variable exists in specific waves
           var <- chk$variable %||% ""
           waves <- chk$waves %||% list()
           passed <- TRUE
@@ -2133,16 +2454,15 @@ run_validations <- function(df, checks, log_entries) {
           }
           list(check_id = cid, passed = passed, severity = sev)
         },
-        "value_range" = , "range_check" = {
-          # check that values fall within a specified range (or are NA)
-          suffixes <- chk$suffixes %||% chk$variables %||% NULL
+        "value_range" = {
+          suffixes <- chk$suffixes %||% chk$variables %||% chk$variable %||% NULL
           if (is.null(suffixes)) suffixes <- expand_items(chk$items)
           lo <- chk$min %||% -Inf
           hi <- chk$max %||% Inf
           passed <- TRUE
           detail <- NULL
-          for (sfx in suffixes) {
-            col <- find_col(df, sfx)
+          for (sfx in unlist(suffixes)) {
+            col <- find_col(df, as.character(sfx))
             if (!is.null(col) && col %in% names(df) && is.numeric(df[[col]])) {
               vals <- df[[col]][!is.na(df[[col]])]
               bad <- sum(vals < lo | vals > hi)
@@ -2154,21 +2474,20 @@ run_validations <- function(df, checks, log_entries) {
               }
             }
           }
-          list(check_id = cid, passed = passed, severity = sev,
-               detail = detail)
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
-        "na_rate" = , "na_rate_check" = {
-          # check NA rate against threshold, optionally restricted by `waves` and a
-          # `condition` expression evaluated against the post-derive frame. the
-          # condition (e.g. questionnaire_version == 'short') selects the rows whose
-          # rate is measured; cp V13 gates on the short-form respondents only.
-          suffixes <- chk$suffixes %||% chk$variables %||% NULL
+        "na_rate" = {
+          suffixes <- chk$suffixes %||% chk$variables %||% chk$scope %||% NULL
           if (is.null(suffixes)) suffixes <- expand_items(chk$items)
-          waves <- chk$waves %||% NULL
-          threshold <- chk$threshold %||% chk$max_rate %||% 1.0
-          direction <- chk$direction %||% "below"
+          waves <- chk[["waves"]] %||% chk[["wave_filter"]] %||% NULL
+          # not_missing alias: zero NA tolerated
+          is_not_missing <- identical(type_raw, "not_missing")
+          threshold <- chk$threshold %||% chk$max_rate %||%
+                       (if (is_not_missing) 0 else 1.0)
+          direction <- chk$direction %||%
+                       (if (identical(type_raw, "na_rate_above")) "above" else "below")
           keep <- rep(TRUE, nrow(df))
-          if (!is.null(waves) && "wave_id" %in% names(df))
+          if (!is.null(waves) && !identical(waves, "all") && "wave_id" %in% names(df))
             keep <- keep & (as.character(df$wave_id) %in% as.character(unlist(waves)))
           cond <- chk$condition %||% NULL
           cond_ok <- TRUE
@@ -2185,8 +2504,8 @@ run_validations <- function(df, checks, log_entries) {
           } else {
             passed <- TRUE
             detail <- NULL
-            for (sfx in suffixes) {
-              col <- find_col(df, sfx)
+            for (sfx in unlist(suffixes)) {
+              col <- find_col(df, as.character(sfx))
               if (!is.null(col) && col %in% names(df)) {
                 subset <- df[[col]][keep]
                 rate <- if (length(subset)) mean(is.na(subset)) else NA_real_
@@ -2205,26 +2524,77 @@ run_validations <- function(df, checks, log_entries) {
           }
         },
         "wave_count" = {
-          # check max waves per person
           col <- chk$column %||% chk$key %||% "nomem_encr"
           max_waves <- chk$max_waves %||% Inf
-          if (col %in% names(df) && "wave_id" %in% names(df)) {
-            counts <- dplyr::n_distinct(df$wave_id[!is.na(df[[col]])])
-            per_person <- df |>
-              dplyr::group_by(dplyr::across(dplyr::all_of(col))) |>
-              dplyr::summarise(n = dplyr::n_distinct(.data$wave_id),
-                               .groups = "drop")
-            max_seen <- max(per_person$n)
-            passed <- max_seen <= max_waves
-            list(check_id = cid, passed = passed, severity = sev,
-                 detail = paste0("max waves per person: ", max_seen))
+          expected  <- chk$expected %||% NULL
+          if ("wave_id" %in% names(df)) {
+            n_waves <- dplyr::n_distinct(df$wave_id)
+            if (!is.null(expected)) {
+              passed <- (n_waves == as.integer(expected))
+              list(check_id = cid, passed = passed, severity = sev,
+                   detail = paste0("distinct waves: ", n_waves,
+                                   " (expected ", expected, ")"))
+            } else if (col %in% names(df)) {
+              per_person <- df |>
+                dplyr::group_by(dplyr::across(dplyr::all_of(col))) |>
+                dplyr::summarise(n = dplyr::n_distinct(.data$wave_id),
+                                 .groups = "drop")
+              max_seen <- max(per_person$n)
+              passed <- max_seen <= max_waves
+              list(check_id = cid, passed = passed, severity = sev,
+                   detail = paste0("max waves per person: ", max_seen))
+            } else {
+              list(check_id = cid, passed = TRUE, severity = "info",
+                   detail = "key columns not found")
+            }
           } else {
             list(check_id = cid, passed = TRUE, severity = "info",
-                 detail = "key columns not found")
+                 detail = "wave_id not found")
           }
         },
-        list(check_id = cid, passed = NA, severity = sev,
-             detail = paste0("type '", type, "' not implemented; SKIPPED"))
+        "row_count" = {
+          w <- chk$wave %||% NULL
+          rows <- if (!is.null(w)) sum(as.character(df$wave_id) == as.character(w))
+                  else nrow(df)
+          lo <- chk$min_rows %||% 0
+          hi <- chk$max_rows %||% Inf
+          passed <- (rows >= lo && rows <= hi)
+          list(check_id = cid, passed = passed, severity = sev,
+               detail = paste0("rows: ", rows,
+                               if (!is.null(w)) paste0(" in wave ", w) else "",
+                               " (bounds ", lo, "..",
+                               if (is.finite(hi)) hi else "Inf", ")"))
+        },
+        "per_wave_mean" = {
+          cols <- .check_cols(df, chk)
+          max_mean <- chk$max_mean %||% Inf
+          min_mean <- chk$min_mean %||% -Inf
+          passed <- TRUE
+          detail <- NULL
+          for (w in unique(as.character(df$wave_id))) {
+            rows <- as.character(df$wave_id) == w
+            for (col in cols) {
+              m <- suppressWarnings(mean(as.numeric(df[[col]][rows]), na.rm = TRUE))
+              if (is.finite(m) && (m > max_mean || m < min_mean)) {
+                passed <- FALSE
+                detail <- paste0("mean(", col, ") = ", round(m, 2),
+                                 " in wave ", w, " outside [",
+                                 min_mean, ", ", max_mean, "]")
+                break
+              }
+            }
+            if (!passed) break
+          }
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
+        },
+        # documentary or unknown
+        if (type_raw %in% .DOCUMENTARY_CHECK_TYPES) {
+          list(check_id = cid, passed = NA, severity = sev, documentary = TRUE,
+               detail = "documentary diagnostic; no executor by design")
+        } else {
+          list(check_id = cid, passed = NA, severity = sev,
+               detail = paste0("type '", type_raw, "' not implemented; SKIPPED"))
+        }
       )
     }, error = function(e) {
       list(check_id = cid, passed = NA, severity = sev,
@@ -2234,32 +2604,44 @@ run_validations <- function(df, checks, log_entries) {
     results <- append(results, list(result))
 
     status <- if (isTRUE(result$passed)) "PASS"
-              else if (isFALSE(result$passed)) "FAIL" else "SKIP"
-    icon <- switch(status, "PASS" = "\u2713", "FAIL" = "\u2717", "~")
+              else if (isFALSE(result$passed)) "FAIL"
+              else if (isTRUE(result$documentary)) "DOC" else "SKIP"
+    icon <- switch(status, "PASS" = "\u2713", "FAIL" = "\u2717",
+                   "DOC" = "\u2022", "~")
     detail_str <- if (!is.null(result$detail) && status == "FAIL") {
       paste0(" -- ", result$detail)
     } else ""
     cli::cli_inform("{icon} [{sev}] {cid}: {status}{detail_str}")
 
-    # severity=error failures are hard errors
     if (sev == "error" && isFALSE(result$passed)) {
       error_count <- error_count + 1L
+    }
+    if (sev == "error" && status == "SKIP") {
+      error_skips <- c(error_skips, cid)
     }
   }
 
   if (error_count > 0)
     cli::cli_warn("{error_count} validation check(s) with severity='error' FAILED")
+  if (length(error_skips) > 0)
+    cli::cli_warn(c(
+      "!" = paste0(length(error_skips), " severity='error' check(s) could not ",
+                   "be evaluated (unknown type): ",
+                   paste(error_skips, collapse = ", ")),
+      "i" = "an error-level check must be executable; fix the check type or downgrade it"))
 
   n_pass <- sum(vapply(results, function(r) isTRUE(r$passed), logical(1)))
   n_fail <- sum(vapply(results, function(r) isFALSE(r$passed), logical(1)))
-  n_skip <- length(results) - n_pass - n_fail
-  if (n_skip > 0)
+  n_doc  <- sum(vapply(results, function(r) isTRUE(r$documentary), logical(1)))
+  n_skip <- length(results) - n_pass - n_fail - n_doc
+  if (n_skip > 0 || n_doc > 0)
     cli::cli_inform(paste0("  checks: ", n_pass, " passed, ", n_fail,
-                           " failed, ", n_skip,
+                           " failed, ", n_doc, " documentary, ", n_skip,
                            " skipped (type not implemented or not evaluable)"))
 
   list(results = results, log = log_entries, error_count = error_count,
-       n_pass = n_pass, n_fail = n_fail, n_skip = n_skip)
+       error_skips = error_skips,
+       n_pass = n_pass, n_fail = n_fail, n_skip = n_skip, n_doc = n_doc)
 }
 
 # ============================================================================
@@ -2276,13 +2658,21 @@ run_validations <- function(df, checks, log_entries) {
 #' @param data_dir character. directory containing wave data files.
 #' @param output_dir character. directory for output files.
 #' @param strict logical. if `TRUE`, abort before writing any outputs when a
-#'   validation check with `severity: error` fails; the default `FALSE`
-#'   preserves the historical report-and-continue behavior.
+#'   validation check with `severity: error` fails or cannot be evaluated,
+#'   or when a wave's selected file violates its `expected_release` pin; the
+#'   default `FALSE` preserves the historical report-and-continue behavior.
+#' @param overwrite logical. if `FALSE`, abort instead of overwriting an
+#'   existing merged output file. default `TRUE` preserves prior behavior.
 #' @return a list (invisibly) with elements `data`, `log`, `validation`,
-#'   `summary`, and `recipe`.
+#'   `summary`, `recipe`, `provenance` (package and recipe versions, input
+#'   file md5 hashes, release decisions, strictness, timestamp), and
+#'   `valid_for_analysis` (`TRUE` when no error-severity check failed or was
+#'   unevaluable and all release pins matched).
 #' @export
-merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE) {
+merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE,
+                              overwrite = TRUE) {
   # accept either a parsed recipe list or a path to a recipe file
+  recipe_path <- if (is.character(recipe) && length(recipe) == 1) recipe else NULL
   if (is.character(recipe) && length(recipe) == 1) recipe <- load_recipe(recipe)
 
   mod_code  <- recipe$meta$module
@@ -2313,6 +2703,26 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   cli::cli_h2("phase 1: loading and pre-processing waves")
   wave_files <- discover_wave_files(recipe, data_dir)
   processed_waves <- list()
+
+  # provenance: input hashes, release decisions, and pin violations
+  input_files <- unlist(lapply(wave_files, function(wf) wf$paths))
+  input_md5 <- tryCatch(tools::md5sum(input_files), error = function(e)
+    stats::setNames(rep(NA_character_, length(input_files)), input_files))
+  release_decisions <- purrr::compact(lapply(wave_files, function(wf) {
+    if (is.null(wf$release_decision)) return(NULL)
+    c(list(wave = wf$wave_id), wf$release_decision)
+  }))
+  release_violations <- vapply(wave_files, function(wf)
+    !isTRUE(wf$release_ok %||% TRUE), logical(1))
+  release_violations <- vapply(
+    wave_files[release_violations], function(wf) wf$wave_id, character(1))
+  if (isTRUE(strict) && length(release_violations) > 0) {
+    cli::cli_abort(c(
+      paste0(length(release_violations), " wave(s) violate their ",
+             "expected_release pin: ",
+             paste(release_violations, collapse = ", ")),
+      "i" = "strict mode: no outputs were written"))
+  }
 
   for (wf in wave_files) {
     wid <- wf$wave_id
@@ -2363,6 +2773,21 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     df[[wave_var]] <- wid
     df[[year_var]] <- as.integer(wave_years[wid])
 
+    # auto-derive fieldwork_ym from the LISS {wave_id}_m convention BEFORE the
+    # expected-presence check runs. expected_presence creates absent critical
+    # variables as all-NA placeholders, and a placeholder named fieldwork_ym
+    # used to suppress this derivation entirely (nine of the ten bundled
+    # recipes declare it, so their merged outputs carried an all-NA
+    # fieldwork_ym). deriving first means the declaration now validates the
+    # derived column instead of blocking it; explicit derive rules can still
+    # overwrite it during the rule phases.
+    if (!("fieldwork_ym" %in% names(df))) {
+      fm_col <- find_col(df, "_m")
+      if (!is.null(fm_col) && fm_col %in% names(df)) {
+        df[["fieldwork_ym"]] <- df[[fm_col]]
+      }
+    }
+
     # expected-presence enforcement
     df <- check_expected_presence(df, wid, expected)
 
@@ -2376,14 +2801,6 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     for (rule in (recipe$harmonization_rules %||% list())) {
       result <- exec_harmonization_rule(df, rule, wid, wm, all_wave_ids, log_entries)
       df <- result$df; log_entries <- result$log
-    }
-
-    # auto-derive fieldwork_ym from LISS _m convention if not already present
-    if (!("fieldwork_ym" %in% names(df))) {
-      fm_col <- find_col(df, "_m")
-      if (!is.null(fm_col) && fm_col %in% names(df)) {
-        df[["fieldwork_ym"]] <- df[[fm_col]]
-      }
     }
 
     processed_waves[[wid]] <- df
@@ -2609,9 +3026,11 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   val <- run_validations(merged, recipe$validation_checks %||% list(), log_entries)
   log_entries <- val$log
 
-  if (isTRUE(strict) && val$error_count > 0) {
+  if (isTRUE(strict) && (val$error_count > 0 || length(val$error_skips %||% character(0)) > 0)) {
     cli::cli_abort(c(
-      paste0(val$error_count, " validation check(s) with severity='error' failed"),
+      paste0(val$error_count, " failed and ",
+             length(val$error_skips %||% character(0)),
+             " unevaluable validation check(s) with severity='error'"),
       "i" = "strict mode: no outputs were written",
       "i" = "re-run with strict = FALSE to write outputs despite failures"))
   }
@@ -2670,6 +3089,11 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   # merged data (SPSS .sav carries the variable labels and the restored value labels)
   merged <- sanitize_spss_names(merged)
   out_sav <- file.path(output_dir, paste0(mod_code, "_merged.sav"))
+  if (!isTRUE(overwrite) && file.exists(out_sav)) {
+    cli::cli_abort(c(
+      "output file {.file {out_sav}} already exists",
+      "i" = "pass overwrite = TRUE to replace it"))
+  }
   haven::write_sav(merged, out_sav)
   cli::cli_inform("  data: {.file {out_sav}}")
 
@@ -2692,21 +3116,47 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     cli::cli_inform("  summary: {.file {summary_file}}")
   }
 
+  valid_for_analysis <- (val$error_count == 0L) &&
+    (length(val$error_skips %||% character(0)) == 0L) &&
+    (length(release_violations) == 0L)
+
+  provenance <- list(
+    package_version = as.character(utils::packageVersion("lissr")),
+    recipe_version  = recipe$meta$recipe_version %||% NA_character_,
+    schema_version  = recipe$meta$schema_version %||% NA_character_,
+    recipe_md5      = if (!is.null(recipe_path))
+      unname(tools::md5sum(recipe_path)) else NA_character_,
+    inputs          = data.frame(file = basename(names(input_md5)),
+                                 md5 = unname(input_md5),
+                                 stringsAsFactors = FALSE),
+    release_decisions = release_decisions,
+    release_violations = release_violations,
+    strict          = isTRUE(strict),
+    timestamp       = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
+  )
+
   # text report
   report_file <- file.path(output_dir,
     log_cfg$report_file %||% paste0(mod_code, "_merge_report.txt"))
-  write_report(merged, val$results, log_entries, recipe, report_file)
+  write_report(merged, val$results, log_entries, recipe, report_file,
+               provenance = provenance,
+               valid_for_analysis = valid_for_analysis)
   cli::cli_inform("  report: {.file {report_file}}")
 
   cli::cli_alert_success(
     "module {toupper(mod_code)} merge complete: {nrow(merged)} rows x {ncol(merged)} cols")
+  if (!valid_for_analysis)
+    cli::cli_alert_warning(
+      "output is NOT flagged valid_for_analysis (failed or unevaluable error-severity checks, or release-pin violations)")
 
   invisible(list(
     data       = merged,
     log        = log_entries,
     validation = val$results,
     summary    = summary,
-    recipe     = recipe
+    recipe     = recipe,
+    provenance = provenance,
+    valid_for_analysis = valid_for_analysis
   ))
 }
 
@@ -2791,13 +3241,19 @@ merge_liss_modules <- function(recipe_paths, data_dir, output_dir = ".",
 # ============================================================================
 
 #' @noRd
-write_report <- function(merged, validation_results, log_entries, recipe, path) {
+write_report <- function(merged, validation_results, log_entries, recipe, path,
+                         provenance = NULL, valid_for_analysis = NA) {
   mod <- recipe$meta$module
   lines <- c(
     paste0("LISS ", toupper(mod), " Module \u2014 Merge Report"),
     paste0("Generated: ", Sys.time()),
     paste0("Recipe version: ", recipe$meta$recipe_version),
     paste0("Schema: canonical v1.1.0 (accepts v1.0.0)"),
+    if (!is.null(provenance)) c(
+      paste0("Package version: ", provenance$package_version),
+      paste0("Strict mode: ", provenance$strict),
+      paste0("Valid for analysis: ", valid_for_analysis)
+    ),
     "",
     paste0("Rows: ", nrow(merged)),
     paste0("Columns: ", ncol(merged)),
@@ -2824,6 +3280,25 @@ write_report <- function(merged, validation_results, log_entries, recipe, path) 
       lines <- c(lines, paste0(
         "[", cc$status, "] ", br$rule_id, ": method=", cc$method,
         " | ", cc$rationale %||% ""))
+    }
+  }
+
+  if (!is.null(provenance)) {
+    lines <- c(lines, "", "--- Provenance ---")
+    for (i in seq_len(nrow(provenance$inputs))) {
+      lines <- c(lines, paste0("input: ", provenance$inputs$file[i],
+                               "  md5: ", provenance$inputs$md5[i]))
+    }
+    for (rd in provenance$release_decisions) {
+      lines <- c(lines, paste0("release decision: wave ", rd$wave,
+                               " selected '", rd$selected, "' ignoring ",
+                               paste(rd$ignored, collapse = ", "),
+                               " (", rd$rule, ")"))
+    }
+    if (length(provenance$release_violations) > 0) {
+      lines <- c(lines, paste0("release-pin VIOLATIONS: ",
+                               paste(provenance$release_violations,
+                                     collapse = ", ")))
     }
   }
 

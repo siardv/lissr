@@ -8,7 +8,7 @@
 meta:
   module: cs
   module_label: Culture and Sports
-  recipe_version: "1.1.0"
+  recipe_version: "1.2.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -69,7 +69,7 @@ global:
 wave_index:
 - id: cs08a
   year: 2008
-  file_pattern: cs08a
+  file_pattern: "cs08a_*"
   notes: ''
   fieldwork_var: cs08a_m
   period: early_instrument
@@ -78,112 +78,112 @@ wave_index:
     any_dk: any_dk
 - id: cs09b
   year: 2009
-  file_pattern: cs09b
+  file_pattern: "cs09b_*"
   notes: ''
   fieldwork_var: cs09b_m
   period: early_instrument
   role_map: *id001
 - id: cs10c
   year: 2010
-  file_pattern: cs10c
+  file_pattern: "cs10c_*"
   notes: ''
   fieldwork_var: cs10c_m
   period: early_instrument
   role_map: *id001
 - id: cs11d
   year: 2011
-  file_pattern: cs11d
+  file_pattern: "cs11d_*"
   notes: ''
   fieldwork_var: cs11d_m
   period: early_instrument
   role_map: *id001
 - id: cs12e
   year: 2012
-  file_pattern: cs12e
+  file_pattern: "cs12e_*"
   notes: ''
   fieldwork_var: cs12e_m
   period: early_instrument
   role_map: *id001
 - id: cs13f
   year: 2013
-  file_pattern: cs13f
+  file_pattern: "cs13f_*"
   notes: ''
   fieldwork_var: cs13f_m
   period: early_instrument
   role_map: *id001
 - id: cs14g
   year: 2014
-  file_pattern: cs14g
+  file_pattern: "cs14g_*"
   notes: ''
   fieldwork_var: cs14g_m
   period: early_instrument
   role_map: *id001
 - id: cs15h
   year: 2015
-  file_pattern: cs15h
+  file_pattern: "cs15h_*"
   notes: ''
   fieldwork_var: cs15h_m
   period: early_instrument
   role_map: *id001
 - id: cs16i
   year: 2016
-  file_pattern: cs16i
+  file_pattern: "cs16i_*"
   notes: ''
   fieldwork_var: cs16i_m
   period: early_instrument
   role_map: *id001
 - id: cs17j
   year: 2017
-  file_pattern: cs17j
+  file_pattern: "cs17j_*"
   notes: ''
   fieldwork_var: cs17j_m
   period: early_instrument
   role_map: *id001
 - id: cs18k
   year: 2018
-  file_pattern: cs18k
+  file_pattern: "cs18k_*"
   notes: ''
   fieldwork_var: cs18k_m
   period: early_instrument
   role_map: *id001
 - id: cs19l
   year: 2019
-  file_pattern: cs19l
+  file_pattern: "cs19l_*"
   notes: ''
   fieldwork_var: cs19l_m
   period: early_instrument
   role_map: *id001
 - id: cs20m
   year: 2020
-  file_pattern: cs20m
+  file_pattern: "cs20m_*"
   notes: ''
   fieldwork_var: cs20m_m
   period: redesigned_instrument
   role_map: *id001
 - id: cs21n
   year: 2021
-  file_pattern: cs21n
+  file_pattern: "cs21n_*"
   notes: ''
   fieldwork_var: cs21n_m
   period: redesigned_instrument
   role_map: *id001
 - id: cs22o
   year: 2022
-  file_pattern: cs22o
+  file_pattern: "cs22o_*"
   notes: ''
   fieldwork_var: cs22o_m
   period: redesigned_instrument
   role_map: *id001
 - id: cs23p
   year: 2023
-  file_pattern: cs23p
+  file_pattern: "cs23p_*"
   notes: ''
   fieldwork_var: cs23p_m
   period: post_reorganization
   role_map: *id001
 - id: cs24q
   year: 2024
-  file_pattern: cs24q
+  file_pattern: "cs24q_*"
   notes: ''
   fieldwork_var: cs24q_m
   period: post_reorganization
@@ -595,7 +595,7 @@ boundary_rules:
   - old_stem: '058'
     new_stem: '619'
     org_type: other_voluntary
-  waves_old:
+  waves_early:
   - cs08a
   - cs09b
   - cs10c
@@ -611,13 +611,13 @@ boundary_rules:
   - cs20m
   - cs21n
   - cs22o
-  waves_new:
+  waves_late:
   - cs23p
   - cs24q
   - cs25r
   flag_column: org_membership_period
-  old_label: no_connection
-  new_label: none_of_these
+  early_label: no_connection
+  late_label: none_of_these
   pool: false
   log: true
   comparability:
@@ -872,6 +872,7 @@ drop_retain_rules:
   anomaly_ref: null
   description: Drop open-text comment/name/specify variables, interview timestamps, and the labelled illness-type item.
   action: drop
+  pattern: '^s(065|072|078|123|322|333|344|355|366|375|376|377|378|471|482|528|529|530|531|532|533|534|535|536|537|538|539|540|549|557)$'
   stems:
   - '065'
   - '072'
@@ -976,7 +977,7 @@ validation_checks:
   description: DK code -9 should appear in at least one variable per wave.
   type: value_present_per_wave
   severity: warning
-  scope: stem_001
+  scope: 001
   value: -9
 - check_id: V03_hobby_freq_missingness_early
   anomaly_ref: A-02
@@ -986,20 +987,20 @@ validation_checks:
   type: na_rate_above
   severity: warning
   scope:
-  - stem_160
-  - stem_161
-  - stem_162
-  - stem_163
-  - stem_164
-  - stem_165
-  - stem_166
-  - stem_167
-  - stem_168
-  - stem_169
-  - stem_170
-  - stem_171
-  - stem_172
-  - stem_173
+  - 160
+  - 161
+  - 162
+  - 163
+  - 164
+  - 165
+  - 166
+  - 167
+  - 168
+  - 169
+  - 170
+  - 171
+  - 172
+  - 173
   - '500'  # blu-ray/DVD item present from cs15h; conditional like the rest of the early battery
   wave_filter:
   - cs08a
@@ -1023,17 +1024,17 @@ validation_checks:
   type: na_rate_below
   severity: warning
   scope:
-  - stem_160
-  - stem_161
-  - stem_162
-  - stem_164
-  - stem_165
-  - stem_166
-  - stem_167
-  - stem_169
-  - stem_171
-  - stem_172
-  - stem_173
+  - 160
+  - 161
+  - 162
+  - 164
+  - 165
+  - 166
+  - 167
+  - 169
+  - 171
+  - 172
+  - 173
   # stems 163, 168, 170 removed (discontinued after cs19l, cs14g, cs19l respectively; always-NA in late waves)
   - '500'  # relabelled films and series at cs20m; asked unconditionally post-redesign
   wave_filter:
@@ -1056,7 +1057,7 @@ validation_checks:
     stems 325/336/347/358/369 no value of 4.
 
     '
-  type: ''
+  type: value_absence
   severity: error
   checks:
   - stems:
@@ -1103,13 +1104,13 @@ validation_checks:
   description: Merged dataset must contain exactly 17 distinct wave_ids.
   type: n_distinct_wave
   severity: error
-  expected: 17
+  expected: 18
 - check_id: V08_stem002_absent_post_cs19l
   anomaly_ref: A-06
-  description: stem_002 should be all-NA in waves cs20m-cs24q.
+  description: 002 should be all-NA in waves cs20m-cs24q.
   type: all_na
   severity: error
-  scope: stem_002
+  scope: 002
   wave_filter:
   - cs20m
   - cs21n

@@ -31,7 +31,7 @@ meta:
   module: "cr"
   module_label: "Religion and Ethnicity"
   schema_version: "1.0.0"
-  recipe_version: "1.1.0"
+  recipe_version: "1.3.0"
   created: "2026-06-13"
   source_spec: "cross-wave harmonization specification"
   covered_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i,
@@ -73,10 +73,14 @@ global:
       - variable: "nomem_encr"
         waves: "all"
         on_absence: "error"
+      - variable: "fieldwork_ym"
+        waves: "all"
+        on_absence: "warn"
     optional_note: >
-      fieldwork_ym is intentionally NOT listed here. the engine derives
-      fieldwork_ym from the per-wave _m column, and pre-declaring it under
-      expected_presence currently suppresses that derivation. revisit once the engine-side fix lands.
+      fieldwork_ym is declared here since 1.3.2.9000: the engine now derives
+      it from the per-wave _m column BEFORE this check runs, so the
+      declaration validates the derived column instead of suppressing the
+      derivation (the pre-1.4 workaround that omitted it is retired).
 
 # ----------------------------------------------------------------------------
 # wave index (id, year, file_pattern derived from the project CSVs)
@@ -266,7 +270,7 @@ harmonization_rules:
       cr08a-cr18k to title case Yes/No in cr19l onward. normalise to lowercase
       so label-text matching is stable. (no-op under to_numeric; see HR20 note.)
     anomaly_ref: A-06
-    suffixes: ["079", "080", "081", "082", "083", "084", "085", "086", "087"]
+    scope: ["079", "080", "081", "082", "083", "084", "085", "086", "087"]
     waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
 
   # --- A-07 apostrophe encoding drift ---------------------------------------
@@ -309,7 +313,10 @@ boundary_rules:
       introduced. items unique to one side of this break cannot be pooled.
     anomaly_ref: A-01
     flag_name: "redesign_2019"
-    true_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    waves_pre: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    waves_post: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    flag_value_pre: 0
+    flag_value_post: 1
     comparability:
       status: non_comparable
       method: no_pool
@@ -323,11 +330,14 @@ boundary_rules:
       (cr19l-cr20m), phase 3 = contracted 69-variable instrument (cr21n-cr25r,
       open-text items dropped).
     anomaly_ref: A-01
-    flag_name: "instrument_phase"
-    levels:
-      1: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
-      2: [cr19l, cr20m]
-      3: [cr21n, cr22o, cr23p, cr24q, cr25r]
+    flag_column: "instrument_phase"
+    phases:
+      - waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+        label: "1"
+      - waves: [cr19l, cr20m]
+        label: "2"
+      - waves: [cr21n, cr22o, cr23p, cr24q, cr25r]
+        label: "3"
     comparability:
       status: partial
       method: pool_with_flags
@@ -344,10 +354,10 @@ boundary_rules:
       rules produce a harmonised code that is poolable when this flag is held.
     anomaly_ref: A-02
     flag_name: "religion_coding_era"
-    levels:
-      1: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f]
-      2: [cr14g, cr15h, cr16i, cr17j, cr18k]
-      3: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    eras:
+      "1": [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f]
+      "2": [cr14g, cr15h, cr16i, cr17j, cr18k]
+      "3": [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
     comparability:
       status: partial
       method: pool_with_flags
@@ -373,10 +383,13 @@ boundary_rules:
       pre/post are not the same scale. keep them as separate derived columns.
     anomaly_ref: A-03
     suffix: "041"
-    pre_name: "attendance_pre2019_8pt"
-    post_name: "attendance_post2019_6pt"
-    pre_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
-    post_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    output_vars:
+    - name: attendance_pre2019_8pt
+      source_suffix: "041"
+      waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    - name: attendance_post2019_6pt
+      source_suffix: "041"
+      waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
     comparability:
       status: non_comparable
       method: no_pool
@@ -389,10 +402,13 @@ boundary_rules:
       as attendance; split into pre/post derived columns.
     anomaly_ref: A-03
     suffix: "042"
-    pre_name: "prayer_pre2019_8pt"
-    post_name: "prayer_post2019_6pt"
-    pre_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
-    post_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    output_vars:
+    - name: prayer_pre2019_8pt
+      source_suffix: "042"
+      waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    - name: prayer_post2019_6pt
+      source_suffix: "042"
+      waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
     comparability:
       status: non_comparable
       method: no_pool
@@ -408,10 +424,13 @@ boundary_rules:
       category was merged with don't-know, so pre/post differ in meaning.
     anomaly_ref: A-04
     suffix: "031"
-    pre_name: "afterlife_pre2019_4pt"
-    post_name: "afterlife_post2019_3pt"
-    pre_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
-    post_waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    output_vars:
+    - name: afterlife_pre2019_4pt
+      source_suffix: "031"
+      waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+    - name: afterlife_post2019_3pt
+      source_suffix: "031"
+      waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
     comparability:
       status: non_comparable
       method: no_pool
@@ -426,10 +445,12 @@ boundary_rules:
       5-point certainly-not / certainly-yes response scale is preserved.
       pooling is acceptable with a wording-period flag.
     anomaly_ref: A-14
-    flag_name: "eval_wording_period"
-    levels:
-      1: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
-      2: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    flag_column: "eval_wording_period"
+    phases:
+      - waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+        label: "1"
+      - waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+        label: "2"
     comparability:
       status: partial
       method: pool_with_flags
@@ -446,7 +467,7 @@ boundary_rules:
       parents-religion and current/past religion-membership block (001-029)
       present cr08a-cr18k only; dropped at the 2019 redesign.
     anomaly_ref: A-01
-    flag_name: "religion_membership_block_present"
+    flag_column: "religion_membership_block_present"
     suffixes: ["001","002","003","004","005","006","007","008","009","010",
                "011","012","013","014","015","016","017","018","019","020",
                "021","022","023","024","025","026","027","028","029"]
@@ -458,7 +479,7 @@ boundary_rules:
       belief battery (032-040, 099-108) present cr08a-cr18k only; deleted at
       the 2019 redesign.
     anomaly_ref: A-01
-    flag_name: "belief_battery_present"
+    flag_column: "belief_battery_present"
     suffixes: ["032","033","034","035","036","037","038","039","040",
                "099","100","101","102","103","104","105","106","107","108"]
     present_in_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
@@ -470,7 +491,7 @@ boundary_rules:
       cr08a-cr10c ONLY (corrected from the audit narrative, which placed the
       drop at cr19l). flag tracks their true presence window.
     anomaly_ref: A-01
-    flag_name: "nationality_birthplace_present"
+    flag_column: "nationality_birthplace_present"
     suffixes: ["043", "044", "053", "057", "060"]
     present_in_waves: [cr08a, cr09b, cr10c]
 
@@ -481,7 +502,7 @@ boundary_rules:
       present cr14g-cr18k only; introduced when codes 5-6 left 013 and removed
       at the 2019 redesign.
     anomaly_ref: A-02
-    flag_name: "reformed_bridge_present"
+    flag_column: "reformed_bridge_present"
     suffixes: ["133"]
     present_in_waves: [cr14g, cr15h, cr16i, cr17j, cr18k]
 
@@ -493,7 +514,7 @@ boundary_rules:
       152-160, religiosity/spirituality 162-163, Dutch identity 164, ethnic
       group 165-179, and 181) introduced at cr19l and carried forward.
     anomaly_ref: A-15
-    flag_name: "post2019_block_present"
+    flag_column: "post2019_block_present"
     suffixes: ["134","135","136","142","143","144","145",
                "152","153","154","155","156","157","158","159","160",
                "162","163","164",
@@ -507,7 +528,7 @@ boundary_rules:
       transient open-text / upbringing-detail block (137-141, 146-151, 161,
       180) present in cr19l-cr20m only; removed at the cr21n contraction.
     anomaly_ref: A-01
-    flag_name: "transient_2019_2020_block_present"
+    flag_column: "transient_2019_2020_block_present"
     suffixes: ["137","138","139","140","141",
                "146","147","148","149","150","151","161","180"]
     present_in_waves: [cr19l, cr20m]
@@ -518,7 +539,7 @@ boundary_rules:
       open-text fields 088 and 091 present cr08a-cr20m; dropped at the cr21n
       contraction.
     anomaly_ref: A-01
-    flag_name: "opentext_088_091_present"
+    flag_column: "opentext_088_091_present"
     suffixes: ["088", "091"]
     present_in_waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k, cr19l, cr20m]
 
@@ -528,7 +549,7 @@ boundary_rules:
       grandparent birthplace items (121,124,127,130) fielded in cr09b ONLY;
       one-off special module.
     anomaly_ref: A-11
-    flag_name: "grandparent_birthplace_present"
+    flag_column: "grandparent_birthplace_present"
     suffixes: ["121", "124", "127", "130"]
     present_in_waves: [cr09b]
 
@@ -538,7 +559,7 @@ boundary_rules:
       duration in seconds (120) present in every wave except the baseline
       cr08a, where it was not yet recorded.
     anomaly_ref: A-09
-    flag_name: "duration_present"
+    flag_column: "duration_present"
     suffixes: ["120"]
     present_in_waves: [cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k, cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
 
@@ -547,7 +568,7 @@ boundary_rules:
     description: >
       household identifier nohouse_encr present only in cr11d and cr12e.
     anomaly_ref: A-10
-    flag_name: "nohouse_encr_present"
+    flag_column: "nohouse_encr_present"
     variables: ["nohouse_encr"]
     present_in_waves: [cr11d, cr12e]
 
@@ -559,10 +580,12 @@ boundary_rules:
       (cr15h onward), verified from the per-wave _m values. seasonality may
       affect religious-attendance reports, so flag the fielding season.
     anomaly_ref: A-12
-    flag_name: "fieldwork_season"
-    levels:
-      winter: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g]
-      summer: [cr15h, cr16i, cr17j, cr18k, cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+    flag_column: "fieldwork_season"
+    phases:
+      - waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g]
+        label: "winter"
+      - waves: [cr15h, cr16i, cr17j, cr18k, cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
+        label: "summer"
     comparability:
       status: partial
       method: pool_with_flags
@@ -623,10 +646,10 @@ drop_retain_rules:
 
 # ----------------------------------------------------------------------------
 # derived variables
-# NOTE: the engine currently materialises derived_variables as all-NA columns
-# (source/dependencies/wave_values are not evaluated).
-# the full derivation logic is encoded below and marked TODO_REEXPRESS so it
-# can be wired up once engine support lands.
+# NOTE: the engine's derived-variable phase evaluates these (per-wave source
+# maps, coalesce/sum/max/direct methods, wave_values, transforms) since
+# 1.3.2.9000; entries still marked TODO_REEXPRESS await re-expression
+# against verified data.
 # ----------------------------------------------------------------------------
 derived_variables:
 

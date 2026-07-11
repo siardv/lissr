@@ -1,6 +1,6 @@
 Package: lissr
 Title: View, Download, and Merge LISS Panel Data
-Version: 1.3.2
+Version: 1.4.0
 Authors@R: person("Siard", "van den Bosch", email = "siardvandenbosch@me.com", role = c("aut", "cre", "cph"))
 Description: Programmatic access to the LISS Data Archive
     (<https://www.lissdata.nl/>). Authenticate with two-factor
@@ -23,6 +23,7 @@ Imports:
     haven,
     httr,
     jsonlite,
+    keyring,
     magrittr,
     purrr (>= 1.0.0),
     readr,
@@ -38,7 +39,6 @@ Imports:
 Suggests:
     askpass,
     fixest,
-    keyring,
     lme4,
     MASS,
     rlang,

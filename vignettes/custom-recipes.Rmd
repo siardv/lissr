@@ -17,11 +17,11 @@ knitr::opts_chunk$set(
 
 ## When to write a custom recipe
 
-The built-in recipes cover the eight core LISS modules as distributed by
+The built-in recipes cover the ten core LISS modules as distributed by
 the archive. You might need a custom recipe when:
 
 - You are working with a **special-purpose LISS study** (not one of the
-  eight core modules) that has no built-in recipe.
+  ten core modules) that has no built-in recipe.
 - You want to **subset waves** or **add project-specific harmonization**
   on top of the standard recipe.
 - You have **downloaded data in a non-standard format** (e.g. Stata
@@ -63,15 +63,15 @@ recipe <- liss_recipe("ch")
 str(recipe, max.level = 1)
 #> List of 10
 #>  $ meta               :List of 8
-#>  $ global             :List of 6
-#>  $ wave_index         :List of 17
-#>  $ variable_rules     :List of 5
-#>  $ harmonization_rules:List of 8
-#>  $ boundary_rules     :List of 4
+#>  $ global             :List of 7
+#>  $ wave_index         :List of 18
+#>  $ variable_rules     :List of 17
+#>  $ harmonization_rules:List of 4
+#>  $ boundary_rules     :List of 12
 #>  $ drop_retain_rules  :List of 3
-#>  $ derived_variables  :List of 2
-#>  $ validation_checks  :List of 4
-#>  $ logging            :List of 3
+#>  $ derived_variables  :List of 6
+#>  $ validation_checks  :List of 10
+#>  $ logging            :List of 5
 ```
 
 ### Subset to specific waves
@@ -257,7 +257,8 @@ recipe$boundary_rules <- append(
     waves_early = list("cs08a", "cs09b", "cs10c", "cs11d", "cs12e",
                        "cs13f", "cs14g", "cs15h", "cs16i", "cs17j",
                        "cs18k", "cs19l"),
-    waves_late  = list("cs20m", "cs21n", "cs22o", "cs23p", "cs24q"),
+    waves_late  = list("cs20m", "cs21n", "cs22o", "cs23p", "cs24q",
+                       "cs25r"),
     early_label = "open_numeric",
     late_label  = "categorical",
     comparability = list(
@@ -284,25 +285,46 @@ validator rejects any action not in this vocabulary:
 # inspect the vocabulary programmatically
 lissr:::VALID_ACTIONS
 #> $variable_rules
-#> [1] "strip_prefix"         "type_coerce"          "rename"
-#> [4] "set_label"            "apply_labelled_policy" "strip_value_labels"
-#> [7] "note_only"
+#>  [1] "strip_prefix"                "type_coerce"
+#>  [3] "coerce_type"                 "coerce_numeric"
+#>  [5] "rename"                      "rename_to_suffix"
+#>  [7] "set_label"                   "apply_labelled_policy"
+#>  [9] "strip_value_labels"          "strip_labels_coerce_numeric"
+#> [11] "ensure_column"               "use_global_policy"
+#> [13] "identity"                    "safe_integer_cast"
+#> [15] "derive_fieldwork_month"      "parse_time"
+#> [17] "note_only"
 #>
 #> $harmonization_rules
-#> [1] "recode_to_na"        "value_recode"        "fix_label"
-#> [4] "crosswalk"           "strip_question_stem" "lowercase_labels"
-#> [7] "flag_only"           "note_only"
+#>  [1] "type_coerce"            "derive_fieldwork_month" "parse_time"
+#>  [4] "recode_to_na"           "recode_sentinels_to_na" "na_recode"
+#>  [7] "recode"                 "value_recode"           "fix_label"
+#> [10] "strip_question_stem"    "lowercase_labels"       "normalize_labels"
+#> [13] "flag_only"              "flag_absence"           "subtract"
+#> [16] "crosswalk"              "conditional_label_swap" "label_to_string"
+#> [19] "derive_combined_party"  "extend_categories"      "transform"
+#> [22] "note_only"
 #>
 #> $boundary_rules
-#> [1] "add_era_flag"     "add_flag"         "add_period_flag"
-#> [4] "split_variable"   "structural_na"    "filter_rows"
-#> [7] "crosswalk_rename" "stack_aux_files"  "note_only"
+#>  [1] "safe_integer_cast"     "fix_label"             "derive_combined_party"
+#>  [4] "add_era_flag"          "add_flag"              "add_period_flag"
+#>  [7] "split_variable"        "structural_na"         "filter_rows"
+#> [10] "drop_outside"          "crosswalk_rename"      "structural_note"
+#> [13] "stack_aux_files"       "retain_where_present"  "retain_but_flag"
+#> [16] "note_only"
 #>
 #> $drop_retain_rules
-#> [1] "drop"                    "retain"
-#> [3] "retain_if_present"       "retain_as_metadata_only"
-#> [5] "note_only"
+#> [1] "flag_only"               "flag_absence"
+#> [3] "drop_outside"            "retain_but_flag"
+#> [5] "drop"                    "retain"
+#> [7] "retain_if_present"       "retain_as_metadata_only"
+#> [9] "note_only"
 ```
+
+The per-action payload contract (which keys each action reads, and
+which it sanctions as documentation) lives in
+`inst/extdata/action_vocabulary.yml`; `audit_liss_recipes()` checks a
+whole recipe corpus against it.
 
 ## Sharing recipes with collaborators
 

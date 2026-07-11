@@ -1,3 +1,476 @@
+# lissr 1.4.0
+
+A nine-stage, evidence-driven overhaul of the merge engine, the bundled
+recipes, the income cleaner, the download and authentication layer, and
+the documentation. Every stage landed with its own regression tests and
+a green `R CMD check`; the test suite grew from 448 to roughly 760
+assertions. The stage-by-stage record follows the highlights.
+
+Highlights:
+
+* Merge engine correctness: `fieldwork_ym` is populated across the nine
+  declaring modules (it was blanked by an ordering bug), cross-wave type
+  harmonization is factor-safe, and every rule application leaves an
+  audit trace.
+* Recipe conformance, made permanent: per-action payload validation
+  driven by the vocabulary registry, a check-type grammar under which
+  all 99 bundled validation checks classify as 68 executable and 31
+  documentary (none silently skipped), and an exported
+  `audit_liss_recipes()` corpus report suitable for CI gating.
+* End-to-end assurance: every bundled recipe merges a synthetic panel in
+  the test suite with strict assertions; merged outputs carry provenance
+  (versions, input md5 hashes, release decisions) and an explicit
+  `valid_for_analysis` verdict; release-version pins and an overwrite
+  guard protect outputs.
+* Output-changing semantic repairs, each verified against archive
+  evidence: the cf module rebuilt from a 17-wave scan (exact recode
+  counts reproduced on real data), ca's `wave_year` standardized to the
+  fieldwork year with the asset reference year preserved per respondent,
+  cv's fieldwork months made executable, and cr's 2019 scale breaks
+  expressed as era-scoped output columns.
+* Income cleaning: eight policy defects repaired (anchor dispatch,
+  range-fallback voiding, single-person and zero-gross gates, bracket
+  mapping, household-id fallback with join diagnostics, scoped
+  `enable_only`, configurable F01 disposition, equivalisation guards),
+  ruleset 1.1.0, controlled-value validation, and an adversarial
+  fixture suite.
+* Download and authentication hardening: HTTP errors are never written
+  as data, verified unzip protects sole copies, session expiry aborts
+  batches, downloads stream with timeout and retries, credentials are
+  never echoed, 2FA is retryable and guarded, the login probe is cheap
+  and RNG-neutral, and keyring moved to Imports.
+* Documentation rebuilt against reality, with drift tests that re-derive
+  every factual claim from the code and recipes, and a canonical-schema
+  article rendered from the packaged schema at build time.
+
+## Stage 8: documentation overhaul
+
+The documentation now describes the package the preceding stages built,
+and a drift-test suite (`tests/testthat/test-stage8-docs.R`) re-derives
+every factual claim from the code and the bundled recipes so the two
+cannot diverge silently again.
+
+* Corrected content: the Background Variables file is no longer called
+  "module (CA)" anywhere (it is a separate monthly release; ca is
+  Assets); every "eight core modules" claim now says ten and the batch
+  examples include ca and cr; the multi-module download loop no longer
+  derives directory names by truncating display names (a bug that wrote
+  Health files into `data/he/`) and matches modules by name fragment
+  instead of exact display strings; the longitudinal vignette's
+  fabricated columns (`s002` as age, `s038` as BMI) and its undefined
+  `treated` variable are replaced by real recipe-declared flag columns
+  (`ch_ecig_dental_items_present`, `s020_wording_period`, and the
+  cancer/alzheimer era flags) and an explicitly reader-supplied
+  treatment definition; the reproducible-pipelines CI chunk installs
+  lissr from GitHub instead of `install_local(".")` on a non-package
+  research project.
+* Settled facts: avars files carry their fieldwork period as a `wave`
+  column (YYYYMM), so the merge-workflow example reads it directly
+  instead of parsing filenames (the multi-module vignette already did);
+  wave counts and year lists reflect the current recipes (ch has 18
+  waves, ch07a-ch25r, skipping 2014; cv skips 2015 and reaches cv26r;
+  cw has 15); the `str(recipe)` and `VALID_ACTIONS` listings show the
+  real current output; the documented schema version is v1.1.0
+  everywhere (the packaged schema's own version), with the additive
+  relationship to v1.0.0 stated.
+* Additions: a new "The Canonical Recipe Schema" article renders
+  `inst/schema/CANONICAL_SCHEMA.md` at build time (zero duplication, no
+  drift); the README gains the income-cleaning and schema articles in
+  its vignette list, a directory-and-naming-contract section, the
+  keyring-ships-with-lissr note, provenance/valid_for_analysis and
+  `audit_liss_recipes()` coverage, and module labels matching the
+  recipes; the pkgdown reference index now lists `audit_liss_recipes()`
+  (its absence would have failed the site build) and the new article.
+* Drift tests: no "(CA)" mislabel and no eight-module claim anywhere;
+  batch lists must contain exactly the ten module codes; the action
+  vocabulary and `str()` listings in custom-recipes must equal the
+  installed package's reality; flag names quoted in vignettes must
+  exist in the recipes; wave-count claims must match the recipes'
+  wave_index lengths; the documented schema version must match the
+  packaged schema. README assertions run in a source tree and skip
+  under R CMD check.
+
+## Stage 7: downloader and authentication hardening
+
+The network layer no longer reports failure as success, no longer
+destroys data on failure, and fails loudly and diagnosably when the
+archive's pages drift. The I/O surface is reduced to three small shims,
+and every error path is exercised offline by mocked tests
+(`tests/testthat/test-stage7-network.R`).
+
+* N1, download integrity: HTTP error responses are detected by status
+  code and never written to disk as data files (a 404 page previously
+  became `foo.sav` with status "ok"); ZIP archives are extracted with
+  verification and the archive is deleted only after the extracted
+  files exist (a corrupt zip previously triggered deletion of the only
+  copy); the first session expiry aborts the remaining batch with
+  status `skipped_batch_aborted` instead of failing file by file.
+* N5, transfer robustness: downloads stream to disk through the
+  session's cookie handle (no whole-file buffering in memory), carry a
+  per-file `.timeout`, retry transient failures (curl errors and HTTP
+  5xx, never deterministic 4xx) with `.retries`, and can skip files
+  already present via `.skip_existing`. Partial transfers land in a
+  temporary name and are renamed only after the status check.
+* N2, confirmation logic: the "download everything?" prompt now
+  defaults to NO, is skipped when an explicit selection tibble was
+  passed, and a non-interactive full-archive request aborts with
+  guidance instead of silently auto-confirming.
+* N3, credential hygiene: the failed-login message no longer echoes a
+  masked password (first character plus stars); an empty or unreadable
+  keyring password aborts the login with a re-store hint instead of
+  crashing on `strrep()`.
+* N4, form discovery: a login page without the expected form or
+  username/password fields aborts with a diagnosis naming what was
+  found, instead of a subscript-out-of-bounds error.
+* N6, content-disposition: header parsing supports the quoted,
+  unquoted, and RFC 5987 `filename*=` forms (the unquoted form
+  previously yielded the whole header as the file name), and every
+  resulting name is sanitized (path components stripped, traversal and
+  reserved characters rejected).
+* N7, blueprint cache: failed module and wave pages are tallied and
+  reported; a partial scrape caches with an explicit incompleteness
+  warning, an empty scrape aborts and caches nothing, and an
+  unreachable module index aborts immediately.
+* N8, two-factor entry: the code is whitespace-normalized (email
+  copy-paste), a rejected code can be retried up to three times
+  without restarting the login, a kicked-back session aborts with
+  guidance, and non-interactive sessions abort before prompting
+  (previously an empty string was submitted silently).
+* N9, `liss_is_logged_in()`: the probe is now cheap and side-effect
+  free. With a cached blueprint it HEADs the first known protected
+  file path (no body transfer, deterministic choice); without one it
+  inspects the login page. It no longer triggers a full archive
+  scrape, downloads a random data file, or mutates the RNG state.
+* N11, keyring placement: `keyring` moves from Suggests to Imports; it
+  was already unconditionally required for credentialed use, and the
+  install-time guards pretending otherwise are gone (with them the
+  three permanently-skipping guard tests).
+
+## Stage 6: income-cleaning policy repairs (ruleset 1.1.0)
+
+Eight policy defects in `liss_clean_income()` that could destroy or
+fabricate values on real data are repaired, the ruleset validator now
+enforces controlled values, and an adversarial fixture suite pins every
+repair (`tests/testthat/test-stage6-cleaning.R`).
+
+* C1: `selection.anchor` is now executed, not merely reported. The
+  engine dispatches the candidate-selection statistic
+  (`household_median` or `household_mean`) from the ruleset's
+  `selection` block, so the generated report can no longer claim a
+  method the code did not use; unknown anchors are rejected at load
+  time.
+* C2: the `range_midpoint` correction fallback (C06) additionally
+  requires the anchor itself to lie inside the admissible range. A
+  below-minimum household (e.g. 5000/5200/50000/5100 against
+  `min_income` 8000) previously had its 10x entry error "corrected" to
+  the range midpoint 79000, fifteen times the truth, ledgered as a
+  confident correction; such cells are now voided with an explicit
+  justification.
+* C3: D04 (personal-income echo) fires only in households known to
+  hold at least `min_household_size` (default 2) members, resolved
+  from the new `variables.household_size` mapping (`aantalhh`); in a
+  single-person household the echo is the expected truth, and roughly
+  40 percent of Dutch households are single-person. D03 (contextual
+  floor) requires a positive gross personal income instead of merely a
+  finite one, so "household income near zero while gross personal is
+  0" no longer voids.
+* C4: bracket-code expansion (P04) classifies the category column by
+  the share of nonzero finite values in 1..max_code (new `code_share`
+  param, default 0.9) and maps per value. One stray sentinel no longer
+  silently disables mapping for the whole column (after which raw
+  codes were misread as euro bounds and D07 was disarmed); stray codes
+  are warned about and treated as missing brackets, and ambiguous
+  mixtures are declined loudly.
+* C5: rows with a missing household id fall back to person-id grouping
+  for the household stage instead of silently receiving no cleaning;
+  skipped and fallback row counts appear in the summary, log, and
+  report. The background join (P01) detects the background wave scale
+  (yyyymm, calendar year, or annual wavenr) instead of assuming
+  yyyymm, reports its match rate, and warns when nothing matches (a
+  year-keyed background previously produced an all-NA join logged as
+  success).
+* C6: `enable_only` is scoped per ruleset section: only sections
+  containing a named rule are restricted, so `enable_only = "D06"`
+  isolates one detection rule while preparation, correction, and
+  finalization machinery keep running (previously the detected cell
+  was voided because its correction rules were disabled too).
+* C7: the F01 hard cap gains a `disposition`: `void` (default, the old
+  behavior), `winsorise` (over-cap values clamp to the cap;
+  non-positive values still void), or `flag` (ledger only, values
+  retained). Genuine top incomes exist, and unconditional voiding
+  biases the right tail downward; the choice is now explicit,
+  per-ruleset or per-call.
+* C9: equivalisation guards: zero-adult compositions yield NA (the
+  OECD-modified divisor could fall below 1), composition vectors of
+  intermediate length are an error instead of silently recycling, and
+  the documentation states that `aantalki` (children at home of any
+  age) only approximates the OECD under-14 child definition.
+* A8: `validate_cleaning_ruleset()` enforces controlled values for
+  detection-rule `disposition`/`scope`/`stage`, the finalization
+  disposition, the selection anchors, consensus-detector `methods`
+  (with `consensus` bounded by the method count), and nested
+  per-method `thresholds`.
+* Audit consistency: D01's ledger `variable` field no longer renders
+  as the literal "NA/..." when a bounds column is unresolved; P03, D01,
+  and the F01 dispositions emit proper JSONL log entries; per-rule
+  `log: false` now suppresses that rule's per-rule decision aggregation
+  in the JSONL trace (the decision ledger itself is never suppressed);
+  `liss_cleaning_report()` requires `output_dir` instead of writing
+  three files into the working directory by default.
+* Tests: three cli-rendered assertions were width-fragile (multi-word
+  regexes break when cli wraps between words) and now match across
+  wrap points.
+
+## Stage 5b: output-changing recipe semantics (ca, cv, cr)
+
+* ca `wave_index` years now mean the same thing as in every other module:
+  the FIELDWORK year. They previously held the asset REFERENCE year (one
+  year earlier), so `wave_year` in merged ca output shifts by +1 for all
+  ten waves (ca08a 2007 -> 2008 ... ca25j 2024 -> 2025). The reference
+  year is not lost: a new executable derived variable
+  `asset_reference_year` (DV00, `wave_values`) carries it per respondent,
+  and the recipe header documents the new semantics. ca recipe 1.2.0.
+* cv DV06/DV07/DV08 deleted: they materialized all-NA shadow duplicates of
+  the BR01/BR02/BR03 flag columns. DV09 (`fieldwork_month`) is
+  re-expressed as an executable derivation (`fieldwork_ym` mod 100), so
+  it carries real calendar months wherever a wave has a `_m` variable
+  instead of being all-NA everywhere; waves without `_m` stay NA pending
+  the archive-metadata backfill tracked in TODO.md. cv recipe 1.2.0.
+* cr BR20/BR21/BR30 (the 2019 scale breaks in religious attendance,
+  prayer frequency, and afterlife belief) are re-expressed as executable
+  `split_variable` rules with explicit `output_vars`: each produces
+  pre-2019 and post-2019 columns (`attendance_pre2019_8pt` /
+  `attendance_post2019_6pt`, the `prayer_*` pair, and
+  `afterlife_pre2019_4pt` / `afterlife_post2019_3pt`) so era-specific
+  analysis never has to pool the raw stacked column across the break.
+  cr recipe 1.3.0.
+* The audit's nonconforming set drops from 10 to 7 (all tracked TODO
+  items), and the pinned snapshot test now expects exactly those seven.
+
+## Stage 5a: the cf module repair, verified against the full archive
+
+The Family and Household recipe was the one module whose execution layer
+failed in both directions (core missing-code rules inert, sentinel recodes
+scoped to every numeric column, string-map recodes that would null items if
+naively re-keyed, and a labelled policy that factorized monetary amounts).
+It is rebuilt on evidence: a new scanner
+(`inst/scripts/verification/cf_scan.R`) read all 17 archive waves with SPSS
+user-missing values preserved, and every rule scope below is verified
+against that scan (v1.4/cf_scan_results.json, 2026-07-11).
+
+* `labelled_policy` switched from `to_factor` to `to_numeric`, aligning cf
+  with the other nine modules. Under `to_factor`, partially labelled
+  variables (18 to 49 per wave, including euro amounts and paradata) became
+  factors: numeric recodes skipped them and `write_sav()` re-coded levels
+  1..k, detaching output codes from the codebook.
+* HARM-005 (999) re-keyed to its three verified DK items 166/180/181: the
+  label holds in all 17 waves and NO other column is 999-labelled anywhere,
+  so the legitimate 999s on durations and euro amounts are provably
+  untouched. HARM-006 (9999, cf11d onward) and HARM-007 (99999,
+  cf08a-cf10c) re-keyed to the ten verified monetary items; cf12e lacks six
+  of them (handled by if_absent), and cf08a's suffix 008 carries no 99999
+  label (its Dutch label appears in cf09b/cf10c), exactly as the recipe's
+  defensive note said.
+* HARM-001 (-9) rewritten from an inert module-wide sweep to
+  evidence-scoped recode blocks: the imputation-flag trio 398/399/400 from
+  cf10c (whose user-missing declarations are inconsistent across waves, so
+  the recode is load-bearing), 535 from cf22o, and 554/555/556 in cf24q.
+  HARM-004 (-8) scoped to its single verified item 535 (cf22o onward).
+* HARM-002 and HARM-003 re-expressed as documentation: the evaluation-item
+  label eras (boundaries verified at cf13f/cf14g and cf21n/cf22o) are
+  translation artifacts on stable codes, and the school-denomination
+  schemes keep their codebook codes (cf12e's "Islamitic" spelling variant
+  recorded). The old string-map value_recode forms would have coerced the
+  items to NA had they ever executed.
+* VAR-002 (fieldwork month) and VAR-004 (completion time; the F8-to-F10
+  widening lands exactly at cf20m) re-keyed and executing; VAR-003 retired,
+  its cf11d type-inconsistency claim does not reproduce in any wave.
+* End-to-end verification on real waves (cf08a, cf11d, cf24q): per-rule
+  recode counts match the scan ground truth exactly (472 / 1,046 / 1,522 /
+  143 / 112 cells), the seven duration 999s and one 999-euro amount
+  survive, zero sentinels remain on targets, fieldwork_ym carries the real
+  months, and the output is flagged valid_for_analysis. The audit's
+  nonconforming set drops from 20 to 10, none of them cf.
+
+## Stage 4: per-module fixtures, provenance, and release pins
+
+* Every bundled recipe now merges a synthetic multi-wave panel end to end
+  in the test suite (`tests/testthat/test-stage4-fixtures.R`). The fixture
+  generator derives each module's columns from its own recipe (rule and
+  check suffixes, value sets implied by value_in_set/value_range checks,
+  planted values for value_present checks, and structural-absence
+  declarations honored as NAs), and the assertions are strict: no rule
+  rolls back, no unimplemented action is hit, every declared flag column is
+  non-degenerate in the OUTPUT, no check skips, and no error-severity check
+  fails.
+* The fixtures immediately caught three real defects, now fixed: cp `V07`'s
+  `max_waves: 16` predated the cp25q onboarding (a full-panel respondent
+  can legitimately appear in 17 waves, so the check would have failed on
+  real data); `value_absence` coerced forbidden values to numeric, so
+  character codes (ch `CHK10`'s forbidden wave id) collapsed to NA and
+  mis-matched; and the uniqueness executor's `$` lookups could be hijacked
+  by partial matching (cd `CHK11`'s `scope_wave` key matched `$scope` and
+  became the key column). Check-payload lookups now use exact indexing,
+  and `uniqueness` accepts the singular `variable` key.
+* `merge_liss_module()` gains provenance and an explicit quality verdict:
+  the returned object carries `provenance` (package, recipe, and schema
+  versions, recipe file md5, per-input md5 hashes, release decisions,
+  strictness, timestamp) and `valid_for_analysis` (TRUE only when no
+  error-severity check failed or was unevaluable and all release pins
+  matched); both are written into the text report.
+* Release-selection transparency: when several files match one wave, the
+  ranking decision (selected, ignored, rule) is recorded in provenance and
+  the report. A `wave_index` entry may pin `expected_release: "1.1p"`;
+  a violated pin warns, clears `valid_for_analysis`, and aborts under
+  `strict = TRUE`.
+* New `overwrite` argument on `merge_liss_module()`: `FALSE` refuses to
+  clobber an existing merged output (default `TRUE` preserves behavior).
+
+## Stage 3b: per-action payload validation and the corpus audit
+
+`action_vocabulary.yml` now carries a machine-readable payload specification
+per action (`reads`: the keys the executor consults; `annotations`:
+action-specific documentation keys), and `validate_recipe()` checks each
+rule's keys against its own action instead of one global recognized-key
+set. A key read by one action no longer passes silently on an action that
+ignores it; documentary and pending actions (note_no_op, pending_spec,
+stub, and the note_only/flag_only/flag_absence no-ops) are exempt by
+design. The registry loads in `.onLoad()` alongside the vocabulary.
+
+The sharper scan surfaced and fixed another round of silently inert or
+misfiring rules: cr `BR70`-`BR79` presence flags never materialized
+(`flag_name` on `structural_na`, which reads `flag_column`); cd `D01`'s
+nohouse_encr drop was inert (singular `variable`); cs `DR01_open_text`
+dropped nothing (a `stems` list the drop executor does not read; now an
+executable pattern); cs checks `V02`/`V03`/`V04`/`V08` passed vacuously
+(scopes written as `stem_NNN`, which double-prefixes in `find_col`); cr
+`HR30` lowercased every labelled column instead of its nine targets
+(`suffixes` instead of `scope`); cv `VR03`/`VR07` were re-expressed as
+documentation (stacking already covers both); cv `VR04`/`VR08` and ch
+`V06` were re-keyed and now execute (V06's Dutch label fix is live).
+
+New export `audit_liss_recipes()`: a corpus conformance report (per-module
+rule conformance, check classification, wave-metadata consistency,
+pattern canonicality) suitable for CI gating. The regression suite pins
+the audit snapshot: exactly 20 known nonconforming rules remain, every
+one mapped to the planned cf repair stage, the cv party pipeline, or a
+TODO item; any new nonconforming rule fails the suite. cd's five free-text
+check types were re-typed to executable primitives and two to documentary
+types; corpus totals are now 68 executable, 31 documentary, 0 skipped.
+
+## Stage 3a: executable validation checks
+
+The recipe validation layer now evaluates most of what the recipes declare.
+Before this change, 70 of the 99 checks across the ten bundled recipes named
+types the runner did not implement and silently reported SKIP; five recipes
+had no executable recipe-level checks at all.
+
+* Check-type aliases normalize recipe-specific names onto the canonical
+  executors: the uniqueness family (`unique_key`, `no_duplicate_ids`,
+  `unique_per_wave`, `assert_identifier`), the value-absence family
+  (`none_equal`, `sentinel_absence`, `no_residual_sentinels`,
+  `assert_no_values`, `value_absence_check`, `value_restriction` as the
+  allowed-waves complement), the range family (`value_in_range`,
+  `assert_range`), the NA-rate family (`na_rate_above`, `na_rate_below`,
+  `not_missing`), and the structural-missingness family
+  (`structural_absence`, `all_na`, `structural_na_count`,
+  `missingness_check` including the expected-present-plus-NA-elsewhere
+  shape).
+* New primitives: `value_in_set` (shared or per-variable allowed sets,
+  `allow_na`), `value_present` (a code must occur, per wave), `row_count`
+  (per-wave or total bounds), `per_wave_mean` (mean bounds per wave, the
+  DK-spike detector), and `wave_count` gains an `expected` exact form.
+  `value_absence` accepts block payloads (`targets`/`checks` lists with
+  per-block waves, columns, and codes) and exclusion lists.
+* Declared diagnostics that need distributional tests or inputs unavailable
+  at merge time (distribution comparisons, panel consistency, presence
+  matrices, and similar) are classified as documentary: they report `DOC`
+  instead of `SKIP` and are counted separately (`n_doc`).
+* A `severity: error` check whose type cannot be evaluated is escalated: a
+  loud warning always, and under `strict = TRUE` the merge aborts before
+  writing outputs (an error-level check must be executable). The validation
+  summary and return value now carry `error_skips`.
+* The action vocabulary is refreshed from the installed
+  `action_vocabulary.yml` in `.onLoad()`; the install-time probe that could
+  resolve a previously installed version is gone. Stale vocabulary statuses
+  corrected (crosswalk, conditional_label_swap, label_to_string,
+  derive_combined_party, and transform are implemented; fix_label's
+  canonical keys are `old_fragment`/`new_fragment`).
+* Recipe corrections required to activate checks: cs `V06` re-typed from an
+  empty string to `value_absence` (its block payload now executes), and cs
+  `V07`'s expected wave count corrected from the stale 17 to 18 (cs25r was
+  onboarded in 1.3.0).
+
+## Stage 2: recipe re-keys and pattern normalization
+
+Every bundled recipe now says what the engine executes. Rule intents are
+unchanged; payload keys the engine never read are re-expressed in canonical
+form, so seven flag/period columns that used to materialize all-NA (or under
+a wrong fallback name) are now populated, one inert recode executes, and one
+unfulfilled promise is documented instead of implied. Regression tests in
+`tests/testthat/test-stage2-recipes.R` sweep every boundary flag rule in
+every bundled recipe and assert non-degeneracy against synthetic data.
+
+* cr: `BR01` (redesign_2019, now 0/1 via waves_pre/waves_post), `BR02`
+  (instrument_phase), `BR10` (religion_coding_era), `BR60`
+  (eval_wording_period), and `BR80` (fieldwork_season) re-keyed to the
+  executable `eras`/`phases`/`flag_column` forms. `fieldwork_ym` is declared
+  under expected_presence again now that the stage-1 engine fix makes the
+  declaration safe.
+* ch: `B12` re-keyed (s020_wording_period now materializes under its own
+  name instead of an all-NA `B12_period`); `B06` crosswalk_rename realigned
+  to `old_suffix`/`new_suffix` with `harmonized_name: h_premium_period`, so
+  the ch08b premium-period item really coalesces with suffix 261; the `D02`
+  drop of the historical stray `h_` column is retired to documentation.
+* ci: `A-09` realigned (nine VUT/prepensioen pairs) with explicit
+  harmonized columns `h_q363` through `h_q371`; `DR03` retired likewise.
+* cp: `A9_paradata_anchor_periods` re-keyed; `paradata_anchor_regime` is now
+  populated with its three anchor regimes.
+* ca: `B02` (ca25j_redesign) and `B03` (ca20g_largeneg_review) re-keyed to
+  executable forms; `H04`'s `preserve_original` promise is removed from the
+  description because no copy mechanism exists yet (tracked in TODO.md).
+* cw: `HR03_pension_dates` re-expressed as a wave-scoped `value_recode`
+  (cw25r: 1 to 2023, 2 to 2024); previously the rule never executed and
+  cw25r categorical codes pooled raw against calendar years.
+* All `file_pattern`s normalized to the extension-agnostic `{wave_id}_*`
+  form (85 entries across cd, cf, ci, cp, cs were `.csv`-suffixed or bare
+  and only loaded through the fallback matcher); the cd10c supersession pin
+  (`cd10c_EN_1.1p*`) is preserved.
+* `recipe_version` bumped on all nine touched recipes;
+  `CANONICAL_SCHEMA.md`'s crosswalk-alias known-limitation section replaced
+  with the resolution note. Merged output gains new additive columns
+  (populated flags and harmonized series); no existing column changes
+  meaning.
+
+## Stage 1: engine correctness fixes
+
+No recipe, schema, or API changes; four behaviors
+of the merge engine are corrected and pinned by regression tests in
+`tests/testthat/test-stage1-fixes.R`.
+
+* `fieldwork_ym` is now derived from the `{wave_id}_m` convention BEFORE the
+  expected-presence check runs. Previously, declaring `fieldwork_ym` under
+  `global.expected_presence` (as nine of the ten bundled recipes do) created
+  an all-NA placeholder first, which suppressed the derivation entirely, so
+  merged outputs carried an all-NA `fieldwork_ym` and a misleading
+  "created as NA" warning for every wave that actually had `_m` data. The cr
+  recipe's workaround note is retired in the stage-2 recipe pass.
+* Cross-wave type harmonization is factor-safe. When the same column is a
+  factor in one wave and numeric in another (registry archetype TD-02, and
+  any module under `labelled_policy: to_factor`), the column is now coerced
+  through `as.character()` with a warning naming the affected columns.
+  Previously the factor side was passed to `as.numeric()`, which stacks
+  level indices (1..k) against real codes in the same column.
+* The residual user-missing sweep honors recipe `exclude` vetoes for
+  q/Q-prefixed column names, mirroring `find_col()`'s full candidate ladder.
+  Previously a veto written against a q-form name was silently ignored and
+  the swept cells could lose documented substantive codes.
+* `value_recode` leaves an audit-log entry when a target suffix does not
+  resolve (`:TARGET_ABSENT`, honoring `if_absent`) or resolves to a
+  non-numeric column (`:SKIPPED_non_numeric`). Previously such targets
+  vanished from the JSONL log entirely.
+* Internal: dead variable removed from the `wave_count` validation check.
+
 # lissr 1.3.2
 
 Completes the party-scheme taxonomy: all five schemes catalogued from

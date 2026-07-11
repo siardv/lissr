@@ -120,13 +120,14 @@ boundary_rules:
         harmonized_name: h_health_index
 ```
 
-Known limitation: two recipes carry alias keys the engine does not
-read, so their renames do not run. `ch` uses `from`/`to`, and `ci` uses
-`old`/`new`. With no resolvable suffix, `harmonized_name` falls back to the
-literal column name `h_`, created all-NA, which each recipe then removes with a
-`drop` rule (`ch` D02, `ci` DR03). Realigning those recipes onto
-`old_suffix`/`new_suffix` would change frozen outputs (the harmonized columns
-would be produced and the `h_` drops would no longer apply), so it is deferred.
+Resolved in 1.3.2.9000 (v1.4 stage 2): the `ch` and `ci` recipes previously
+carried alias keys the engine does not read (`from`/`to` and `old`/`new`), so
+their renames never ran and a stray all-NA `h_` column was produced and then
+dropped. Both recipes now use `old_suffix`/`new_suffix` with explicit
+`harmonized_name` entries (`h_premium_period`; `h_q363` through `h_q371`), the
+harmonized columns are really produced, and the old `h_` drop rules are
+retired as documentation. This intentionally changes merged output relative
+to 1.3.x: the harmonized columns are new, additive columns.
 
 ### Drop / retain rules
 

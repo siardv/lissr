@@ -18,7 +18,8 @@ knitr::opts_chunk$set(
 ## Overview
 
 lissr includes a recipe-driven merge engine that processes YAML
-specifications conforming to the Canonical Schema v1.0.0. Each recipe
+specifications conforming to the Canonical Schema v1.1.0 (a strictly
+additive extension of v1.0.0; recipes may declare either). Each recipe
 encodes all merge-relevant decisions for a module: file patterns,
 variable harmonization, boundary handling, comparability contracts, and
 validation checks.
@@ -46,10 +47,14 @@ This produces four files:
 - `ch_merge_summary.json` — per-run summary (if enabled in recipe)
 - `ch_merge_report.txt` — human-readable report
 
+The returned object additionally carries `provenance` (package, recipe,
+and schema versions, per-input md5 hashes, release-selection decisions)
+and a `valid_for_analysis` verdict, both reproduced in the report.
+
 ## Batch merge
 
 ```{r}
-modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci")
+modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci", "ca", "cr")
 recipe_paths <- purrr::map_chr(modules, ~ {
   system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
 })
@@ -97,27 +102,27 @@ onboard_new_wave(
 
 ## Background variables
 
-The background variables module (CA) is a monthly snapshot used as the
-linkage backbone for all other modules. When merging background variables
-with survey data:
+The Background Variables file (`avars`) is a monthly snapshot used as
+the linkage backbone for all other modules. It is a separate release,
+not one of the ten core modules. When merging background variables with
+survey data:
 
 1. Use only `nomem_encr` as the join key (never `nohouse_encr`).
 2. Match the fieldwork month of the survey, not the calendar year.
 
 The merged output includes a `fieldwork_ym` column (YYYYMM integer)
-derived automatically from the LISS `_m` suffix. Background variable
-files carry the period in their filename rather than as a column, so
-you need to tag each file before stacking:
+derived automatically from the LISS `_m` suffix. Each `avars` file
+carries its fieldwork period as a `wave` column (YYYYMM), so stacking
+monthly files needs no filename parsing:
 
 ```{r}
 # example: merge Health survey with background variables
 survey <- haven::read_sav("output/ch_merged.sav")
 
-# read avars files and tag each with YYYYMM from the filename
+# read avars files; the period is the `wave` column in each file
 bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
 bg_data  <- purrr::map_dfr(bg_files, function(f) {
-  ym <- as.integer(stringr::str_extract(basename(f), "\\d{6}"))
-  haven::read_sav(f) |> dplyr::mutate(fieldwork_ym = ym)
+  haven::read_sav(f) |> dplyr::mutate(fieldwork_ym = as.integer(wave))
 })
 
 merged <- dplyr::left_join(

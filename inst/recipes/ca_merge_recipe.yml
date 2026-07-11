@@ -14,7 +14,7 @@ meta:
   module: "ca"
   module_label: "Assets"
   schema_version: "1.0.0"
-  recipe_version: "1.0.0"
+  recipe_version: "1.2.0"
   created: "2026-06-13"
   source_spec: "cross-wave harmonization specification"
   covered_waves: [ca08a, ca10b, ca12c, ca14d, ca16e, ca18f, ca20g, ca22h, ca24i, ca25j]
@@ -28,7 +28,10 @@ meta:
     full set carrying 999 in the value labels, scoped ca08a-ca24i (ca25j uses
     -9). Native -9/-8 missing codes are left intact (no panel-wide recode);
     ca20g large-negative values are handled by B03 (add_flag), not a blanket
-    recode.
+    recode. Recipe 1.2.0: wave_index `year` re-keyed from the asset reference
+    year to the fieldwork year (matching every other module); the reference
+    year is preserved per respondent as asset_reference_year (DV00,
+    wave_values).
 
 global:
   id_variable: "nomem_encr"
@@ -51,59 +54,61 @@ global:
       here (do not remove). nohouse_encr is intentionally NOT listed critical
       (present only ca08a/ca10b; see drop_retain_rules / A-07).
 
-# wave_index: `year` is the REFERENCE year of the assets measured (audit reference
-# dates are 31 December of each year), not the fieldwork year. The fieldwork
-# window is preserved in `field_months`; `year` deliberately tracks the
-# reference year rather than the fieldwork year. ca24i/ca25j are one reference
-# year apart (2023 then 2024), breaking the otherwise biennial cadence.
+# wave_index: `year` is the FIELDWORK year (the year the questionnaire ran),
+# aligned with every other module recipe since 1.2.0. The REFERENCE year of
+# the assets measured (audit reference date 31 December; one year before
+# fieldwork) is materialised per respondent by DV00_asset_reference_year
+# under derived_variables. The fieldwork window stays in `field_months`.
+# ca24i/ca25j are one fieldwork year apart (2024 then 2025), breaking the
+# otherwise biennial cadence.
 wave_index:
   - id: "ca08a"
-    year: 2007
+    year: 2008
     file_pattern: "ca08a_*"
     field_months: "2008-06"
     wave_number: 1
   - id: "ca10b"
-    year: 2009
+    year: 2010
     file_pattern: "ca10b_*"
     field_months: "2010-06"
     wave_number: 2
   - id: "ca12c"
-    year: 2011
+    year: 2012
     file_pattern: "ca12c_*"
     field_months: "2012-06"
     wave_number: 3
   - id: "ca14d"
-    year: 2013
+    year: 2014
     file_pattern: "ca14d_*"
     field_months: "2014-10"
     wave_number: 4
   - id: "ca16e"
-    year: 2015
+    year: 2016
     file_pattern: "ca16e_*"
     field_months: "2016-06"
     wave_number: 5
   - id: "ca18f"
-    year: 2017
+    year: 2018
     file_pattern: "ca18f_*"
     field_months: "2018-10"
     wave_number: 6
   - id: "ca20g"
-    year: 2019
+    year: 2020
     file_pattern: "ca20g_*"
     field_months: "2020-09"
     wave_number: 7
   - id: "ca22h"
-    year: 2021
+    year: 2022
     file_pattern: "ca22h_*"
     field_months: "2022-09"
     wave_number: 8
   - id: "ca24i"
-    year: 2023
+    year: 2024
     file_pattern: "ca24i_*"
     field_months: "2024-09"
     wave_number: 9
   - id: "ca25j"
-    year: 2024
+    year: 2025
     file_pattern: "ca25j_*"
     field_months: "2025-07"
     wave_number: 10
@@ -188,15 +193,13 @@ harmonization_rules:
   # the un-collapsed detail is preserved separately.
   - rule_id: H04_debt_bracket_collapse
     action: value_recode
-    description: "collapse ca25j debt brackets 16/17/18 into legacy top bracket 15 (variable 056); preserve un-collapsed detail"
+    description: "collapse ca25j debt brackets 16/17/18 into legacy top bracket 15 (variable 056). NOTE: the un-collapsed detail is not preserved; the engine has no copy-before-recode mechanism yet (tracked in TODO.md), so recover raw detail from the source ca25j file if needed"
     waves: [ca25j]
     variables: ["056"]
     mapping:
       "16": 15
       "17": 15
       "18": 15
-    preserve_original: true
-    original_suffix: "056_ca25j_detail"
     anomaly_ref: "A-04"
 
   # A-09 apostrophe encoding: ca08a uses U+2019 (right single quote) in
@@ -268,8 +271,10 @@ boundary_rules:
   - rule_id: B02_ca25j_redesign
     action: add_period_flag
     description: "flag the ca25j questionnaire restructuring (14 items dropped, 69 new items 091-159, top-level decomposition of balances/insurance/investments/debt)"
-    flag_variable: ca25j_redesign
-    period_waves: [ca25j]
+    flag_column: ca25j_redesign
+    phases:
+      - waves: [ca25j]
+        label: "redesigned"
     comparability:
       status: "non_comparable"
       method: "pool_with_flags"
@@ -283,10 +288,12 @@ boundary_rules:
     action: add_flag
     description: "flag respondents whose ca20g euro-amount cells contain undocumented large-negative values (-9999999999/-9999999998); every hit MUST be reviewed manually before any recode - the ca20g codebook does not document these codes"
     flag_variable: ca20g_largeneg_review
-    flag_true_waves: [ca20g]
-    target_suffixes: ["012","014","016","018","021","023","025","027","032","035",
-                      "038","042","045","049","052","055","063","083","085"]
+    waves_pre: [ca08a, ca10b, ca12c, ca14d, ca16e, ca18f, ca22h, ca24i, ca25j]
+    waves_post: [ca20g]
+    flag_value_pre: 0
+    flag_value_post: 1
     review_required: true
+    notes: "euro-amount suffixes to review manually in ca20g: 012, 014, 016, 018, 021, 023, 025, 027, 032, 035, 038, 042, 045, 049, 052, 055, 063, 083, 085"
     anomaly_ref: "A-01"
 
   # A-11 (supplementary, engine-detected): ca22h preloaded-answer programming
@@ -295,7 +302,10 @@ boundary_rules:
     action: add_flag
     description: "flag ca22h for the preloaded-answer programming error that elevates item nonresponse on carried-forward variables"
     flag_variable: preload_failure
-    flag_true_waves: [ca22h]
+    waves_pre: [ca08a, ca10b, ca12c, ca14d, ca16e, ca18f, ca20g, ca24i, ca25j]
+    waves_post: [ca22h]
+    flag_value_pre: 0
+    flag_value_post: 1
     anomaly_ref: "A-11"
 
 # ── Drop / retain rules ───────────────────────────────────────────────────────
@@ -323,11 +333,28 @@ drop_retain_rules:
     anomaly_ref: null
 
 # ── Derived variables ─────────────────────────────────────────────────────────
-# The package engine materialises derived_variables as all-NA columns today
-# (the derived-variable executor is pending). Full payloads are retained so the
-# executor can compute them once shipped.
-# TODO_REEXPRESS: recompute these once the derived-variable executor lands.
+# Executed by the engine's derived-variable phase (sum/max over per-wave
+# source maps, wave_values constants). DV00 carries the asset reference year
+# that wave_index `year` held before recipe 1.2.0.
 derived_variables:
+
+  - rule_id: DV00_asset_reference_year
+    name: asset_reference_year
+    description: "reference year of the assets measured (audit reference date 31 December of this year). wave_index `year` and wave_year track the fieldwork year from recipe 1.2.0 on; the reference year (one year before fieldwork) is preserved here."
+    output_type: integer
+    wave_values:
+      ca08a: 2007
+      ca10b: 2009
+      ca12c: 2011
+      ca14d: 2013
+      ca16e: 2015
+      ca18f: 2017
+      ca20g: 2019
+      ca22h: 2021
+      ca24i: 2023
+      ca25j: 2024
+    anomaly_ref: null
+    log: true
 
   - rule_id: h_balance_total
     name: h_balance_total

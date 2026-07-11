@@ -24,7 +24,19 @@ liss_blueprint <- function(refresh = FALSE) {
   base_url <- "https://www.dataarchive.lissdata.nl"
 
   cli::cli_alert_info("Fetching module index...")
-  index_page <- xml2::read_html(paste0(base_url, "/study-units/view/1"))
+  index_page <- tryCatch(
+    xml2::read_html(paste0(base_url, "/study-units/view/1")),
+    error = function(e) NULL
+  )
+  if (is.null(index_page)) {
+    cli::cli_abort(c(
+      "could not fetch the archive's module index",
+      "i" = "check the connection and {.fn liss_server_status}; nothing was cached"
+    ))
+  }
+  fails <- new.env(parent = emptyenv())
+  fails$modules <- 0L
+  fails$waves <- 0L
   mods <- purrr::map_dfr(c("#id1 > .card-body", "#id2 > .card-body"), function(sel) {
     links <- rvest::html_elements(rvest::html_element(index_page, sel), "a")
     tibble::tibble(
@@ -35,6 +47,13 @@ liss_blueprint <- function(refresh = FALSE) {
     )
   })
 
+  if (nrow(mods) == 0) {
+    cli::cli_abort(c(
+      "the module index yielded no modules",
+      "i" = "the archive's page layout may have changed; nothing was cached"
+    ))
+  }
+
   cli::cli_alert_info("Scanning {nrow(mods)} module(s) for waves and files...")
 
   blueprint <- purrr::map_dfr(seq_len(nrow(mods)), function(i) {
@@ -43,7 +62,10 @@ liss_blueprint <- function(refresh = FALSE) {
       xml2::read_html(paste0(base_url, "/study-units/view/", mod$module_id)),
       error = function(e) NULL
     )
-    if (is.null(page)) return(NULL)
+    if (is.null(page)) {
+      fails$modules <- fails$modules + 1L
+      return(NULL)
+    }
 
     mes <- rvest::html_element(page, "#id_mes")
     if (length(mes) == 0 || is.na(mes)) return(NULL)
@@ -63,7 +85,10 @@ liss_blueprint <- function(refresh = FALSE) {
         xml2::read_html(paste0(base_url, "/study-units/view/", w$wave_id)),
         error = function(e) NULL
       )
-      if (is.null(wp)) return(NULL)
+      if (is.null(wp)) {
+        fails$waves <- fails$waves + 1L
+        return(NULL)
+      }
       dd <- rvest::html_element(wp, "#id_dd")
       if (length(dd) == 0 || is.na(dd)) return(NULL)
       rows <- rvest::html_elements(dd, ".row")
@@ -96,6 +121,19 @@ liss_blueprint <- function(refresh = FALSE) {
     dplyr::select("module", "module_id", "wave", "wave_id",
                   "type", "name", "file", "path") %>%
     dplyr::arrange(.data$module, .data$wave, .data$type)
+
+  if (nrow(blueprint) == 0) {
+    cli::cli_abort(c(
+      "the archive scrape produced an empty blueprint; nothing was cached",
+      "i" = "the page layout may have changed, or every page failed to load ({fails$modules} module page{?s}, {fails$waves} wave page{?s} failed)"
+    ))
+  }
+  if (fails$modules > 0 || fails$waves > 0) {
+    cli::cli_warn(c(
+      "{fails$modules} module page{?s} and {fails$waves} wave page{?s} failed to load; the cached blueprint may be incomplete",
+      "i" = "re-run {.code liss_blueprint(refresh = TRUE)} to retry"
+    ))
+  }
 
   .liss_cache$blueprint <- blueprint
   .liss_cache$timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M")

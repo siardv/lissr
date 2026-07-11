@@ -97,7 +97,10 @@ liss_cleaning_ruleset <- function(path = NULL) {
 #' required metadata and variable mappings, sane global constraints,
 #' unique rule ids, actions drawn from the controlled vocabulary,
 #' non-empty descriptions, resolvable reference keys, and numeric
-#' parameter sanity. Unrecognized rule keys draw a warning only,
+#' parameter sanity. Controlled values are enforced for detection-rule
+#' `disposition`, `scope`, and `stage`, the finalization disposition,
+#' the `selection` anchors, consensus-detector `methods`, and nested
+#' per-method `thresholds`. Unrecognized rule keys draw a warning only,
 #' mirroring the merge engine's authoring check.
 #'
 #' @param ruleset a parsed ruleset (from [liss_cleaning_ruleset()] or
@@ -159,8 +162,13 @@ validate_cleaning_ruleset <- function(ruleset, quiet = FALSE) {
     "magnitude_ceiling", "factor", "upper_factor", "lower_factor",
     "min_obs", "consensus", "k", "min_donors", "min_relative_deviation",
     "min_valid", "max_valid",
-    "max_code", "multiplier", "multiplier_ceiling"
+    "max_code", "multiplier", "multiplier_ceiling",
+    "min_household_size", "code_share"
   )
+  detection_dispositions <- c("void_bounds", "set_na", "correct", "flag")
+  detection_scopes <- c("global", "household", "dataset")
+  finalization_dispositions <- c("void", "winsorise", "flag")
+  known_methods <- c("iqr", "mad", "zscore")
   seen_ids <- character(0)
   for (section in names(CLEANING_ACTIONS)) {
     for (r in ruleset[[section]] %||% list()) {
@@ -201,7 +209,86 @@ validate_cleaning_ruleset <- function(ruleset, quiet = FALSE) {
                      " must be a single nonnegative finite number"))
         }
       }
+      # controlled values for disposition, scope, and stage
+      if (identical(section, "detection_rules")) {
+        disp <- as.character(r$disposition %||% "")[1]
+        if (!disp %in% detection_dispositions) {
+          err(paste0(rid, ": disposition '", disp, "' must be one of ",
+                     paste(detection_dispositions, collapse = ", ")))
+        }
+        sc <- as.character(r$scope %||% "")[1]
+        if (!sc %in% detection_scopes) {
+          err(paste0(rid, ": scope '", sc, "' must be one of ",
+                     paste(detection_scopes, collapse = ", ")))
+        }
+        st <- r$stage
+        if (!is.null(st) && !identical(as.character(st), "preliminary")) {
+          err(paste0(rid, ": stage '", st,
+                     "' is not recognized (only 'preliminary' is)"))
+        }
+      }
+      if (identical(section, "finalization_rules")) {
+        fd <- as.character(r$params$disposition %||% r$disposition %||%
+                             "void")[1]
+        if (!fd %in% finalization_dispositions) {
+          err(paste0(rid, ": disposition '", fd, "' must be one of ",
+                     paste(finalization_dispositions, collapse = ", ")))
+        }
+      }
+      # consensus-detector payloads: known methods, achievable consensus,
+      # and per-method thresholds that are named positive numbers
+      mets <- as.character(unlist(r$params$methods %||% list()))
+      if (length(mets) > 0) {
+        badm <- setdiff(mets, known_methods)
+        if (length(badm) > 0) {
+          err(paste0(rid, ": unknown method(s) ",
+                     paste(badm, collapse = ", "), " (known: ",
+                     paste(known_methods, collapse = ", "), ")"))
+        }
+        cons_v <- r$params$consensus
+        if (is.numeric(cons_v) && length(cons_v) == 1 &&
+            is.finite(cons_v) && cons_v > length(mets)) {
+          err(paste0(rid, ": params.consensus (", cons_v,
+                     ") exceeds the number of methods (", length(mets), ")"))
+        }
+      }
+      th <- r$params$thresholds
+      if (!is.null(th)) {
+        if (!is.list(th) || is.null(names(th)) || any(!nzchar(names(th)))) {
+          err(paste0(rid, ": params.thresholds must be a named list"))
+        } else {
+          for (tn in names(th)) {
+            tvv <- th[[tn]]
+            if (!is.numeric(tvv) || length(tvv) != 1 || !is.finite(tvv) ||
+                tvv <= 0) {
+              err(paste0(rid, ": params.thresholds.", tn,
+                         " must be a single positive finite number"))
+            }
+          }
+          if (length(mets) > 0) {
+            orphan <- setdiff(names(th), mets)
+            if (length(orphan) > 0) {
+              wrn(paste0(rid, ": threshold(s) for method(s) not in ",
+                         "params.methods: ", paste(orphan, collapse = ", ")))
+            }
+          }
+        }
+      }
     }
+  }
+
+  # candidate-selection block: the anchor is executed (not merely
+  # reported), so its values are controlled here
+  sel <- ruleset$selection %||% list()
+  anc <- as.character(sel$anchor %||% "household_median")[1]
+  if (!anc %in% c("household_median", "household_mean")) {
+    err(paste0("selection.anchor '", anc,
+               "' must be household_median or household_mean"))
+  }
+  fb <- as.character(sel$fallback_anchor %||% "range_midpoint")[1]
+  if (!identical(fb, "range_midpoint")) {
+    err(paste0("selection.fallback_anchor '", fb,
+               "' must be range_midpoint"))
   }
 
   valid <- length(errors) == 0
@@ -262,8 +349,12 @@ apply_ruleset_overrides <- function(rs, income_cap = NULL, min_income = NULL,
   }
 
   all_ids <- character(0)
+  ids_by_section <- list()
   for (section in names(CLEANING_ACTIONS)) {
-    for (r in rs[[section]] %||% list()) all_ids <- c(all_ids, r$rule_id)
+    sids <- vapply(rs[[section]] %||% list(),
+                   function(r) as.character(r$rule_id %||% ""), character(1))
+    ids_by_section[[section]] <- sids
+    all_ids <- c(all_ids, sids)
   }
   set_enabled <- function(rs, ids, value) {
     for (section in names(CLEANING_ACTIONS)) {
@@ -280,10 +371,23 @@ apply_ruleset_overrides <- function(rs, income_cap = NULL, min_income = NULL,
     if (length(unknown) > 0) {
       cli::cli_abort("enable_only references unknown rule id(s): {paste(unknown, collapse = ', ')}")
     }
-    rs <- set_enabled(rs, setdiff(all_ids, enable_only), FALSE)
+    # scoped per section: only sections that contain a named rule are
+    # restricted to the named set; the other sections keep their enabled
+    # state. enable_only = "D06" therefore isolates one detection rule
+    # while preparation, correction, and finalization machinery keep
+    # running (the old all-section restriction silently turned a
+    # detected cell's correction into a void).
+    hit_sections <- names(Filter(function(sids) any(sids %in% enable_only),
+                                 ids_by_section))
+    for (section in hit_sections) {
+      rs <- set_enabled(rs, setdiff(ids_by_section[[section]], enable_only),
+                        FALSE)
+    }
     rs <- set_enabled(rs, enable_only, TRUE)
     applied <- c(applied, paste0("enable_only = ",
-                                 paste(enable_only, collapse = ", ")))
+                                 paste(enable_only, collapse = ", "),
+                                 " (scoped to ",
+                                 paste(hit_sections, collapse = ", "), ")"))
   }
   if (!is.null(disable)) {
     unknown <- setdiff(disable, all_ids)
@@ -368,6 +472,7 @@ resolve_cleaning_variables <- function(data, vars) {
     wave = wave,
     personal_net = fp(vars$personal_net),
     personal_gross = fp(vars$personal_gross),
+    household_size = fp(vars$household_size),
     category_code = fp(vars$category_code),
     category_min = fp(vars$category_min),
     category_max = fp(vars$category_max),
@@ -552,7 +657,24 @@ attach_background_frame <- function(df, background, vars, origin, wv) {
   join_desc <- person
   if ("wave" %in% names(b) || "wavenr" %in% names(b)) {
     if (!"wavenr" %in% names(b)) {
-      b$wavenr <- as.integer(as.numeric(b$wave) %/% 100L - origin)
+      # detect the background wave scale before deriving the annual
+      # index: yyyymm keys divide by 100, year keys subtract the origin
+      # directly, and small integers are already annual wavenr values.
+      # blindly assuming yyyymm (the old behavior) turned year-keyed
+      # backgrounds into impossible wavenr values and an all-NA join
+      # that was logged as success.
+      bwv <- as.numeric(b$wave)
+      fin <- bwv[is.finite(bwv)]
+      b$wavenr <- if (length(fin) > 0 && all(fin >= 190001)) {
+        as.integer(bwv %/% 100L - origin)
+      } else if (length(fin) > 0 && all(fin >= 1900 & fin <= 2100)) {
+        as.integer(bwv - origin)
+      } else if (length(fin) > 0 && all(fin >= 0 & fin <= 100)) {
+        as.integer(bwv)
+      } else {
+        cli::cli_warn("background wave values fit no recognizable scale (yyyymm, calendar year, or annual wavenr); assuming yyyymm")
+        as.integer(bwv %/% 100L - origin)
+      }
     }
     ord <- do.call(order,
                    b[intersect(c(".lissr_join_person", "wavenr", "wave"),
@@ -570,6 +692,11 @@ attach_background_frame <- function(df, background, vars, origin, wv) {
     keys <- ".lissr_join_person"
   }
 
+  # match-rate diagnostic: how many data rows find a background row
+  key_b <- do.call(paste, c(b[keys], list(sep = "\r")))
+  key_d <- do.call(paste, c(df[keys], list(sep = "\r")))
+  n_matched <- sum(key_d %in% key_b)
+
   add_cols <- setdiff(names(b), c(names(df), person, "wave", "wavenr"))
   b <- b[c(keys, add_cols)]
   n_before <- nrow(df)
@@ -579,7 +706,8 @@ attach_background_frame <- function(df, background, vars, origin, wv) {
   }
   out$.lissr_join_person <- NULL
   out$.lissr_join_wavenr <- NULL
-  list(data = out, n_added_cols = length(add_cols), join_desc = join_desc)
+  list(data = out, n_added_cols = length(add_cols), join_desc = join_desc,
+       n_matched = n_matched)
 }
 
 # ---- candidate generation ------------------------------------------------------
@@ -684,7 +812,11 @@ generate_candidates <- function(gv, p, obs_v, rmin, rmax, vmin, vmax,
 #' @param income_cap,min_income optional overrides for the global
 #'   plausibility constraints.
 #' @param disable,enable_only optional character vectors of rule ids to
-#'   switch off, or to run exclusively.
+#'   switch off, or to run exclusively. `enable_only` is scoped per
+#'   ruleset section: only sections that contain a named rule are
+#'   restricted to the named set, so `enable_only = "D06"` isolates one
+#'   detection rule while the preparation, correction, and finalization
+#'   machinery keeps running.
 #' @param params optional named list of per-rule parameter overrides,
 #'   e.g. `list(D06 = list(volatility_min = 0.7))`.
 #' @param variables optional named list overriding entries of the
@@ -730,6 +862,16 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   mn <- cons$min_income
   origin <- cons$wavenr_origin %||% 2007
 
+  # per-rule log switches, honored uniformly: rules with log: false are
+  # excluded from the per-rule decision aggregation in the JSONL trace
+  # (the decision ledger itself is never suppressed)
+  rule_log <- list()
+  for (section in names(CLEANING_ACTIONS)) {
+    for (r in rs[[section]] %||% list()) {
+      rule_log[[as.character(r$rule_id %||% "")]] <- isTRUE(r$log %||% TRUE)
+    }
+  }
+
   # light pre-resolution: target only, for the double-cleaning guard
   tv0 <- {
     cands <- as.character(unlist(c(rs$variables$target,
@@ -764,13 +906,17 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     if (rule_enabled(p01)) {
       ab <- attach_background_frame(df, background, vars_pre, origin, wv)
       df <- ab$data
+      if (ab$n_matched == 0) {
+        cli::cli_warn("{p01$rule_id}: background join matched 0 of {nrow(df)} row{?s}; check the background wave keying and person ids")
+      }
       if (isTRUE(p01$log %||% TRUE)) {
         logs <- c(logs, list(clean_log_entry(p01$rule_id, "*",
-                                             "attach_background", nrow(df),
+                                             "attach_background",
+                                             ab$n_matched,
                                              values_changed = ab$n_added_cols)))
       }
       if (verbose) {
-        cli::cli_alert_info("{p01$rule_id}: background attached ({ab$n_added_cols} column{?s} added; join on {ab$join_desc})")
+        cli::cli_alert_info("{p01$rule_id}: background attached ({ab$n_added_cols} column{?s} added; join on {ab$join_desc}; {ab$n_matched}/{nrow(df)} row{?s} matched)")
       }
     } else if (verbose) {
       cli::cli_alert_info("background supplied but attach_background is disabled; ignored")
@@ -796,6 +942,11 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   }
   pnet <- ctx_abs(vars$personal_net)
   pgross <- ctx_abs(vars$personal_gross)
+  hsize <- if (is.na(vars$household_size)) {
+    rep(NA_real_, n)
+  } else {
+    numeric_view(df[[vars$household_size]])
+  }
 
   p02 <- first_rule(rs, "preparation_rules", "resolve_target_variable")
   if (rule_enabled(p02) && isTRUE(p02$log %||% TRUE)) {
@@ -856,6 +1007,11 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     if (length(idx) > 0) {
       w[idx] <- abs(w[idx])
       status[idx] <- paste0("rectified:", p03$rule_id)
+      if (isTRUE(p03$log %||% TRUE)) {
+        logs <- c(logs, list(clean_log_entry(p03$rule_id, tv, "rectify_sign",
+                                             length(idx),
+                                             values_changed = length(idx))))
+      }
       if (verbose) {
         cli::cli_alert_info("{p03$rule_id}: {length(idx)} negative value{?s} sign-rectified")
       }
@@ -869,8 +1025,22 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   p04 <- first_rule(rs, "preparation_rules", "map_category_bounds")
   if (rule_enabled(p04) && !is.na(vars$category_code)) {
     code_vals <- numeric_view(df[[vars$category_code]])
-    fmax <- suppressWarnings(max(finite_vals(code_vals)))
-    if (is.finite(fmax) && fmax <= rp(p04, "max_code", 7)) {
+    max_code <- rp(p04, "max_code", 7)
+    code_share <- rp(p04, "code_share", 0.9)
+    # classify the column on its nonzero finite values: a bracket-code
+    # column is nearly all 1..max_code, a euro-bounds column has none
+    # there (its nonzero values are bracket amounts), and anything in
+    # between is ambiguous and declined loudly. the old max()-based
+    # gate let one stray sentinel silently disable mapping for the
+    # whole column, after which raw codes were misread as euro bounds.
+    fin_nz <- finite_vals(code_vals)
+    fin_nz <- fin_nz[fin_nz != 0]
+    share <- if (length(fin_nz) > 0) {
+      mean(fin_nz >= 1 & fin_nz <= max_code)
+    } else {
+      0
+    }
+    if (share >= code_share && length(fin_nz) > 0) {
       cb <- cons$category_bounds %||% list()
       mapped <- category_bounds_from_codes(code_vals,
                                            as.numeric(unlist(cb$lower)),
@@ -878,20 +1048,43 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
       row_min <- mapped$lower
       row_max <- mapped$upper
       n_mapped <- sum(is.finite(row_min))
+      stray <- is.finite(code_vals) & code_vals != 0 &
+        !(code_vals >= 1 & code_vals <= max_code)
+      if (any(stray)) {
+        sv <- sort(unique(code_vals[stray]))
+        cli::cli_warn("{p04$rule_id}: {sum(stray)} value{?s} outside 1..{max_code} in bracket-code column {.field {vars$category_code}} treated as missing brackets (offending value{?s}: {paste(utils::head(fmt_plain(sv), 5), collapse = ', ')})")
+      }
       if (isTRUE(p04$log %||% TRUE)) {
         logs <- c(logs, list(clean_log_entry(p04$rule_id, vars$category_code,
-                                             "map_category_bounds", n_mapped)))
+                                             "map_category_bounds", n_mapped,
+                                             values_changed = sum(stray))))
       }
       if (verbose) {
         cli::cli_alert_info("{p04$rule_id}: bracket codes expanded to euro bounds on {n_mapped} row{?s}")
       }
+    } else if (share > 0) {
+      cli::cli_warn(c(
+        "{p04$rule_id}: bracket-code mapping declined for {.field {vars$category_code}}: {round(100 * share)}% of nonzero finite values lie in 1..{max_code} (a bracket-code column needs at least {round(100 * code_share)}%)",
+        "i" = "the column passes through as euro bounds; any raw codes in it will be misread by the bound checks (D01, D07)"
+      ))
+      if (isTRUE(p04$log %||% TRUE)) {
+        logs <- c(logs, list(clean_log_entry(p04$rule_id, vars$category_code,
+                                             "map_category_bounds:DECLINED",
+                                             0L)))
+      }
     }
+    # share == 0: the column already holds euro bounds; pass through
   }
 
   d01 <- first_rule(rs, "detection_rules", "invalid_category_bounds")
   if (rule_enabled(d01)) {
     minv <- rp(d01, "min_valid", 0)
     maxv <- rp(d01, "max_valid", 120000)
+    named_or <- function(x, fallback) {
+      if (length(x) == 1 && !is.na(x)) as.character(x) else fallback
+    }
+    bounds_var <- paste0(named_or(vars$category_min, "category_min"), "/",
+                         named_or(vars$category_max, "category_max"))
     bad <- (is.finite(row_min) & (row_min < minv | row_min > maxv)) |
       (is.finite(row_max) & (row_max < minv | row_max > maxv)) |
       (is.finite(row_min) & is.finite(row_max) & row_min > row_max)
@@ -901,8 +1094,7 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
                  (row_min[i] < minv || row_min[i] > maxv)) row_min[i] else row_max[i]
       ledger_add(ld, d01$rule_id, "void_bounds", TRUE, i, pid[i], hid[i],
                  wv[i],
-                 variable = paste0(vars$category_min %||% "category_min", "/",
-                                   vars$category_max %||% "category_max"),
+                 variable = bounds_var,
                  observed = off, corrected = NA_real_,
                  evidence = paste0("bounds [", fnum(row_min[i]), ", ",
                                    fnum(row_max[i]), "] outside [",
@@ -913,6 +1105,11 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     if (length(idx) > 0) {
       row_min[idx] <- NA_real_
       row_max[idx] <- NA_real_
+      if (isTRUE(d01$log %||% TRUE)) {
+        logs <- c(logs, list(clean_log_entry(d01$rule_id, bounds_var,
+                                             "void_bounds", length(idx),
+                                             values_changed = length(idx))))
+      }
       if (verbose) {
         cli::cli_alert_info("{d01$rule_id}: category bounds voided on {length(idx)} row{?s}")
       }
@@ -933,26 +1130,35 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
       just <- "annual income below the absolute floor carries no recoverable magnitude information and is voided"
     } else if (identical(r$action, "contextual_floor")) {
       thr <- rp(r, "threshold", 100)
-      idx <- which(is.finite(w) & w <= thr & is.finite(pgross))
+      # gate on pgross > 0: a zero gross personal income does not
+      # contradict a near-zero household figure, so such rows are spared
+      idx <- which(is.finite(w) & w <= thr & is.finite(pgross) & pgross > 0)
       ev <- function(i) paste0("value ", fnum(w[i]), " at or below ",
                                fnum(thr), " while gross personal income ",
                                fnum(pgross[i]), " is reported")
-      just <- "household income at the contextual floor contradicts the reported personal income and is voided"
+      just <- "household income at the contextual floor contradicts the reported positive personal income and is voided"
     } else if (identical(r$action, "personal_income_echo")) {
       ceil <- rp(r, "ceiling", 10000)
       tol <- rp(r, "tolerance", 100)
+      min_hh <- rp(r, "min_household_size", 2)
       near_net <- is.finite(w) & is.finite(pnet) & abs(w - pnet) < tol
       near_gross <- is.finite(w) & is.finite(pgross) & abs(w - pgross) < tol
-      idx <- which(is.finite(w) & w < ceil & (near_net | near_gross))
+      # in a single-person household the household income legitimately
+      # equals the personal income, so the echo is only evidence of a
+      # keying error when the household is known to hold at least
+      # min_household_size members; unknown sizes are spared
+      multi <- is.finite(hsize) & hsize >= min_hh
+      idx <- which(is.finite(w) & w < ceil & (near_net | near_gross) & multi)
       ev <- function(i) {
         src <- if (isTRUE(near_net[i])) {
           paste0("personal net income ", fnum(pnet[i]))
         } else {
           paste0("personal gross income ", fnum(pgross[i]))
         }
-        paste0("value ", fnum(w[i]), " within +/-", fnum(tol), " of ", src)
+        paste0("value ", fnum(w[i]), " within +/-", fnum(tol), " of ", src,
+               " in a household of ", fnum(hsize[i]))
       }
-      just <- "a low household total echoing a personal income figure indicates the personal amount was entered in the household field; the household value is voided"
+      just <- "a low household total echoing a personal income figure in a multi-person household indicates the personal amount was entered in the household field; the household value is voided"
     } else {
       next
     }
@@ -1011,8 +1217,29 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   }
 
   # ---- household stage --------------------------------------------------------
-  grp_ok <- !is.na(hid)
-  groups <- split(seq_len(n)[grp_ok], hid[grp_ok])
+  # rows with a missing household id would otherwise silently receive no
+  # household-stage cleaning (real LISS merges contain such rows); they
+  # fall back to person-id grouping, and rows lacking both ids are
+  # counted as skipped. the h:/p: key prefixes keep the two id spaces
+  # from colliding.
+  grp_key <- ifelse(!is.na(hid), paste0("h:", hid),
+                    ifelse(!is.na(pid), paste0("p:", pid), NA_character_))
+  n_hid_fallback <- sum(is.na(hid) & !is.na(pid))
+  n_ungroupable <- sum(is.na(grp_key))
+  groups <- split(seq_len(n)[!is.na(grp_key)], grp_key[!is.na(grp_key)])
+  if (n_hid_fallback > 0 || n_ungroupable > 0) {
+    logs <- c(logs, list(clean_log_entry(
+      "GROUPING", vars$household, "household_id_fallback",
+      n_hid_fallback, values_changed = n_ungroupable)))
+    if (verbose) {
+      if (n_hid_fallback > 0) {
+        cli::cli_alert_info("{n_hid_fallback} row{?s} with a missing household id grouped by person id for the household stage")
+      }
+      if (n_ungroupable > 0) {
+        cli::cli_alert_warning("{n_ungroupable} row{?s} with neither household nor person id received no household-stage cleaning")
+      }
+    }
+  }
   n_groups_processed <- 0L
 
   d05 <- first_rule(rs, "detection_rules", "low_magnitude_scale")
@@ -1029,6 +1256,12 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   c06 <- first_rule(rs, "correction_rules", "range_midpoint")
   c06_on <- rule_enabled(c06)
 
+  # selection policy: the anchor statistic is dispatched from the ruleset's
+  # selection block (household_median or household_mean), so execution and
+  # the generated report can never disagree about the method used
+  sel_cfg <- rs$selection %||% list()
+  anchor_stat <- as.character(sel_cfg$anchor %||% "household_median")
+
   apply_cell <- function(i_glob, p_loc, rule, evd, gv, gmin_p, gmax_p) {
     # shared correction path for one flagged cell; returns the new value
     obs_v <- gv[p_loc]
@@ -1036,8 +1269,12 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     vmax_c <- min(if (is.finite(gmax_p)) gmax_p else cap, cap)
     if (vmin_c > vmax_c) vmin_c <- vmax_c
     oth <- finite_vals(gv[-p_loc])
-    anchor <- if (length(oth) > 0) stats::median(oth) else (vmin_c + vmax_c) / 2
-    anchor_src <- if (length(oth) > 0) "household_median" else "range_midpoint"
+    anchor <- if (length(oth) > 0) {
+      if (identical(anchor_stat, "household_mean")) mean(oth) else stats::median(oth)
+    } else {
+      (vmin_c + vmax_c) / 2
+    }
+    anchor_src <- if (length(oth) > 0) anchor_stat else "range_midpoint"
 
     if (identical(mode, "na_only")) {
       ledger_add(ld, rule$rule_id, "set_na", applied_flag, i_glob,
@@ -1056,16 +1293,31 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
                                w, i_glob)
     flt <- filter_candidates(cnd$values, cnd$sources, vmin_c, vmax_c)
     if (length(flt$values) == 0) {
-      if (c06_on) {
+      # the range-midpoint fallback is only defensible when the household's
+      # own evidence (the anchor) lies inside the admissible range; when the
+      # anchor itself is out of range, every admissible value contradicts
+      # the household series, so imputing the midpoint would fabricate a
+      # magnitude (e.g. replacing a 10x entry error with a value 15x the
+      # truth). such cells are voided instead.
+      anchor_ok <- length(oth) > 0 && anchor >= vmin_c && anchor <= vmax_c
+      if (c06_on && (anchor_ok || length(oth) == 0)) {
         flt <- list(values = (vmin_c + vmax_c) / 2,
                     sources = "range_midpoint")
       } else {
+        just <- if (!c06_on) {
+          "no admissible correction candidate and the range_midpoint fallback is disabled; value voided"
+        } else {
+          paste0("no admissible correction candidate, and the household ",
+                 anchor_stat, " ", fnum(anchor),
+                 " lies outside the admissible range [", fnum(vmin_c), ", ",
+                 fnum(vmax_c),
+                 "]; the range-midpoint fallback would fabricate a magnitude contradicted by the household's own series, so the value is voided")
+        }
         ledger_add(ld, rule$rule_id, "set_na", applied_flag, i_glob,
                    pid[i_glob], hid[i_glob], wv[i_glob], tv,
                    observed = obs_v, corrected = NA_real_,
                    valid_min = vmin_c, valid_max = vmax_c, anchor = anchor,
-                   evidence = evd,
-                   justification = "no admissible correction candidate and the range_midpoint fallback is disabled; value voided")
+                   evidence = evd, justification = just)
         status[i_glob] <<- paste0("voided:", rule$rule_id)
         return(NA_real_)
       }
@@ -1284,34 +1536,69 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   }
 
   # ---- F01: hard plausibility cap ---------------------------------------------
+  # disposition (ruleset key or params override): "void" sets offending
+  # values to NA (the historical behavior), "winsorise" clamps over-cap
+  # values to the cap while still voiding non-positive values (they carry
+  # no magnitude to clamp to), and "flag" only ledgers, leaving every
+  # value in place. genuine top incomes exist, so hard-voiding them
+  # biases the right tail; the disposition makes that trade-off explicit
+  # and reversible.
   f01 <- first_rule(rs, "finalization_rules", "hard_cap_to_na")
   if (rule_enabled(f01)) {
+    f01_disp <- as.character(f01$params$disposition %||%
+                               f01$disposition %||% "void")
     idx <- which(is.finite(w) & (w <= 0 | w > cap))
+    n_voided_f <- 0L
+    n_wins_f <- 0L
+    n_flag_f <- 0L
+    na_b <- sum(is.na(w))
     for (i in idx) {
-      evd <- if (w[i] <= 0) {
+      over <- w[i] > cap
+      evd <- if (!over) {
         paste0("post-correction value ", fnum(w[i]), " is non-positive")
       } else {
         paste0("post-correction value ", fnum(w[i]),
                " still exceeds the income cap ", fnum(cap))
       }
-      ledger_add(ld, f01$rule_id, "cap_na", applied_flag, i, pid[i], hid[i],
-                 wv[i], tv, observed = w[i], corrected = NA_real_,
-                 evidence = evd,
-                 justification = "value the constrained correction stage could not bring inside the plausible range; voided rather than retained")
+      if (identical(f01_disp, "flag")) {
+        ledger_add(ld, f01$rule_id, "cap_flag", TRUE, i, pid[i], hid[i],
+                   wv[i], tv, observed = w[i], corrected = NA_real_,
+                   evidence = evd,
+                   justification = "value outside the plausible range retained under disposition 'flag'; annotated for the researcher's own treatment")
+        n_flag_f <- n_flag_f + 1L
+      } else if (identical(f01_disp, "winsorise") && over) {
+        ledger_add(ld, f01$rule_id, "cap_winsorise", applied_flag, i, pid[i],
+                   hid[i], wv[i], tv, observed = w[i], corrected = cap,
+                   evidence = evd,
+                   justification = "value above the income cap clamped to the cap under disposition 'winsorise', preserving the observation's rank while bounding its magnitude")
+        w[i] <- cap
+        status[i] <- paste0("winsorised:", f01$rule_id)
+        n_wins_f <- n_wins_f + 1L
+      } else {
+        ledger_add(ld, f01$rule_id, "cap_na", applied_flag, i, pid[i], hid[i],
+                   wv[i], tv, observed = w[i], corrected = NA_real_,
+                   evidence = evd,
+                   justification = "value the constrained correction stage could not bring inside the plausible range; voided rather than retained")
+        w[i] <- NA_real_
+        status[i] <- paste0("capped:", f01$rule_id)
+        n_voided_f <- n_voided_f + 1L
+      }
     }
     if (length(idx) > 0) {
-      na_b <- sum(is.na(w))
-      w[idx] <- NA_real_
-      status[idx] <- paste0("capped:", f01$rule_id)
       if (isTRUE(f01$log %||% TRUE)) {
-        logs <- c(logs, list(clean_log_entry(f01$rule_id, tv, "cap_na",
+        act <- paste0("hard_cap:", f01_disp)
+        logs <- c(logs, list(clean_log_entry(f01$rule_id, tv, act,
                                              length(idx),
-                                             values_changed = length(idx),
+                                             values_changed = n_voided_f + n_wins_f,
                                              na_before = na_b,
                                              na_after = sum(is.na(w)))))
       }
       if (verbose) {
-        cli::cli_alert_info("{f01$rule_id}: {length(idx)} unrecoverable value{?s} set to NA")
+        msg <- switch(f01_disp,
+          "flag" = "{f01$rule_id}: {n_flag_f} out-of-range value{?s} flagged (disposition 'flag'; values retained)",
+          "winsorise" = "{f01$rule_id}: {n_wins_f} value{?s} winsorised to the cap, {n_voided_f} non-positive value{?s} set to NA",
+          "{f01$rule_id}: {n_voided_f} unrecoverable value{?s} set to NA")
+        cli::cli_alert_info(msg)
       }
     }
   }
@@ -1377,6 +1664,7 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
                             FUN = sum)
     agg <- agg[order(agg$rule_id, agg$action), , drop = FALSE]
     for (k in seq_len(nrow(agg))) {
+      if (isFALSE(rule_log[[agg$rule_id[k]]])) next
       logs <- c(logs, list(clean_log_entry(agg$rule_id[k], tv,
                                            paste0("decisions:", agg$action[k]),
                                            agg$n[k],
@@ -1401,6 +1689,10 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     n_voided = cnt("set_na"),
     n_rectified = cnt("rectify_sign"),
     n_capped = cnt("cap_na"),
+    n_winsorised = cnt("cap_winsorise"),
+    n_cap_flagged = sum(decisions$action == "cap_flag"),
+    n_hid_fallback = n_hid_fallback,
+    n_ungroupable = n_ungroupable,
     n_bounds_voided = sum(decisions$action == "void_bounds"),
     n_flagged_dataset = sum(decisions$action == "flag"),
     pct_corrected = if (sum(is.finite(observed)) > 0) {
@@ -1438,7 +1730,7 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
         "dry run complete: {summary$n_decisions} decision{?s} ledgered as proposals; data unchanged")
     } else {
       cli::cli_alert_success(
-        "income cleaning complete: {summary$n_corrected} corrected, {summary$n_voided} voided, {summary$n_rectified} rectified, {summary$n_capped} capped, {summary$n_flagged_dataset} dataset-flagged")
+        "income cleaning complete: {summary$n_corrected} corrected, {summary$n_voided} voided, {summary$n_rectified} rectified, {summary$n_capped} capped, {summary$n_winsorised} winsorised, {summary$n_flagged_dataset} dataset-flagged")
     }
   }
   invisible(res)
@@ -1452,7 +1744,7 @@ print.liss_clean_result <- function(x, ...) {
   cli::cli_h3("liss income cleaning result ({s$mode} mode)")
   cli::cli_bullets(c(
     "*" = "target {.field {s$target}}: {s$n_finite_before} finite value{?s} in, {s$n_finite_after} out ({s$n_rows} row{?s}, {s$n_groups_processed} household{?s} processed)",
-    "*" = "{s$n_corrected} corrected, {s$n_voided} voided, {s$n_rectified} rectified, {s$n_capped} capped, {s$n_flagged_dataset} dataset-flagged",
+    "*" = "{s$n_corrected} corrected, {s$n_voided} voided, {s$n_rectified} rectified, {s$n_capped} capped, {s$n_winsorised %||% 0} winsorised, {s$n_flagged_dataset} dataset-flagged",
     "*" = "{s$n_decisions} ledgered decision{?s}; inspect $decisions or write artifacts with liss_cleaning_report()"
   ))
   invisible(x)
@@ -1468,7 +1760,7 @@ summary.liss_clean_result <- function(object, ...) {
   cat("Corrected:", s$n_corrected,
       paste0("(", ifelse(is.na(s$pct_corrected), "NA", s$pct_corrected), "%)"),
       " Voided:", s$n_voided, " Rectified:", s$n_rectified,
-      " Capped:", s$n_capped, "\n")
+      " Capped:", s$n_capped, " Winsorised:", s$n_winsorised %||% 0, "\n")
   cat("Dataset-level flags:", s$n_flagged_dataset, "\n")
   fmt_dist <- function(d, label) {
     if (is.null(d)) return(invisible(NULL))
@@ -1497,11 +1789,13 @@ summary.liss_clean_result <- function(object, ...) {
 #'
 #' @param result a `liss_clean_result` from [liss_clean_income()].
 #' @param output_dir directory for the artifacts (created if needed).
+#'   Required, so three files are never written into the working
+#'   directory by accident.
 #' @param verbose print the written paths.
 #' @return invisibly, a list with the `report`, `decisions`, and `log`
 #'   paths.
 #' @export
-liss_cleaning_report <- function(result, output_dir = ".", verbose = TRUE) {
+liss_cleaning_report <- function(result, output_dir, verbose = TRUE) {
   if (!inherits(result, "liss_clean_result")) {
     cli::cli_abort("`result` must be a liss_clean_result from liss_clean_income()")
   }
@@ -1644,6 +1938,13 @@ build_cleaning_report_md <- function(result, lcfg, decisions_name) {
              paste0("- voided: ", s$n_voided),
              paste0("- sign-rectified: ", s$n_rectified),
              paste0("- capped to NA: ", s$n_capped),
+             paste0("- winsorised to the cap: ", s$n_winsorised %||% 0),
+             paste0("- out-of-range values flagged (F01 disposition): ",
+                    s$n_cap_flagged %||% 0),
+             paste0("- rows grouped by person id (household id missing): ",
+                    s$n_hid_fallback %||% 0,
+                    "; rows with no usable group id: ",
+                    s$n_ungroupable %||% 0),
              paste0("- category bounds voided: ", s$n_bounds_voided),
              paste0("- dataset-level flags (annotation only): ",
                     s$n_flagged_dataset),
@@ -1756,17 +2057,32 @@ build_cleaning_report_md <- function(result, lcfg, decisions_name) {
 #' scale used by the source analysis pipelines; `"oecd_modified"`
 #' divides by `1 + 0.5 * (adults - 1) + 0.3 * children`; `"sqrt"`
 #' divides by the square root of household size. Rows with an invalid
-#' composition (size below one, negative children, or more children
-#' than members) yield NA and are counted in a warning.
+#' composition (size below one, negative children, or zero adults,
+#' since every scale presumes at least one adult) yield NA and are
+#' counted in a warning. `household_size` and `n_children` must have
+#' length 1 or the length of `income`; other lengths are an error
+#' rather than being silently recycled.
+#'
+#' @details
+#' The modified OECD scale defines children as household members under
+#' 14, whereas the LISS `aantalki` variable counts children living at
+#' home of any age. Passing `aantalki` therefore approximates the OECD
+#' scale by treating every at-home child as under 14; when an under-14
+#' count is available it should be preferred. The `"weighted_sqrt"`
+#' default is calibrated to `aantalki` and unaffected.
 #'
 #' @param income numeric household income.
 #' @param household_size total household members (LISS `aantalhh`).
-#' @param n_children number of children (LISS `aantalki`).
+#' @param n_children number of children (LISS `aantalki`; see Details
+#'   for the OECD under-14 caveat).
 #' @param scale equivalence scale, see details.
 #' @param child_weight weight per child under `"weighted_sqrt"`.
 #' @param elasticity size elasticity under `"weighted_sqrt"`.
 #' @param verbose warn about invalid compositions.
 #' @return numeric vector of equivalised income.
+#' @examples
+#' liss_equivalise_income(30000, household_size = 3, n_children = 1)
+#' liss_equivalise_income(30000, 3, 1, scale = "oecd_modified")
 #' @export
 liss_equivalise_income <- function(income, household_size, n_children = 0,
                                    scale = c("weighted_sqrt",
@@ -1782,7 +2098,7 @@ liss_equivalise_income <- function(income, household_size, n_children = 0,
                                   elasticity = elasticity)
   hh <- rep_len(numeric_view(household_size), length(out))
   nc <- rep_len(numeric_view(n_children), length(out))
-  bad <- !is.finite(hh) | !is.finite(nc) | hh < 1 | nc < 0 | nc > hh
+  bad <- !is.finite(hh) | !is.finite(nc) | hh < 1 | nc < 0 | (hh - nc) < 1
   if (verbose && any(bad)) {
     cli::cli_warn(
       "{sum(bad)} row{?s} with invalid household composition set to NA")

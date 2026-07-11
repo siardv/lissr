@@ -8,7 +8,7 @@
 meta:
   module: ch
   module_label: Health
-  recipe_version: "1.0.0"
+  recipe_version: "1.1.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -680,11 +680,10 @@ harmonization_rules:
   - '001'
   - '002'
   - '003'
-  target_type: null
   if_absent: warn_and_create_na
   log: true
-  label_find: variabele
-  label_replace: variable
+  old_fragment: variabele
+  new_fragment: variable
   notes: "corrected labels per A-12: '001' -> 'preloaded variable: gender', '002' -> 'preloaded variable: age', '003' -> 'preloaded variable: job'; 'variabele' occurs only in ch08b and only on these three suffixes"
 boundary_rules:
 - rule_id: B01
@@ -833,9 +832,10 @@ boundary_rules:
   waves:
   - ch08b
   crosswalk:
-  - from: '244'
-    to: '261'
-  notes: "ch08b244 and ch09c-ch18k 261 carry the identical question text modulo the survey year ('Per what period did you pay premiums for the health insurance in YYYY?'); renaming unifies the series under canonical suffix 261 so the ch08b data is not stranded under 244"
+  - old_suffix: '244'
+    new_suffix: '261'
+    harmonized_name: h_premium_period
+  notes: "ch08b244 and ch09c-ch18k 261 carry the identical question text modulo the survey year ('Per what period did you pay premiums for the health insurance in YYYY?'); the coalesced series lives in h_premium_period so the ch08b data is not stranded under 244 (keys realigned to old_suffix/new_suffix in 1.3.2.9000)"
 - rule_id: B07
   anomaly_ref: null
   description: health care allowance items 263-264 introduced at ch13g, undocumented introduction
@@ -946,9 +946,9 @@ boundary_rules:
   boundary: ch23p_to_ch24q
   log: true
   suffix: '020'
-  flag_name: s020_wording_period
-  periods:
-    original_wording:
+  flag_column: s020_wording_period
+  phases:
+  - waves:
     - ch07a
     - ch08b
     - ch09c
@@ -965,9 +965,11 @@ boundary_rules:
     - ch21n
     - ch22o
     - ch23p
-    reworded_with_examples:
+    label: original_wording
+  - waves:
     - ch24q
     - ch25r
+    label: reworded_with_examples
   comparability:
     status: partial
     method: pool_with_flags
@@ -983,11 +985,8 @@ drop_retain_rules:
   log: true
 - rule_id: D02
   anomaly_ref: null
-  description: drop the stray empty h_ column; a crosswalk_rename entry with no resolvable suffix (recipe uses from/to keys, the executor reads old_suffix/new_suffix) creates it all-NA
-  action: drop
-  columns:
-  - h_
-  reason: all-NA artifact of a no-suffix crosswalk_rename
+  description: retired in 1.3.2.9000. B06 was re-keyed to old_suffix/new_suffix, so the stray all-NA h_ column this rule used to drop is no longer produced; kept as documentation of the historical artifact
+  action: note_only
   log: true
 - rule_id: R01
   description: always retain merge key and paradata

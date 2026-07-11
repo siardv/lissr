@@ -8,7 +8,7 @@
 meta:
   module: cp
   module_label: Personality
-  recipe_version: "1.1.0"
+  recipe_version: "1.2.0"
   created: '2026-02-09'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -59,7 +59,7 @@ global:
 wave_index:
 - id: cp08a
   year: 2008
-  file_pattern: cp08a_1p_EN.csv
+  file_pattern: "cp08a_*"
   notes: ''
   order: 1
   label: Wave 1
@@ -74,7 +74,7 @@ wave_index:
     questionnaire_version: questionnaire_version
 - id: cp09b
   year: 2009
-  file_pattern: cp09b_1_0p_EN.csv
+  file_pattern: "cp09b_*"
   notes: ''
   order: 2
   label: Wave 2
@@ -83,7 +83,7 @@ wave_index:
   role_map: *id001
 - id: cp10c
   year: 2010
-  file_pattern: cp10c_1_0p_EN.csv
+  file_pattern: "cp10c_*"
   notes: ''
   order: 3
   label: Wave 3
@@ -92,7 +92,7 @@ wave_index:
   role_map: *id001
 - id: cp11d
   year: 2011
-  file_pattern: cp11d_1_0p_EN.csv
+  file_pattern: "cp11d_*"
   notes: ''
   order: 4
   label: Wave 4
@@ -101,7 +101,7 @@ wave_index:
   role_map: *id001
 - id: cp12e
   year: 2012
-  file_pattern: cp12e_1_0p_EN.csv
+  file_pattern: "cp12e_*"
   notes: ''
   order: 5
   label: Wave 5
@@ -110,7 +110,7 @@ wave_index:
   role_map: *id001
 - id: cp13f
   year: 2013
-  file_pattern: cp13f_EN_1_0p.csv
+  file_pattern: "cp13f_*"
   notes: ''
   order: 6
   label: Wave 6
@@ -119,7 +119,7 @@ wave_index:
   role_map: *id001
 - id: cp14g
   year: 2014
-  file_pattern: cp14g_EN_1_0p.csv
+  file_pattern: "cp14g_*"
   notes: ''
   order: 7
   label: Wave 7
@@ -128,7 +128,7 @@ wave_index:
   role_map: *id001
 - id: cp15h
   year: 2015
-  file_pattern: cp15h_EN_1_0p.csv
+  file_pattern: "cp15h_*"
   notes: ''
   order: 8
   label: Wave 8
@@ -137,7 +137,7 @@ wave_index:
   role_map: *id001
 - id: cp17i
   year: 2017
-  file_pattern: cp17i_EN_1_0p.csv
+  file_pattern: "cp17i_*"
   notes: ''
   order: 9
   label: Wave 9
@@ -146,7 +146,7 @@ wave_index:
   role_map: *id001
 - id: cp18j
   year: 2018
-  file_pattern: cp18j_EN_1_0p.csv
+  file_pattern: "cp18j_*"
   notes: ''
   order: 10
   label: Wave 10
@@ -155,7 +155,7 @@ wave_index:
   role_map: *id001
 - id: cp19k
   year: 2019
-  file_pattern: cp19k_EN_1_0p.csv
+  file_pattern: "cp19k_*"
   notes: ''
   order: 11
   label: Wave 11
@@ -164,7 +164,7 @@ wave_index:
   role_map: *id001
 - id: cp20l
   year: 2020
-  file_pattern: cp20l_EN_1_0p.csv
+  file_pattern: "cp20l_*"
   notes: ''
   order: 12
   label: Wave 12
@@ -173,7 +173,7 @@ wave_index:
   role_map: *id001
 - id: cp21m
   year: 2021
-  file_pattern: cp21m_EN_1_0p.csv
+  file_pattern: "cp21m_*"
   notes: ''
   order: 13
   label: Wave 13
@@ -182,7 +182,7 @@ wave_index:
   role_map: *id001
 - id: cp22n
   year: 2022
-  file_pattern: cp22n_EN_1_0p.csv
+  file_pattern: "cp22n_*"
   notes: ''
   order: 14
   label: Wave 14
@@ -191,7 +191,7 @@ wave_index:
   role_map: *id001
 - id: cp23o
   year: 2023
-  file_pattern: cp23o_EN_1_0p.csv
+  file_pattern: "cp23o_*"
   notes: ''
   order: 15
   label: Wave 15
@@ -200,7 +200,7 @@ wave_index:
   role_map: *id001
 - id: cp24p
   year: 2024
-  file_pattern: cp24p_EN_1_0p.csv
+  file_pattern: "cp24p_*"
   notes: ''
   order: 16
   label: Wave 16
@@ -352,18 +352,15 @@ boundary_rules:
   anomaly_ref: A-09
   description: paradata items 184-188 carry three anchor-label regimes; 'definitely' becomes 'certainly' at cp13f and cp24p adds explicit labels for intermediate values 2, 3, 4
   action: add_period_flag
-  items:
-  - 184-188
-  flag_name: paradata_anchor_regime
-  # TODO_REEXPRESS: periods/comparability payload shape pending engine support
-  periods:
+  flag_column: paradata_anchor_regime
+  phases:
   - waves:
     - cp08a
     - cp09b
     - cp10c
     - cp11d
     - cp12e
-    value: definitely
+    label: definitely
   - waves:
     - cp13f
     - cp14g
@@ -375,11 +372,11 @@ boundary_rules:
     - cp21m
     - cp22n
     - cp23o
-    value: certainly
+    label: certainly
   - waves:
     - cp24p
     - cp25q
-    value: certainly_explicit_234
+    label: certainly_explicit_234
   comparability:
     status: partial
     boundaries:
@@ -675,10 +672,10 @@ validation_checks:
   within: wave_id
 - check_id: V07_wave_count
   anomaly_ref: null
-  description: no person appears in more than 16 waves
+  description: no person appears in more than 17 waves (the full covered set; was 16 before cp25q was onboarded)
   type: wave_count
   severity: error
-  max_waves: 16
+  max_waves: 17
 - check_id: V08_bigfive_range
   anomaly_ref: null
   description: Big Five items (020–069) must be in 1–5 or NA

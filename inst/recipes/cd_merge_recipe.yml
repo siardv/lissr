@@ -8,7 +8,7 @@
 meta:
   module: cd
   module_label: Housing
-  recipe_version: "1.1.0"
+  recipe_version: "1.2.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -58,7 +58,7 @@ global:
 wave_index:
 - id: cd08a
   year: 2008
-  file_pattern: cd08a_EN_1_2p.csv
+  file_pattern: "cd08a_*"
   notes: ''
   fieldwork: 2008-06 / 2008-09
   financial_ref: contemporaneous
@@ -77,7 +77,7 @@ wave_index:
     h_landlord_type: h_landlord_type
 - id: cd09b
   year: 2009
-  file_pattern: cd09b_EN_1_0p.csv
+  file_pattern: "cd09b_*"
   notes: ''
   fieldwork: 2009-06 / 2009-08
   financial_ref: '2008-12-31'
@@ -100,7 +100,7 @@ wave_index:
   role_map: *id001
 - id: cd11d
   year: 2011
-  file_pattern: cd11d_EN_2_0p.csv
+  file_pattern: "cd11d_*"
   notes: ''
   fieldwork: 2011-06 / 2011-08
   financial_ref: '2010-12-31'
@@ -109,7 +109,7 @@ wave_index:
   role_map: *id001
 - id: cd12e
   year: 2012
-  file_pattern: cd12e_EN_1_0p.csv
+  file_pattern: "cd12e_*"
   notes: ''
   fieldwork: 2012-06 / 2012-08
   financial_ref: '2011-12-31'
@@ -118,7 +118,7 @@ wave_index:
   role_map: *id001
 - id: cd13f
   year: 2013
-  file_pattern: cd13f_EN_1_1p.csv
+  file_pattern: "cd13f_*"
   notes: ''
   fieldwork: 2013-06 / 2013-08
   financial_ref: '2012-12-31'
@@ -127,7 +127,7 @@ wave_index:
   role_map: *id001
 - id: cd14g
   year: 2014
-  file_pattern: cd14g_EN_1_1p.csv
+  file_pattern: "cd14g_*"
   notes: anomaly 8 — atypical Oct-Nov fieldwork
   fieldwork: 2014-10 / 2014-11
   financial_ref: '2013-12-31'
@@ -136,7 +136,7 @@ wave_index:
   role_map: *id001
 - id: cd15h
   year: 2015
-  file_pattern: cd15h_EN_1_0p.csv
+  file_pattern: "cd15h_*"
   notes: anomaly 7 — shares reference year with cd16i
   fieldwork: 2015-06
   financial_ref: '2014-12-31'
@@ -145,7 +145,7 @@ wave_index:
   role_map: *id001
 - id: cd16i
   year: 2016
-  file_pattern: cd16i_EN_1_0p.csv
+  file_pattern: "cd16i_*"
   notes: anomaly 7 — shares reference year with cd15h; 18-month recall
   fieldwork: 2016-06 / 2016-07
   financial_ref: '2014-12-31'
@@ -154,7 +154,7 @@ wave_index:
   role_map: *id001
 - id: cd17j
   year: 2017
-  file_pattern: cd17j_EN_1_0p.csv
+  file_pattern: "cd17j_*"
   notes: ''
   fieldwork: 2017-06 / 2017-07
   financial_ref: '2016-12-31'
@@ -163,7 +163,7 @@ wave_index:
   role_map: *id001
 - id: cd18k
   year: 2018
-  file_pattern: cd18k_EN_1_0p.csv
+  file_pattern: "cd18k_*"
   notes: last wave before cd19l restructuring
   fieldwork: 2018-06 / 2018-08
   financial_ref: '2017-12-31'
@@ -172,7 +172,7 @@ wave_index:
   role_map: *id001
 - id: cd19l
   year: 2019
-  file_pattern: cd19l_EN_3_0p.csv
+  file_pattern: "cd19l_*"
   notes: anomalies 1-4 — major structural break
   fieldwork: 2019-07 / 2019-08
   financial_ref: '2018-12-31'
@@ -181,7 +181,7 @@ wave_index:
   role_map: *id001
 - id: cd20m
   year: 2020
-  file_pattern: cd20m_EN_2_0p.csv
+  file_pattern: "cd20m_*"
   notes: ''
   fieldwork: 2020-06 / 2020-08
   financial_ref: '2019-12-31'
@@ -190,7 +190,7 @@ wave_index:
   role_map: *id001
 - id: cd21n
   year: 2021
-  file_pattern: cd21n_EN_1_0p.csv
+  file_pattern: "cd21n_*"
   notes: ''
   fieldwork: 2021-06 / 2021-08
   financial_ref: '2020-12-31'
@@ -199,7 +199,7 @@ wave_index:
   role_map: *id001
 - id: cd22o
   year: 2022
-  file_pattern: cd22o_EN_1_0p.csv
+  file_pattern: "cd22o_*"
   notes: ''
   fieldwork: 2022-06 / 2022-08
   financial_ref: '2021-12-31'
@@ -208,7 +208,7 @@ wave_index:
   role_map: *id001
 - id: cd23p
   year: 2023
-  file_pattern: cd23p_EN_1_0p.csv
+  file_pattern: "cd23p_*"
   notes: ''
   fieldwork: 2023-06 / 2023-08
   financial_ref: '2022-12-31'
@@ -217,7 +217,7 @@ wave_index:
   role_map: *id001
 - id: cd24q
   year: 2024
-  file_pattern: cd24q_EN_1_0p.csv
+  file_pattern: "cd24q_*"
   notes: anomaly 12 — dwelling type label change; anomaly 6b — 'all' mortgage wording
   fieldwork: 2024-06 / 2024-08
   financial_ref: '2023-12-31'
@@ -226,7 +226,7 @@ wave_index:
   role_map: *id001
 - id: cd25r
   year: 2025
-  file_pattern: cd25r_EN_1_0p.csv
+  file_pattern: "cd25r_*"
   notes: anomaly 15 — 127 new variables
   fieldwork: 2025-06 / 2025-08
   financial_ref: '2024-12-31'
@@ -930,7 +930,7 @@ drop_retain_rules:
   anomaly_ref: A-10
   description: drop on nohouse_encr (inconsistently available cd08a-cd11d only; use LISS background)
   action: drop
-  variable: nohouse_encr
+  variables: [nohouse_encr]
   reason: inconsistently available cd08a-cd11d only; use LISS background
   log: true
 - rule_id: D02_open_text_period
@@ -1153,7 +1153,7 @@ validation_checks:
 - check_id: CHK01_sentinel_residual
   anomaly_ref: A-01
   description: ''
-  type: ''
+  type: sentinel_completeness
   severity: warning
   sentinel_set:
   - 98
@@ -1179,7 +1179,9 @@ validation_checks:
 - check_id: CHK02_satisfaction_range
   anomaly_ref: A-03
   description: ''
-  type: all non-NA in 0:10
+  type: value_range
+  min: 0
+  max: 10
   severity: error
   variables:
   - h_satisfaction_dwelling
@@ -1187,17 +1189,22 @@ validation_checks:
 - check_id: CHK03_rent_period_val5
   anomaly_ref: A-04
   description: ''
-  type: no value 5 in h_rent_period where era == era1
+  type: value_absence
+  variables: ["h_rent_period"]
+  forbidden_values: [5]
+  in_waves: [cd08a, cd09b, cd10c, cd11d, cd12e, cd13f, cd14g, cd15h, cd16i, cd17j, cd18k]
   severity: error
 - check_id: CHK04_rent_benefit_crosstab
   anomaly_ref: A-05
   description: crosstab h_rent_benefit against its per-wave sources to confirm the three question formulations harmonize consistently
-  type: crosstab h_rent_benefit x source (011 in cd08a-cd10c, 086 in cd11d-cd13f, 088 in cd14g-cd25r); all source categories must map per the derivation logic
+  type: crosstab
   severity: warning
 - check_id: CHK05_mortgage_range
   anomaly_ref: A-01
   description: ''
-  type: all non-NA in [0, 999999999]
+  type: value_range
+  min: 0
+  max: 999999999
   severity: error
   variables:
   - h_mortgage_debt
@@ -1222,7 +1229,10 @@ validation_checks:
 - check_id: CHK08_cd13f_binary
   anomaly_ref: A-13
   description: ''
-  type: cd13f vars 041-053 all non-NA in {0,1}
+  type: value_in_set
+  suffixes: ["041", "042", "043", "044", "045", "046", "047", "048", "049", "050", "051", "052", "053"]
+  allowed_values: [0, 1]
+  in_waves: [cd13f]
   severity: error
 - check_id: CHK09_distribution_boundary
   anomaly_ref: A-03
@@ -1238,7 +1248,10 @@ validation_checks:
 - check_id: CHK10_financial_ref_dup
   anomaly_ref: A-07
   description: ''
-  type: h_financial_ref_year == 2014 for cd15h and cd16i
+  type: value_in_set
+  variables: ["h_financial_ref_year"]
+  allowed_values: [2014]
+  in_waves: [cd15h, cd16i]
   severity: info
 - check_id: CHK11_cd10c_stack_uniqueness
   anomaly_ref: A-09

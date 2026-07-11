@@ -1,0 +1,29 @@
+---
+title: "The Canonical Recipe Schema"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{The Canonical Recipe Schema}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This article renders the packaged schema document
+(`inst/schema/CANONICAL_SCHEMA.md`) at build time, so it can never
+drift from the file the validator actually enforces. The same document
+ships inside every installation:
+
+```{r, eval = FALSE}
+system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
+```
+
+```{r schema-body, echo = FALSE, results = "asis"}
+schema_path <- system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
+schema <- readLines(schema_path, warn = FALSE)
+# demote headings one level so the vignette title stays the only h1
+schema <- sub("^#", "##", schema)
+cat(schema, sep = "\n")
+```

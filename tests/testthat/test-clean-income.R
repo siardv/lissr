@@ -208,7 +208,7 @@ test_that("overrides toggle rules, merge params, and are recorded", {
   expect_identical(d06$params$volatility_min, 0.7)
   expect_true(any(grepl("income_cap = 175000", rs2$meta$overrides)))
   expect_error(lissr:::apply_ruleset_overrides(rs, disable = "Z99"),
-               "unknown rule id")
+               "unknown\\s+rule\\s+id")
 })
 
 # ---- engine: one scenario per rule ---------------------------------------------
@@ -429,7 +429,7 @@ test_that("cleaning is deterministic and row-order independent within households
 test_that("re-cleaning is guarded, and a stripped re-run reaches a steady state", {
   fix <- make_income_fixture()
   res <- clean_quiet(fix)
-  expect_error(clean_quiet(res$data), "cleaned already")
+  expect_error(clean_quiet(res$data), "cleaned\\s+already")
 
   stripped <- res$data
   stripped$nethh_observed <- NULL
@@ -565,7 +565,7 @@ test_that("liss_equivalise_income matches the manual scale and warns on bad comp
                30000 / ((3 - 1 + 0.8 * 1)^0.5))
   expect_warning(
     out <- lissr::liss_equivalise_income(c(30000, 30000), c(3, 0), c(1, 0)),
-    "invalid household composition"
+    "invalid\\s+household\\s+composition"
   )
   expect_true(is.na(out[2]))
 })

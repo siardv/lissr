@@ -9,7 +9,7 @@ liss_login(username = NULL)
 \arguments{
 \item{username}{character or numeric. the LISS archive username (typically
 a 5-digit number). if \code{NULL} (the default), looks up saved credentials
-via \code{\link[keyring:key_list]{keyring::key_list()}}. when exactly one set of credentials is stored,
+via \code{\link[keyring:key_get]{keyring::key_list()}}. when exactly one set of credentials is stored,
 that username is used automatically. if no credentials are saved, prompts
 interactively for username and password.}
 }

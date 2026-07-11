@@ -22,13 +22,6 @@
 #' }
 liss_store_credentials <- function(username, password = NULL) {
   username <- as.character(username)
-  if (!requireNamespace("keyring", quietly = TRUE)) {
-    stop(
-      "The 'keyring' package is required to store credentials securely.\n",
-      "Install it with: install.packages(\"keyring\")",
-      call. = FALSE
-    )
-  }
 
   if (is.null(password)) {
     # interactive prompt — password never visible in console history
@@ -59,13 +52,6 @@ liss_store_credentials <- function(username, password = NULL) {
 #' }
 liss_delete_credentials <- function(username) {
   username <- as.character(username)
-  if (!requireNamespace("keyring", quietly = TRUE)) {
-    stop(
-      "The 'keyring' package is required to manage credentials.\n",
-      "Install it with: install.packages(\"keyring\")",
-      call. = FALSE
-    )
-  }
   keyring::key_delete("LISS_Data_Archive", username = username)
   cli::cli_alert_success("Credentials deleted for {.val {username}}.")
   invisible(TRUE)
@@ -82,12 +68,5 @@ liss_delete_credentials <- function(username) {
 #' liss_list_credentials()
 #' }
 liss_list_credentials <- function() {
-  if (!requireNamespace("keyring", quietly = TRUE)) {
-    stop(
-      "The 'keyring' package is required to manage credentials.\n",
-      "Install it with: install.packages(\"keyring\")",
-      call. = FALSE
-    )
-  }
   keyring::key_list("LISS_Data_Archive")
 }

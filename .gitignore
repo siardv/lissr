@@ -25,3 +25,7 @@ income/
 
 # local pkgdown builds (the site is deployed from gh-pages)
 /docs/
+
+v1.4/
+INCOME_CLEANING_DESIGN.md
+INCOME_CLEANING_PATCH_NOTES.md
