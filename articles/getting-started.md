@@ -1,0 +1,52 @@
+# Getting Started with lissr
+
+## Prerequisites
+
+You need a registered account at the [LISS Data
+Archive](https://www.dataarchive.lissdata.nl/).
+
+## Store credentials
+
+Store your username and password in the system keyring so lissr can
+retrieve them automatically. The password is never saved in plain text
+or in your R history.
+
+``` r
+
+library(lissr)
+liss_store_credentials("1234")
+```
+
+## Log in
+
+``` r
+
+liss_login()
+```
+
+You will be prompted for a two-factor verification code sent to your
+email.
+
+## Browse modules
+
+``` r
+
+liss_modules()
+liss_wave_matrix()
+```
+
+## Select and download
+
+``` r
+
+selection <- liss_select()
+liss_download(selection)
+```
+
+## Next steps
+
+See [Merging LISS Panel
+Data](https://siardv.github.io/lissr/articles/merge-workflow.md) for
+merging longitudinal data. *(or run
+[`vignette("merge-workflow", package = "lissr")`](https://siardv.github.io/lissr/articles/merge-workflow.md)
+in the console)*

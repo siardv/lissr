@@ -1,0 +1,184 @@
+# Income Cleaning
+
+## Why clean income at all
+
+Self-reported household income in the LISS panel contains a familiar
+family of artefacts: misplaced decimal points, monthly amounts entered
+in an annual field, personal income entered in the household field,
+placeholder values, sign errors, and residual SPSS missing codes. Left
+in place, a single misplaced zero moves a household across every income
+bracket an analysis uses.
+
+[`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)
+turns the cleaning procedures that used to live in ad hoc analysis
+scripts into a rule-driven, fully audited stage of the lissr pipeline.
+Every decision rule is declared in a YAML ruleset, every applied
+decision lands in a ledger with its evidence and a plain-language
+justification, the original values stay in the returned data, and a
+generated report lets any reader reconstruct and contest each
+modification.
+
+## The ruleset
+
+The default ruleset ships with the package and is the single source of
+truth for what the cleaner may do:
+
+``` r
+
+library(lissr)
+
+rs <- liss_cleaning_ruleset()
+print(rs)
+
+system.file("cleaning", "income_cleaning_rules.yml", package = "lissr")
+```
+
+Rules are grouped into four sections. Preparation rules (P01 to P06)
+resolve columns, attach background demographics, expand bracket codes,
+rectify sign errors, and sweep residual SPSS missing codes. Detection
+rules (D01 to D11) identify implausible cells, from unrecoverable
+placeholder values through household-level scale errors and robust
+statistical outliers to dataset-level extremes. Correction rules (C01 to
+C06) generate candidate replacement values. The finalization rule (F01)
+voids anything still outside the plausible range. Each rule carries an
+id, a description, a rationale, optional literature references,
+parameters, and an `enabled` switch.
+
+## Quick start: dry run first, then correct
+
+The cleaner operates on merged module output. A dry run in `"flag"` mode
+performs the full procedure without touching a single value; the
+simulated result arrives in `nethh_proposed` and every would-be decision
+in the ledger:
+
+``` r
+
+result <- merge_liss_module(liss_recipe("ci"), data_dir = "data/ci",
+                            output_dir = "output/ci")
+
+dry <- liss_clean_income(result, mode = "flag")
+
+head(dry$decisions)
+summary(dry)
+```
+
+Once the proposals look right, run in the default `"correct"` mode and
+write the audit artifacts:
+
+``` r
+
+cleaned <- liss_clean_income(result, output_dir = "output/ci")
+
+cleaned$data$nethh          # cleaned values
+cleaned$data$nethh_observed # untouched input, always preserved
+table(cleaned$data$nethh_clean_status, useNA = "ifany")
+```
+
+A third mode, `"na_only"`, voids detected cells without imputing
+anything, for analyses that prefer missingness over model-based
+corrections.
+
+## Reading a decision
+
+Every modified cell has at least one ledger row. A scale-error
+correction looks like this:
+
+``` r
+
+d <- cleaned$decisions
+d[d$rule_id == "D06", c("person_id", "wave", "observed", "corrected",
+                        "candidate_source", "evidence")]
+
+# the justification column carries the full sentence, for example:
+# "detected by scale_error; replaced with the household_median candidate
+#  25800 (closest of 4 admissible candidate(s) to the household_median
+#  25800; constrained to [8000, 150000])"
+```
+
+The `candidates` column lists every admissible candidate the selection
+saw, so a reader can verify that the applied value was the closest to
+the anchor, and the `valid_min`/`valid_max` columns show the constraint
+window (category bounds where reported, global limits otherwise).
+
+## The report
+
+[`liss_cleaning_report()`](https://siardv.github.io/lissr/reference/liss_cleaning_report.md)
+renders three artifacts: a markdown report whose methodology section is
+generated from the ruleset itself (every rule with its description,
+rationale, parameters, and references), the complete decision ledger as
+CSV, and an engine-shaped JSONL audit log:
+
+``` r
+
+liss_cleaning_report(cleaned, output_dir = "output/ci")
+```
+
+Because the methodology is generated from the ruleset that actually ran,
+the report can never drift from the code.
+
+## Disagreeing with a rule
+
+Every rule can be switched off or re-parameterised per run, and the
+overrides are recorded in the report:
+
+``` r
+
+# a stricter volatility requirement for scale-error detection,
+# no extreme-z net, and a higher plausibility cap
+cleaned2 <- liss_clean_income(
+  result,
+  income_cap = 175000,
+  disable = c("D10"),
+  params = list(D06 = list(volatility_min = 0.7))
+)
+```
+
+For a lasting policy, copy the packaged YAML, edit it, and pass the
+path;
+[`validate_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/validate_cleaning_ruleset.md)
+enforces the schema:
+
+``` r
+
+cleaned3 <- liss_clean_income(result, ruleset = "my_income_rules.yml")
+```
+
+## Attaching background demographics
+
+Donor-pool matching (correction rule C05) works best with household
+size, position, occupation, age, and education attached. Rule P01 aligns
+a monthly background file to the annual wave scale, keeps one row per
+person-year, and joins on the person id, never on the household id:
+
+``` r
+
+background <- haven::read_sav("data/avars_201801_EN_1.0p.sav")
+cleaned <- liss_clean_income(result, background = background)
+```
+
+## Equivalised income
+
+For cross-household comparison,
+[`liss_equivalise_income()`](https://siardv.github.io/lissr/reference/liss_equivalise_income.md)
+provides the scale the source analysis pipelines used, alongside the
+OECD-modified and square-root alternatives:
+
+``` r
+
+library(magrittr)
+
+panel <- cleaned$data %>%
+  dplyr::mutate(
+    stand_inc = liss_equivalise_income(nethh, aantalhh, aantalki)
+  )
+```
+
+## Where the rules came from
+
+The ruleset consolidates the income-cleaning procedures of two
+production analysis projects and corrects several latent defects found
+while porting them; `INCOME_CLEANING_DESIGN.md` in the repository maps
+every legacy construct to its rule, documents each deviation, and
+describes how to propose new rules or parameter changes through pull
+requests, so the methodology can improve under community review while
+the audit trail keeps every historical run reproducible.
