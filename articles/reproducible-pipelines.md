@@ -133,7 +133,7 @@ summary$total_rows
 summary$total_cols
 #> [1] 265
 summary$total_waves
-#> [1] 17
+#> [1] 18
 ```
 
 ### The text report
@@ -165,7 +165,10 @@ golden <- list(
   wave_ids           = sort(unique(merged$wave_id)),
   wave_row_counts    = as.list(table(merged$wave_id)),
   na_rates           = lapply(merged, \(x) round(mean(is.na(x)), 4)),
-  column_types       = vapply(merged, \(x) class(x)[1], character(1))
+  column_types       = vapply(merged, \(x) class(x)[1], character(1)),
+  # from the merge result: pin the recipe version and the quality verdict
+  recipe_version     = result$provenance$recipe_version,
+  valid_for_analysis = result$valid_for_analysis
 )
 
 jsonlite::write_json(golden, "golden/ch_golden.json",
@@ -230,8 +233,8 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
       - name: Install lissr
         run: |
-          install.packages("remotes")
-          remotes::install_local(".")
+          install.packages(c("remotes", "yaml"))
+          remotes::install_github("siardv/lissr")
         shell: Rscript {0}
       - name: Validate recipes
         run: |
@@ -279,13 +282,14 @@ have `comparability` contracts with explicit rationales.
 
 For a paper’s methods section, a minimal reference looks like:
 
-> Data were merged using the lissr R package (v1.0.0) with recipe
-> `ch_custom.yml` (recipe version 1.0.0, schema version 1.0.0). Sentinel
+> Data were merged using the lissr R package (v1.4.0) with recipe
+> `ch_custom.yml` (recipe version 1.0.0, schema version 1.1.0). Sentinel
 > codes were recoded to NA per rules H01–H03. Self-rated health items
-> (suffix 001) were pooled across all 17 waves; e-cigarette items
-> (suffixes 265–267) were restricted to waves ch15h–ch24q per
-> comparability contract B03 (method = no_pool). The merge log and
-> recipe file are included in the replication package.
+> (suffix 001) were pooled across all 18 waves; e-cigarette items
+> (suffixes 265–267) were restricted to waves ch15h–ch25r, where the
+> block was fielded (boundary rule B08). The merge log and recipe file
+> are included in the replication package; the report’s provenance block
+> records the input file md5 hashes and the valid_for_analysis verdict.
 
 ## Assembling a replication package
 

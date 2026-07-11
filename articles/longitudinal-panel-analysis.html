@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -75,7 +76,7 @@
       <h1>Longitudinal Panel Analysis</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/vignettes/longitudinal-panel-analysis.Rmd" class="external-link"><code>vignettes/longitudinal-panel-analysis.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/vignettes/longitudinal-panel-analysis.Rmd" class="external-link"><code>vignettes/longitudinal-panel-analysis.Rmd</code></a></small>
       <div class="d-none name"><code>longitudinal-panel-analysis.Rmd</code></div>
     </div>
 
@@ -140,13 +141,13 @@ automatically.</p>
 <span></span>
 <span><span class="co"># the stacked panel has one row per person-wave</span></span>
 <span><span class="va">panel</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">wave_id</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span>n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 17 × 2</span></span>
+<span><span class="co">#&gt; # A tibble: 18 × 2</span></span>
 <span><span class="co">#&gt;    wave_id     n</span></span>
 <span><span class="co">#&gt;    &lt;chr&gt;   &lt;int&gt;</span></span>
 <span><span class="co">#&gt;  1 ch07a    6871</span></span>
 <span><span class="co">#&gt;  2 ch08b    6386</span></span>
 <span><span class="co">#&gt;  3 ch09c    6222</span></span>
-<span><span class="co">#&gt;  ...</span></span></code></pre></div>
+<span><span class="co">#&gt;  ...  (18 waves, ch07a through ch25r; counts are illustrative)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="step-3-understand-the-panel-structure">Step 3 — understand the panel structure<a class="anchor" aria-label="anchor" href="#step-3-understand-the-panel-structure"></a>
@@ -160,18 +161,18 @@ automatically.</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">nomem_encr</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>n_waves <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/n_distinct.html" class="external-link">n_distinct</a></span><span class="op">(</span><span class="va">wave_id</span><span class="op">)</span>, .groups <span class="op">=</span> <span class="st">"drop"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># distribution of participation</span></span>
+<span><span class="co"># distribution of participation (illustrative counts)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">participation</span><span class="op">$</span><span class="va">n_waves</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17</span></span>
-<span><span class="co">#&gt; 1842  801  602  489  431  378  354  307  301  285  284  300  343  388  482  723 2391</span></span>
+<span><span class="co">#&gt;    1    2    3   ...   16   17   18</span></span>
+<span><span class="co">#&gt; 1842  801  602   ...  482  723 2103</span></span>
 <span></span>
-<span><span class="co"># balanced sub-panel: respondents present in all 17 waves</span></span>
+<span><span class="co"># balanced sub-panel: respondents present in all 18 waves</span></span>
 <span><span class="va">balanced_ids</span> <span class="op">&lt;-</span> <span class="va">participation</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">n_waves</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">n_waves</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/pull.html" class="external-link">pull</a></span><span class="op">(</span><span class="va">nomem_encr</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">balanced_ids</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 2391</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2103</span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="attrition-diagnostics">Attrition diagnostics<a class="anchor" aria-label="anchor" href="#attrition-diagnostics"></a>
@@ -182,7 +183,7 @@ upward.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># tag respondents who appear in wave 1 but not in the final wave</span></span>
 <span><span class="va">first_wave</span> <span class="op">&lt;-</span> <span class="st">"ch07a"</span></span>
-<span><span class="va">last_wave</span>  <span class="op">&lt;-</span> <span class="st">"ch24q"</span></span>
+<span><span class="va">last_wave</span>  <span class="op">&lt;-</span> <span class="st">"ch25r"</span></span>
 <span></span>
 <span><span class="va">baseline</span> <span class="op">&lt;-</span> <span class="va">panel</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">wave_id</span> <span class="op">==</span> <span class="va">first_wave</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -192,19 +193,20 @@ upward.</p>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="co"># compare baseline self-rated health between survivors and attriters</span></span>
+<span><span class="co"># (age is not a survey-module column; attach it from the Background</span></span>
+<span><span class="co"># Variables file if you need it in this comparison)</span></span>
 <span><span class="va">baseline</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">survived</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
 <span>    n         <span class="op">=</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>    mean_srh  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">s001</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
-<span>    mean_age  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">s002</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>    .groups   <span class="op">=</span> <span class="st">"drop"</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 2 × 4</span></span>
-<span><span class="co">#&gt;   survived     n mean_srh mean_age</span></span>
-<span><span class="co">#&gt;   &lt;lgl&gt;    &lt;int&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 FALSE     4480     3.08     48.5</span></span>
-<span><span class="co">#&gt; 2 TRUE      2391     3.25     43.2</span></span></code></pre></div>
+<span><span class="co">#&gt; # A tibble: 2 × 3</span></span>
+<span><span class="co">#&gt;   survived     n mean_srh</span></span>
+<span><span class="co">#&gt;   &lt;lgl&gt;    &lt;int&gt;    &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 FALSE     4480     3.08</span></span>
+<span><span class="co">#&gt; 2 TRUE      2103     3.25</span></span></code></pre></div>
 <p>If baseline health is significantly different between groups,
 consider inverse-probability weighting or Heckman selection models.</p>
 </div>
@@ -218,10 +220,13 @@ for panel data.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lrberge.github.io/fixest/" class="external-link">fixest</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># self-rated health (s001) regressed on a time-varying predictor</span></span>
-<span><span class="co"># e.g. BMI (s038) with person and year fixed effects</span></span>
+<span><span class="co"># self-rated health (s001) regressed on a time-varying predictor with</span></span>
+<span><span class="co"># person and year fixed effects. pick the predictor from your module's</span></span>
+<span><span class="co"># codebook and use its harmonised suffix; `x_var` is a placeholder</span></span>
+<span><span class="va">panel</span> <span class="op">&lt;-</span> <span class="va">panel</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>x_var <span class="op">=</span> <span class="va">s004</span><span class="op">)</span>  <span class="co"># replace s004 with your item</span></span>
+<span></span>
 <span><span class="va">fe_model</span> <span class="op">&lt;-</span> <span class="fu">fixest</span><span class="fu">::</span><span class="fu"><a href="https://lrberge.github.io/fixest/reference/feols.html" class="external-link">feols</a></span><span class="op">(</span></span>
-<span>  <span class="va">s001</span> <span class="op">~</span> <span class="va">s038</span> <span class="op">|</span> <span class="va">nomem_encr</span> <span class="op">+</span> <span class="va">wave_year</span>,</span>
+<span>  <span class="va">s001</span> <span class="op">~</span> <span class="va">x_var</span> <span class="op">|</span> <span class="va">nomem_encr</span> <span class="op">+</span> <span class="va">wave_year</span>,</span>
 <span>  data <span class="op">=</span> <span class="va">panel</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -229,19 +234,26 @@ for panel data.</p>
 <div class="section level3">
 <h3 id="handling-boundary-breaks">Handling boundary breaks<a class="anchor" aria-label="anchor" href="#handling-boundary-breaks"></a>
 </h3>
-<p>The Health module changed the e-cigarette question block at wave
-ch15h. The recipe creates a period flag; you should respect it.</p>
+<p>The Health recipe declares boundary rules where the instrument
+changed: for example, the e-cigarette and dental-hygienist items
+(suffixes 265-267) only exist from ch15h onward, and item 020 was
+reworded at ch24q. Each rule materialises a flag column; you should
+respect them.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># inspect boundary flags created by the merge engine</span></span>
-<span><span class="va">flag_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"_flag$|_period$|_era$"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">panel</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">flag_cols</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"_flag$|_period$|_era$|_present$"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">panel</span><span class="op">)</span>,</span>
+<span>                  value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">flag_cols</span></span>
-<span><span class="co">#&gt; [1] "ecig_era_flag"  "work_capacity_period"</span></span>
+<span><span class="co">#&gt; [1] "cancer_definition_era"        "alzheimer_definition_era"</span></span>
+<span><span class="co">#&gt; [3] "ch_hca_items_present"         "ch_ecig_dental_items_present"</span></span>
+<span><span class="co">#&gt; [5] "ch_years_not_working_present" "ch_covid_n2o_items_present"</span></span>
+<span><span class="co">#&gt; [7] "ch_menopause_module_present"  "s020_wording_period"</span></span>
 <span></span>
-<span><span class="co"># if your analysis touches e-cigarette variables, restrict to waves</span></span>
-<span><span class="co"># on one side of the boundary — or include the era flag as a control</span></span>
+<span><span class="co"># if your analysis touches the e-cigarette items, restrict to waves</span></span>
+<span><span class="co"># where the block was fielded — or include the flag as a control</span></span>
 <span><span class="va">panel</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">ecig_era_flag</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">ecig_era_flag</span>, <span class="va">wave_year</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">ch_ecig_dental_items_present</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">wave_year</span><span class="op">)</span></span></code></pre></div>
 <p>The merge report (<code>output/ch_merge_report.txt</code>) lists
 every comparability contract and its recommended pooling strategy. Check
 it before deciding to pool across eras.</p>
@@ -254,10 +266,15 @@ it before deciding to pool across eras.</p>
 designs. For example, suppose a policy change affected a subset of
 respondents in 2016. You can estimate dynamic treatment effects:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># define treatment: respondents living in province X at baseline</span></span>
-<span><span class="co"># (you would attach this from background variables)</span></span>
+<code class="sourceCode R"><span><span class="co"># define treatment: respondents exposed to the policy, identified from</span></span>
+<span><span class="co"># a baseline covariate you attach (for example province of residence</span></span>
+<span><span class="co"># from the Background Variables file). `treated_ids` is your design's</span></span>
+<span><span class="co"># treatment group</span></span>
+<span><span class="va">treated_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span> <span class="op">)</span>  <span class="co"># fill from your design</span></span>
+<span></span>
 <span><span class="va">panel</span> <span class="op">&lt;-</span> <span class="va">panel</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    treated  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">nomem_encr</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">treated_ids</span><span class="op">)</span>,</span>
 <span>    post     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">wave_year</span> <span class="op">&gt;=</span> <span class="fl">2016</span><span class="op">)</span>,</span>
 <span>    rel_year <span class="op">=</span> <span class="va">wave_year</span> <span class="op">-</span> <span class="fl">2016</span></span>
 <span>  <span class="op">)</span></span>
@@ -293,13 +310,13 @@ directly into <code>lme4</code>:</p>
 <div class="section level2">
 <h2 id="working-with-a-wave-subset">Working with a wave subset<a class="anchor" aria-label="anchor" href="#working-with-a-wave-subset"></a>
 </h2>
-<p>Sometimes you only need a window of waves — for instance, the five
-years around a policy change. Rather than merging all 17 waves, trim the
+<p>Sometimes you only need a window of waves — for instance, the years
+around a policy change. Rather than merging all 18 waves, trim the
 recipe before merging:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">recipe</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ch"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># keep only 2014–2018</span></span>
+<span><span class="co"># keep only 2015-2018 (ch skipped 2014; there is no ch14 wave)</span></span>
 <span><span class="va">target_waves</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch15h"</span>, <span class="st">"ch16i"</span>, <span class="st">"ch17j"</span>, <span class="st">"ch18k"</span><span class="op">)</span></span>
 <span><span class="va">recipe</span><span class="op">$</span><span class="va">wave_index</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/keep.html" class="external-link">keep</a></span><span class="op">(</span></span>
 <span>  <span class="va">recipe</span><span class="op">$</span><span class="va">wave_index</span>,</span>

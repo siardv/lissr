@@ -2,6 +2,7 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
+  canonical-schema: canonical-schema.html
   cross-sectional-analysis: cross-sectional-analysis.html
   custom-recipes: custom-recipes.html
   getting-started: getting-started.html
@@ -10,7 +11,7 @@ articles:
   merge-workflow: merge-workflow.html
   multi-module-linkage: multi-module-linkage.html
   reproducible-pipelines: reproducible-pipelines.html
-last_built: 2026-07-11T19:04Z
+last_built: 2026-07-11T21:09Z
 urls:
   reference: https://siardv.github.io/lissr/reference
   article: https://siardv.github.io/lissr/articles

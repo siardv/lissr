@@ -40,9 +40,11 @@ rules (D01 to D11) identify implausible cells, from unrecoverable
 placeholder values through household-level scale errors and robust
 statistical outliers to dataset-level extremes. Correction rules (C01 to
 C06) generate candidate replacement values. The finalization rule (F01)
-voids anything still outside the plausible range. Each rule carries an
-id, a description, a rationale, optional literature references,
-parameters, and an `enabled` switch.
+handles anything still outside the plausible range according to its
+`disposition`: `void` (the default) sets such values to NA, `winsorise`
+clamps over-cap values to the cap, and `flag` only ledgers them. Each
+rule carries an id, a description, a rationale, optional literature
+references, parameters, and an `enabled` switch.
 
 ## Quick start: dry run first, then correct
 
@@ -172,6 +174,11 @@ panel <- cleaned$data %>%
     stand_inc = liss_equivalise_income(nethh, aantalhh, aantalki)
   )
 ```
+
+One definitional caveat for the OECD-modified scale: it defines children
+as household members under 14, while `aantalki` counts children living
+at home of any age, so passing `aantalki` approximates that scale; see
+[`?liss_equivalise_income`](https://siardv.github.io/lissr/reference/liss_equivalise_income.md).
 
 ## Where the rules came from
 

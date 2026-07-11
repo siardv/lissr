@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -49,6 +49,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
@@ -75,7 +76,7 @@
       <h1>Multi-Module Linkage</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/vignettes/multi-module-linkage.Rmd" class="external-link"><code>vignettes/multi-module-linkage.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/vignettes/multi-module-linkage.Rmd" class="external-link"><code>vignettes/multi-module-linkage.Rmd</code></a></small>
       <div class="d-none name"><code>multi-module-linkage.Rmd</code></div>
     </div>
 
@@ -106,13 +107,13 @@ person-wave level.</p>
 <div class="section level2">
 <h2 id="architecture-of-a-multi-module-analysis">Architecture of a multi-module analysis<a class="anchor" aria-label="anchor" href="#architecture-of-a-multi-module-analysis"></a>
 </h2>
-<pre><code>Background Variables (CA) ──── demographics, income, education
+<pre><code>Background Variables (avars, monthly) ── demographics, income, education
           │
-          ├── Health (CH) ──── self-rated health, BMI, smoking
+          ├── Health (ch) ──── self-rated health, smoking
           │
-          ├── Income (CI) ──── employment status, labour income
+          ├── Income (ci) ──── employment status, labour income
           │
-          └── Politics (CV) ── voting, political trust</code></pre>
+          └── Politics (cv) ── voting, political trust</code></pre>
 <p>Each module is merged independently using its own recipe (different
 sentinel codes, different boundary rules, different variable numbering),
 then the cleaned outputs are joined on <code>nomem_encr</code> +
@@ -128,12 +129,16 @@ then the cleaned outputs are joined on <code>nomem_encr</code> +
 <span></span>
 <span><span class="fu"><a href="../reference/liss_login.html">liss_login</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># download all waves for three modules</span></span>
+<span><span class="co"># download all waves for three modules. map each module code to a</span></span>
+<span><span class="co"># distinctive fragment of its archive display name; matching by</span></span>
+<span><span class="co"># fragment is robust to small display-name changes, and the code (not</span></span>
+<span><span class="co"># the display name) names the directory the recipes expect</span></span>
 <span><span class="va">bp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_blueprint.html">liss_blueprint</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="kw">for</span> <span class="op">(</span><span class="va">mod</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Health"</span>, <span class="st">"Economic Integration: Income"</span>, <span class="st">"Politics and Values"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">files</span> <span class="op">&lt;-</span> <span class="va">bp</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">module</span> <span class="op">==</span> <span class="va">mod</span>, <span class="va">type</span> <span class="op">==</span> <span class="st">"spss"</span><span class="op">)</span></span>
-<span>  <span class="va">mod_dir</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="fu"><a href="https://rdrr.io/r/base/chartr.html" class="external-link">tolower</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/substr.html" class="external-link">substr</a></span><span class="op">(</span><span class="va">mod</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">files</span>, .dir <span class="op">=</span> <span class="va">mod_dir</span><span class="op">)</span></span>
+<span><span class="va">mods</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>ch <span class="op">=</span> <span class="st">"Health"</span>, ci <span class="op">=</span> <span class="st">"Income"</span>, cv <span class="op">=</span> <span class="st">"Politics"</span><span class="op">)</span></span>
+<span><span class="kw">for</span> <span class="op">(</span><span class="va">code</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">mods</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">files</span> <span class="op">&lt;-</span> <span class="va">bp</span> <span class="op">|&gt;</span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="va">mods</span><span class="op">[[</span><span class="va">code</span><span class="op">]</span><span class="op">]</span>, <span class="va">module</span>, ignore.case <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="va">type</span> <span class="op">==</span> <span class="st">"spss"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">files</span>, .dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="va">code</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co"># merge each module with its own recipe</span></span>
@@ -162,19 +167,18 @@ of columns. For a focused analysis, select only the variables you need
 before joining — this keeps the linked dataset manageable and avoids
 column-name collisions.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># health: self-rated health (s001) and BMI (s038)</span></span>
+<code class="sourceCode R"><span><span class="co"># the suffixes below are illustrative; the same suffix means different</span></span>
+<span><span class="co"># things in different modules, so confirm each one against the module</span></span>
+<span><span class="co"># codebook or the merge report before analysis</span></span>
 <span><span class="va">health</span> <span class="op">&lt;-</span> <span class="va">results</span><span class="op">$</span><span class="va">ch</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">nomem_encr</span>, <span class="va">wave_year</span>,</span>
-<span>         srh <span class="op">=</span> <span class="va">s001</span>,</span>
-<span>         bmi <span class="op">=</span> <span class="va">s038</span><span class="op">)</span></span>
+<span>         srh <span class="op">=</span> <span class="va">s001</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># income: main employment status (s001 in CI = net personal income)</span></span>
 <span><span class="va">income</span> <span class="op">&lt;-</span> <span class="va">results</span><span class="op">$</span><span class="va">ci</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">nomem_encr</span>, <span class="va">wave_year</span>,</span>
 <span>         net_income <span class="op">=</span> <span class="va">s001</span>,</span>
 <span>         employed   <span class="op">=</span> <span class="va">s006</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># politics: voted in last election (s012 in CV)</span></span>
 <span><span class="va">politics</span> <span class="op">&lt;-</span> <span class="va">results</span><span class="op">$</span><span class="va">cv</span><span class="op">$</span><span class="va">data</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">nomem_encr</span>, <span class="va">wave_year</span>,</span>
 <span>         voted_last_election <span class="op">=</span> <span class="va">s012</span>,</span>
@@ -184,24 +188,24 @@ column-name collisions.</p>
 <h2 id="step-3-align-wave-years">Step 3 — align wave years<a class="anchor" aria-label="anchor" href="#step-3-align-wave-years"></a>
 </h2>
 <p>Not all modules are fielded in exactly the same year. The Health
-module skipped 2014 (there is no ch14 wave); the Work module has 15
-waves while Health has 17. When joining on <code>wave_year</code>, you
-get <code>NA</code> in modules that did not have a wave that year. This
-is expected, not an error.</p>
+module skipped 2014 (there is no ch14 wave) and Politics and Values
+skipped 2015; the Work module has 15 waves while Health has 18. When
+joining on <code>wave_year</code>, you get <code>NA</code> in modules
+that did not have a wave that year. This is expected, not an error.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># which years does each module cover?</span></span>
 <span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">results</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">.x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">wave_year</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $ch</span></span>
 <span><span class="co">#&gt;  [1] 2007 2008 2009 2010 2011 2012 2013 2015 2016 2017 2018 2019 2020 2021</span></span>
-<span><span class="co">#&gt;      2022 2023 2024</span></span>
+<span><span class="co">#&gt;      2022 2023 2024 2025</span></span>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; $ci</span></span>
-<span><span class="co">#&gt;  [1] 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020</span></span>
-<span><span class="co">#&gt;      2021 2022 2023 2024</span></span>
+<span><span class="co">#&gt;  [1] 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021</span></span>
+<span><span class="co">#&gt;      2022 2023 2024 2025</span></span>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt; $cv</span></span>
-<span><span class="co">#&gt;  [1] 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021</span></span>
-<span><span class="co">#&gt;      2022 2023 2024</span></span>
+<span><span class="co">#&gt;  [1] 2008 2009 2010 2011 2012 2013 2014 2016 2017 2018 2019 2020 2021 2022</span></span>
+<span><span class="co">#&gt;      2023 2024 2025 2026</span></span>
 <span></span>
 <span><span class="co"># find the overlapping years</span></span>
 <span><span class="va">common_years</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Reduce</a></span><span class="op">(</span></span>
@@ -209,8 +213,8 @@ is expected, not an error.</p>
 <span>  <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">results</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">.x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">wave_year</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">common_years</span></span>
-<span><span class="co">#&gt; [1] 2008 2009 2010 2011 2012 2013 2015 2016 2017 2018 2019 2020 2021 2022</span></span>
-<span><span class="co">#&gt;     2023 2024</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 2008 2009 2010 2011 2012 2013 2016 2017 2018 2019 2020 2021 2022 2023</span></span>
+<span><span class="co">#&gt;     2024 2025</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="step-4-join-modules">Step 4 — join modules<a class="anchor" aria-label="anchor" href="#step-4-join-modules"></a>
@@ -310,12 +314,12 @@ module.</li>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="scaling-to-all-eight-modules">Scaling to all eight modules<a class="anchor" aria-label="anchor" href="#scaling-to-all-eight-modules"></a>
+<h2 id="scaling-to-all-ten-modules">Scaling to all ten modules<a class="anchor" aria-label="anchor" href="#scaling-to-all-ten-modules"></a>
 </h2>
 <p>If you need variables from every module, the batch merge handles
 it:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">all_modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch"</span>, <span class="st">"cv"</span>, <span class="st">"cd"</span>, <span class="st">"cf"</span>, <span class="st">"cw"</span>, <span class="st">"cp"</span>, <span class="st">"cs"</span>, <span class="st">"ci"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">all_modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch"</span>, <span class="st">"cv"</span>, <span class="st">"cd"</span>, <span class="st">"cf"</span>, <span class="st">"cw"</span>, <span class="st">"cp"</span>, <span class="st">"cs"</span>, <span class="st">"ci"</span>, <span class="st">"ca"</span>, <span class="st">"cr"</span><span class="op">)</span></span>
 <span><span class="va">recipe_paths</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_chr</a></span><span class="op">(</span><span class="va">all_modules</span>, <span class="op">~</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"recipes"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">.x</span>, <span class="st">"_merge_recipe.yml"</span><span class="op">)</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>

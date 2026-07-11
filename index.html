@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -51,6 +51,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
@@ -85,6 +86,7 @@
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
 </h2>
+<p>Credentials are stored in the operating system’s keyring (macOS Keychain, Windows Credential Store, or Linux Secret Service); the <code>keyring</code> package is a dependency and installs with lissr.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://siardv.github.io/lissr/">lissr</a></span><span class="op">)</span></span>
 <span></span>
@@ -135,26 +137,33 @@
 <li>
 <a href="https://siardv.github.io/lissr/articles/custom-recipes.html">Custom Merge Recipes</a>: writing or adapting a YAML recipe against the canonical schema.</li>
 <li>
+<a href="https://siardv.github.io/lissr/articles/income-cleaning.html">Income Cleaning</a>: rule-driven detection and constrained correction of implausible household-income values, with a full audit ledger.</li>
+<li>
 <a href="https://siardv.github.io/lissr/articles/reproducible-pipelines.html">Reproducible Research Pipelines</a>: structuring the workflow as a reproducible pipeline.</li>
+<li>
+<a href="https://siardv.github.io/lissr/articles/canonical-schema.html">The Canonical Recipe Schema</a>: the authoritative YAML structure every recipe conforms to, rendered from the packaged schema document.</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="merge-system">Merge system<a class="anchor" aria-label="anchor" href="#merge-system"></a>
 </h2>
-<p>The merge engine processes YAML recipes conforming to <code>CANONICAL_SCHEMA.md</code> (v1.0.0). Each recipe encodes every merge-relevant decision for a module: wave file patterns, variable harmonization rules, boundary handling, comparability contracts, and validation checks.</p>
-<p>Built-in recipes are included for all ten core LISS modules: CH (Health), CV (Politics and Values), CD (Housing), CF (Family and Household), CW (Work and Schooling), CP (Personality), CS (Culture and Sports), CI (Economic Integration), CA (Assets), and CR (Religion and Ethnicity).</p>
+<p>The merge engine processes YAML recipes conforming to <code>CANONICAL_SCHEMA.md</code>, schema version 1.1.0 (a strictly additive extension of 1.0.0; recipes may declare either, and each recipe additionally carries its own <code>recipe_version</code>). Each recipe encodes every merge-relevant decision for a module: wave file patterns, variable harmonization rules, boundary handling, comparability contracts, and validation checks.</p>
+<p>Every merged output carries provenance (package, recipe, and schema versions, per-input md5 hashes, release-selection decisions) and an explicit <code>valid_for_analysis</code> verdict, both in the returned object and in the text report. <code><a href="reference/audit_liss_recipes.html">audit_liss_recipes()</a></code> produces a corpus-level conformance report over the bundled recipes, suitable for CI gating.</p>
+<p>Built-in recipes are included for all ten core LISS modules: ch (Health), cv (Politics and Values), cd (Housing), cf (Family and Household), cw (Work and Schooling), cp (Personality), cs (Culture and Sports), ci (Economic Integration: Income), ca (Assets), and cr (Religion and Ethnicity). The Background Variables file (<code>avars</code>) is a separate monthly release, not one of these modules.</p>
 </div>
 <div class="section level2">
 <h2 id="background-variables">Background variables<a class="anchor" aria-label="anchor" href="#background-variables"></a>
 </h2>
 <p>The merge engine covers the ten core study modules above; it does not fetch or attach the LISS Background Variables (the monthly <code>avars</code> file). Demographics such as age, sex, education, income, and household composition live in that separate file, and you join them yourself after merging.</p>
 <p>Two identifier columns are preserved through every merge: <code>nomem_encr</code> (the respondent id, used as the merge key) and <code>nohouse_encr</code> (the encrypted household id). <code>nohouse_encr</code> is present only in early waves of most modules and is dropped later, so for recent waves the household id has to come from the Background Variables file.</p>
-<p>To attach demographics, download the Background Variables file for the same fieldwork month as your merged data, then left-join on <code>nomem_encr</code>:</p>
+<p>To attach demographics, download the Background Variables file for the same fieldwork month as your merged data, then left-join on <code>nomem_encr</code>. Each <code>avars</code> file carries the fieldwork period as a <code>wave</code> column (YYYYMM), so you never need to parse it out of the filename:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the Background Variables file appears as the "Background Variables" module</span></span>
 <span><span class="co"># in liss_select() / the blueprint; download it, then read and join</span></span>
 <span><span class="va">avars</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars/avars_202411_EN_1_0p.sav"</span><span class="op">)</span></span>
+<span><span class="co"># the fieldwork period is in the `wave` column (here: 202411)</span></span>
 <span><span class="va">merged_with_demographics</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">result</span>, <span class="va">avars</span>, by <span class="op">=</span> <span class="st">"nomem_encr"</span><span class="op">)</span></span></code></pre></div>
+<p><code><a href="reference/liss_clean_income.html">liss_clean_income()</a></code> can attach a background frame itself (its <code>P01</code> rule aligns monthly <code>avars</code> waves to the annual scale and reports the join match rate); see the income-cleaning vignette.</p>
 <p>Join on <code>nomem_encr</code> only, never <code>nohouse_encr</code> (the household id is not a stable person-level key and changes when household composition changes), and match the Background Variables fieldwork month to your wave data. The <code>cross-sectional-analysis</code> and <code>multi-module-linkage</code> vignettes show the full workflow.</p>
 </div>
 <div class="section level2">
@@ -162,6 +171,11 @@
 </h2>
 <p>The package has been developed and tested only with SPSS <code>.sav</code> files, which is the default format throughout. The downloader can also fetch Stata <code>.dta</code> files, and the engine includes a read path for them (<code><a href="https://haven.tidyverse.org/reference/read_dta.html" class="external-link">haven::read_dta</a></code>), but <code>.dta</code> input has never been tested. Treat <code>.dta</code> support as experimental: there is no guarantee the merge pipeline produces correct results from <code>.dta</code> sources, so validate any <code>.dta</code>-based output yourself. The engine can also read <code>.csv</code> files via <code>readr</code>.</p>
 <p>A built-in fallback matches a wave file by its <code>wave_id</code> prefix when a recipe’s <code>file_pattern</code> extension does not match the file on disk (for example a recipe written for <code>.sav</code> run against a downloaded <code>.dta</code>). This only locates the file; it does not validate that a non-<code>.sav</code> format is handled correctly downstream.</p>
+<div class="section level3">
+<h3 id="directory-and-naming-contract">Directory and naming contract<a class="anchor" aria-label="anchor" href="#directory-and-naming-contract"></a>
+</h3>
+<p>The engine discovers each wave’s file inside <code>data_dir</code> by the recipe’s <code>file_pattern</code>, which is the canonical <code>{wave_id}_*</code> glob for every bundled recipe (matching archive names such as <code>ch07a_EN_1.0p.sav</code>). Keep one module per directory (for example <code>data/ch/</code>) or pass a flat directory containing only that module’s files. When several files match one wave, the engine ranks release versions, records the decision in the provenance block, and a <code>wave_index</code> entry may pin <code>expected_release</code>; a violated pin invalidates the output and aborts under <code>strict = TRUE</code>.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="validate-recipes-without-merging">Validate recipes without merging<a class="anchor" aria-label="anchor" href="#validate-recipes-without-merging"></a>

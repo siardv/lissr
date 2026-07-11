@@ -6,8 +6,11 @@ by `(adults + child_weight * children)^elasticity`, the scale used by
 the source analysis pipelines; `"oecd_modified"` divides by
 `1 + 0.5 * (adults - 1) + 0.3 * children`; `"sqrt"` divides by the
 square root of household size. Rows with an invalid composition (size
-below one, negative children, or more children than members) yield NA
-and are counted in a warning.
+below one, negative children, or zero adults, since every scale presumes
+at least one adult) yield NA and are counted in a warning.
+`household_size` and `n_children` must have length 1 or the length of
+`income`; other lengths are an error rather than being silently
+recycled.
 
 ## Usage
 
@@ -35,7 +38,8 @@ liss_equivalise_income(
 
 - n_children:
 
-  number of children (LISS `aantalki`).
+  number of children (LISS `aantalki`; see Details for the OECD under-14
+  caveat).
 
 - scale:
 
@@ -56,6 +60,15 @@ liss_equivalise_income(
 ## Value
 
 numeric vector of equivalised income.
+
+## Details
+
+The modified OECD scale defines children as household members under 14,
+whereas the LISS `aantalki` variable counts children living at home of
+any age. Passing `aantalki` therefore approximates the OECD scale by
+treating every at-home child as under 14; when an under-14 count is
+available it should be preferred. The `"weighted_sqrt"` default is
+calibrated to `aantalki` and unaffected.
 
 ## Examples
 

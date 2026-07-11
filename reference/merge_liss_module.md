@@ -7,7 +7,8 @@ outputs (merged SAV, JSONL log, JSON summary, text report).
 ## Usage
 
 ``` r
-merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE)
+merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE,
+  overwrite = TRUE)
 ```
 
 ## Arguments
@@ -29,10 +30,19 @@ merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE)
 - strict:
 
   logical. if `TRUE`, abort before writing any outputs when a validation
-  check with `severity: error` fails; the default `FALSE` preserves the
-  historical report-and-continue behavior.
+  check with `severity: error` fails or cannot be evaluated, or when a
+  wave's selected file violates its `expected_release` pin; the default
+  `FALSE` preserves the historical report-and-continue behavior.
+
+- overwrite:
+
+  logical. if `FALSE`, abort instead of overwriting an existing merged
+  output file. default `TRUE` preserves prior behavior.
 
 ## Value
 
 a list (invisibly) with elements `data`, `log`, `validation`, `summary`,
-and `recipe`.
+`recipe`, `provenance` (package and recipe versions, input file md5
+hashes, release decisions, strictness, timestamp), and
+`valid_for_analysis` (`TRUE` when no error-severity check failed or was
+unevaluable and all release pins matched).

@@ -16,6 +16,10 @@ remotes::install_github("siardv/lissr")
 
 ## Quick start
 
+Credentials are stored in the operating system’s keyring (macOS
+Keychain, Windows Credential Store, or Linux Secret Service); the
+`keyring` package is a dependency and installs with lissr.
+
 ``` r
 
 library(lissr)
@@ -76,22 +80,42 @@ installing:
 - [Custom Merge
   Recipes](https://siardv.github.io/lissr/articles/custom-recipes.html):
   writing or adapting a YAML recipe against the canonical schema.
+- [Income
+  Cleaning](https://siardv.github.io/lissr/articles/income-cleaning.html):
+  rule-driven detection and constrained correction of implausible
+  household-income values, with a full audit ledger.
 - [Reproducible Research
   Pipelines](https://siardv.github.io/lissr/articles/reproducible-pipelines.html):
   structuring the workflow as a reproducible pipeline.
+- [The Canonical Recipe
+  Schema](https://siardv.github.io/lissr/articles/canonical-schema.html):
+  the authoritative YAML structure every recipe conforms to, rendered
+  from the packaged schema document.
 
 ## Merge system
 
 The merge engine processes YAML recipes conforming to
-`CANONICAL_SCHEMA.md` (v1.0.0). Each recipe encodes every merge-relevant
-decision for a module: wave file patterns, variable harmonization rules,
-boundary handling, comparability contracts, and validation checks.
+`CANONICAL_SCHEMA.md`, schema version 1.1.0 (a strictly additive
+extension of 1.0.0; recipes may declare either, and each recipe
+additionally carries its own `recipe_version`). Each recipe encodes
+every merge-relevant decision for a module: wave file patterns, variable
+harmonization rules, boundary handling, comparability contracts, and
+validation checks.
 
-Built-in recipes are included for all ten core LISS modules: CH
-(Health), CV (Politics and Values), CD (Housing), CF (Family and
-Household), CW (Work and Schooling), CP (Personality), CS (Culture and
-Sports), CI (Economic Integration), CA (Assets), and CR (Religion and
-Ethnicity).
+Every merged output carries provenance (package, recipe, and schema
+versions, per-input md5 hashes, release-selection decisions) and an
+explicit `valid_for_analysis` verdict, both in the returned object and
+in the text report.
+[`audit_liss_recipes()`](https://siardv.github.io/lissr/reference/audit_liss_recipes.md)
+produces a corpus-level conformance report over the bundled recipes,
+suitable for CI gating.
+
+Built-in recipes are included for all ten core LISS modules: ch
+(Health), cv (Politics and Values), cd (Housing), cf (Family and
+Household), cw (Work and Schooling), cp (Personality), cs (Culture and
+Sports), ci (Economic Integration: Income), ca (Assets), and cr
+(Religion and Ethnicity). The Background Variables file (`avars`) is a
+separate monthly release, not one of these modules.
 
 ## Background variables
 
@@ -109,15 +133,22 @@ id has to come from the Background Variables file.
 
 To attach demographics, download the Background Variables file for the
 same fieldwork month as your merged data, then left-join on
-`nomem_encr`:
+`nomem_encr`. Each `avars` file carries the fieldwork period as a `wave`
+column (YYYYMM), so you never need to parse it out of the filename:
 
 ``` r
 
 # the Background Variables file appears as the "Background Variables" module
 # in liss_select() / the blueprint; download it, then read and join
 avars <- haven::read_sav("data/avars/avars_202411_EN_1_0p.sav")
+# the fieldwork period is in the `wave` column (here: 202411)
 merged_with_demographics <- dplyr::left_join(result, avars, by = "nomem_encr")
 ```
+
+[`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)
+can attach a background frame itself (its `P01` rule aligns monthly
+`avars` waves to the annual scale and reports the join match rate); see
+the income-cleaning vignette.
 
 Join on `nomem_encr` only, never `nohouse_encr` (the household id is not
 a stable person-level key and changes when household composition
@@ -141,6 +172,17 @@ recipe’s `file_pattern` extension does not match the file on disk (for
 example a recipe written for `.sav` run against a downloaded `.dta`).
 This only locates the file; it does not validate that a non-`.sav`
 format is handled correctly downstream.
+
+### Directory and naming contract
+
+The engine discovers each wave’s file inside `data_dir` by the recipe’s
+`file_pattern`, which is the canonical `{wave_id}_*` glob for every
+bundled recipe (matching archive names such as `ch07a_EN_1.0p.sav`).
+Keep one module per directory (for example `data/ch/`) or pass a flat
+directory containing only that module’s files. When several files match
+one wave, the engine ranks release versions, records the decision in the
+provenance block, and a `wave_index` entry may pin `expected_release`; a
+violated pin invalidates the output and aborts under `strict = TRUE`.
 
 ## Validate recipes without merging
 

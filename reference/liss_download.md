@@ -14,7 +14,10 @@ liss_download(
   .dir = "liss",
   .modules = NULL,
   .waves = NULL,
-  .unzip = TRUE
+  .unzip = TRUE,
+  .skip_existing = FALSE,
+  .timeout = 300,
+  .retries = 2
 )
 ```
 
@@ -44,12 +47,41 @@ liss_download(
 - .unzip:
 
   logical. if `TRUE` (the default), ZIP files are extracted and the
-  archive is removed.
+  archive is removed once extraction is verified; a failed extraction
+  keeps the archive and reports `unzip_failed_archive_kept`.
+
+- .skip_existing:
+
+  logical. if `TRUE`, files whose listed name is already present in
+  `.dir` are skipped without a network request (status
+  `skipped_existing`). the check uses the archive's listed file name,
+  not the name a content-disposition header may assign.
+
+- .timeout:
+
+  numeric. per-file download timeout in seconds.
+
+- .retries:
+
+  integer. how many times a failed request (curl error or HTTP 5xx) is
+  retried before giving up on that file.
 
 ## Value
 
 a tibble of download results with columns `file` and `status`
-(invisibly).
+(invisibly). `status` is one of `"ok"`, `"skipped_existing"`,
+`"session_expired"`, `"skipped_batch_aborted"`, `"http_<code>"`,
+`"unzip_failed_archive_kept"`, or `"error: <message>"`.
+
+## Details
+
+downloads stream to disk through the authenticated session with a
+per-file timeout, and transient failures (network errors, HTTP 5xx) are
+retried. HTTP error responses are never written to disk as data files,
+ZIP archives are only removed after their extraction has been verified,
+and the first session expiry aborts the remaining batch (each remaining
+file is reported as `skipped_batch_aborted` instead of failing one by
+one).
 
 ## Examples
 

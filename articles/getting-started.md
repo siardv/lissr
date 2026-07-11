@@ -7,9 +7,11 @@ Archive](https://www.dataarchive.lissdata.nl/).
 
 ## Store credentials
 
-Store your username and password in the system keyring so lissr can
-retrieve them automatically. The password is never saved in plain text
-or in your R history.
+Store your username and password in the system keyring (macOS Keychain,
+Windows Credential Store, or Linux Secret Service) so lissr can retrieve
+them automatically; the `keyring` package is a dependency and installs
+with lissr. The password is never saved in plain text or in your R
+history.
 
 ``` r
 

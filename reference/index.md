@@ -37,6 +37,8 @@
   : load and validate a canonical YAML merge recipe
 - [`validate_recipe()`](https://siardv.github.io/lissr/reference/validate_recipe.md)
   : validate a merge recipe against the canonical schema
+- [`audit_liss_recipes()`](https://siardv.github.io/lissr/reference/audit_liss_recipes.md)
+  : audit merge recipes for engine conformance
 - [`liss_blueprint()`](https://siardv.github.io/lissr/reference/liss_blueprint.md)
   : build a complete file inventory of the LISS Data Archive
 - [`onboard_new_wave()`](https://siardv.github.io/lissr/reference/onboard_new_wave.md)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -34,6 +34,7 @@
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -49,7 +50,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>TODO and known limitations</h1>
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/TODO.md" class="external-link"><code>TODO.md</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/TODO.md" class="external-link"><code>TODO.md</code></a></small>
     </div>
 
 <div id="todo-and-known-limitations" class="section level1">
@@ -57,26 +58,29 @@
 <p>This file tracks known limitations and planned work for lissr. For bug reports and feature requests, please use the GitHub issue tracker.</p>
 <div class="section level2">
 <h2 id="known-limitations">Known limitations<a class="anchor" aria-label="anchor" href="#known-limitations"></a></h2>
-<ul><li>File formats. The package has been tested only with SPSS <code>.sav</code> files. Stata <code>.dta</code> download and a <code>.dta</code> read path exist but are untested and not guaranteed; <code>.csv</code> is also read but not formally validated. See the “File formats” section of the README.</li>
-<li>Background variables. Demographics from the LISS Background Variables (<code>avars</code>) file are not merged automatically; they must be downloaded and joined on <code>nomem_encr</code>. See the “Background variables” section of the README.</li>
-<li>Crosswalk alias keys. Two recipes carry alias keys the engine does not read; this is documented as a known limitation in <code>CANONICAL_SCHEMA.md</code> and is left as-is to keep merged outputs stable.</li>
-<li>Recipe rules pending execution. Some rules validate against the schema but do not yet execute (the validator emits non-fatal warnings for them). Known cases:
-<ul><li>cr: BR20, BR21, BR30 (split_variable with no output_vars)</li>
-<li>cf: VAR-002, VAR-003, VAR-004 (type_coerce via target_suffixes)</li>
+<ul><li><p>File formats. The package has been tested only with SPSS <code>.sav</code> files. Stata <code>.dta</code> download and a <code>.dta</code> read path exist but are untested and not guaranteed; <code>.csv</code> is also read but not formally validated. See the “File formats” section of the README.</p></li>
+<li><p>Background variables. Demographics from the LISS Background Variables (<code>avars</code>) file are not merged automatically; they must be downloaded and joined on <code>nomem_encr</code>. See the “Background variables” section of the README.</p></li>
+<li><p>ca H04 collapses the ca25j debt brackets without preserving the un-collapsed detail; the engine has no copy-before-recode mechanism. Either add a <code>copy_column</code> variable action or document the loss permanently. (The rule’s description now states the loss; resolved as a promise, open as a feature.)</p></li>
+<li>
+<p>Recipe rules pending execution. Some rules validate against the schema but do not yet execute (the validator emits non-fatal warnings for them). Known cases:</p>
+<ul><li>(cr BR20/BR21/BR30 resolved in 1.3.2.9000 stage 5b: split_variable now ships executable output_vars producing pre/post-2019 columns for the attendance, prayer, and afterlife scale breaks)</li>
+<li>(cf resolved in 1.3.2.9000 stage 5: labelled_policy switched to to_numeric, HARM-001 through HARM-007 re-scoped or re-expressed against a 17-wave archive scan, VAR-002/VAR-004 re-keyed and executing, VAR-003 retired with evidence; see inst/scripts/verification/cf_scan.R and NEWS)</li>
 <li>ca: H05, H07 (fix_label via find/replace)</li>
 <li>cw: HR01 (missing flag column)</li>
-</ul>
-Resolved in 1.1.0: cv HR01 through HR04 (engine now reads the <code>recode</code> alias and <code>exclude</code> blocks); cr HR10 through HR12 and HR20/HR21 (recipe keys corrected to <code>suffixes</code>); cp A1 DK recodes (keys corrected to <code>suffixes</code>); cs A1_dk_recode (rewritten as an executable value_recode on the verified suffixes).</li>
+</ul><p>Resolved in 1.3.2.9000 (stage 2): cr BR01/BR02/BR10/BR60/BR80, ch B12, cp A9, ca B02/B03 (degenerate flag columns now populate); cw HR03 (pension dates now recode in cw25r); ch B06 and ci A-09 crosswalk_rename alias keys (harmonized columns now produced).</p>
+<p>Resolved in 1.1.0: cv HR01 through HR04 (engine now reads the <code>recode</code> alias and <code>exclude</code> blocks); cr HR10 through HR12 and HR20/HR21 (recipe keys corrected to <code>suffixes</code>); cp A1 DK recodes (keys corrected to <code>suffixes</code>); cs A1_dk_recode (rewritten as an executable value_recode on the verified suffixes).</p>
+</li>
 </ul></div>
 <div class="section level2">
 <h2 id="planned-work">Planned work<a class="anchor" aria-label="anchor" href="#planned-work"></a></h2>
 <ul><li>Test and validate Stata <code>.dta</code> input end to end, or document and remove the <code>.dta</code> download option if it will not be supported.</li>
+<li>Offline network test infrastructure (assessment A6): the stage-7 shim mocks cover the download and probe error paths; a full fixture server or injectable base URL would extend coverage to the login and blueprint scrape flows.</li>
 <li>Implement the recipe rules listed above that currently validate but do not execute.</li>
 <li>Optional codebook cross-validation: check recipe assumptions (code lists, wave ranges, variable presence) against the LISS codebooks. A <code>verify_recipe_against_data()</code> helper would institutionalize the scans used for the 1.1.0 verification report.</li>
-<li>Onboard the archive waves not yet covered by recipes: ch25r, cp25q, cs25r, cv26r. Drafted <code>wave_index</code> entries, measured structural diffs against each predecessor, and the per-module lists of wave-scoped rules to extend are in <code>lissr-verification-report.md</code> (section 6). cv26r changes five suffixes and needs a boundary review; the other three are structurally clean.</li>
 <li>Extend the cs A1 DK verification (code-anchored label scan) from cs08a to the remaining pre-cs20m waves before declaring the suffix list final.</li>
-<li>cv fieldwork month: recent cv waves carry no <code>{wave_id}_m</code> variable, so DV09_fieldwork_month materializes as all-NA; populate it via <code>wave_values</code> and upgrade <code>derive_fieldwork_month</code> to an integer yyyymm parse.</li>
+<li>cv fieldwork month: DV09_fieldwork_month executes since 1.3.2.9000 stage 5b (fieldwork_ym mod 100) and carries real months wherever a wave has a <code>{wave_id}_m</code> variable; recent cv waves have none, so their months remain NA. Backfill those waves via <code>wave_values</code> once the fieldwork calendar is verified against archive metadata.</li>
 <li>Consider <code><a href="https://haven.tidyverse.org/reference/tagged_na.html" class="external-link">haven::tagged_na()</a></code> or re-declared user-missing ranges to keep the DK-vs-refusal distinction in outputs beyond what the 1.1.0 restore/sweep preserves.</li>
+<li>Income cleaning, rule-conditional anchors (assessment C8): scale errors should anchor to the rescaled value rather than the household median, so “correction” is more than within-household median imputation on planted scale errors. Deferred from the 1.3.2.9000 stage-6 pass (C1-C7, C9, A8 are resolved there; see NEWS).</li>
 </ul></div>
 <div class="section level2">
 <h2 id="tracking">Tracking<a class="anchor" aria-label="anchor" href="#tracking"></a></h2>

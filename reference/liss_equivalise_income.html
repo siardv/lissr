@@ -5,15 +5,21 @@ divides by (adults + child_weight * children)^elasticity, the
 scale used by the source analysis pipelines; "oecd_modified"
 divides by 1 + 0.5 * (adults - 1) + 0.3 * children; "sqrt"
 divides by the square root of household size. Rows with an invalid
-composition (size below one, negative children, or more children
-than members) yield NA and are counted in a warning.'><meta property="og:description" content='Converts household income to a per-equivalent-adult scale for
+composition (size below one, negative children, or zero adults,
+since every scale presumes at least one adult) yield NA and are
+counted in a warning. household_size and n_children must have
+length 1 or the length of income; other lengths are an error
+rather than being silently recycled.'><meta property="og:description" content='Converts household income to a per-equivalent-adult scale for
 cross-household comparison. The default "weighted_sqrt" scale
 divides by (adults + child_weight * children)^elasticity, the
 scale used by the source analysis pipelines; "oecd_modified"
 divides by 1 + 0.5 * (adults - 1) + 0.3 * children; "sqrt"
 divides by the square root of household size. Rows with an invalid
-composition (size below one, negative children, or more children
-than members) yield NA and are counted in a warning.'></head><body>
+composition (size below one, negative children, or zero adults,
+since every scale presumes at least one adult) yield NA and are
+counted in a warning. household_size and n_children must have
+length 1 or the length of income; other lengths are an error
+rather than being silently recycled.'></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -21,7 +27,7 @@ than members) yield NA and are counted in a warning.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.3.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,6 +54,7 @@ than members) yield NA and are counted in a warning.'></head><body>
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
     <li><a class="dropdown-item" href="../articles/reproducible-pipelines.html">Reproducible Research Pipelines</a></li>
+    <li><a class="dropdown-item" href="../articles/canonical-schema.html">The Canonical Recipe Schema</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -63,7 +70,7 @@ than members) yield NA and are counted in a warning.'></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Equivalise household income</h1>
-      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/main/R/liss_clean_income.R" class="external-link"><code>R/liss_clean_income.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/siardv/lissr/blob/v1.4.0/R/liss_clean_income.R" class="external-link"><code>R/liss_clean_income.R</code></a></small>
       <div class="d-none name"><code>liss_equivalise_income.Rd</code></div>
     </div>
 
@@ -74,8 +81,11 @@ divides by <code>(adults + child_weight * children)^elasticity</code>, the
 scale used by the source analysis pipelines; <code>"oecd_modified"</code>
 divides by <code>1 + 0.5 * (adults - 1) + 0.3 * children</code>; <code>"sqrt"</code>
 divides by the square root of household size. Rows with an invalid
-composition (size below one, negative children, or more children
-than members) yield NA and are counted in a warning.</p>
+composition (size below one, negative children, or zero adults,
+since every scale presumes at least one adult) yield NA and are
+counted in a warning. <code>household_size</code> and <code>n_children</code> must have
+length 1 or the length of <code>income</code>; other lengths are an error
+rather than being silently recycled.</p>
     </div>
 
     <div class="section level2">
@@ -104,7 +114,8 @@ than members) yield NA and are counted in a warning.</p>
 
 
 <dt id="arg-n-children">n_children<a class="anchor" aria-label="anchor" href="#arg-n-children"></a></dt>
-<dd><p>number of children (LISS <code>aantalki</code>).</p></dd>
+<dd><p>number of children (LISS <code>aantalki</code>; see Details
+for the OECD under-14 caveat).</p></dd>
 
 
 <dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
@@ -126,6 +137,15 @@ than members) yield NA and are counted in a warning.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>numeric vector of equivalised income.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The modified OECD scale defines children as household members under
+14, whereas the LISS <code>aantalki</code> variable counts children living at
+home of any age. Passing <code>aantalki</code> therefore approximates the OECD
+scale by treating every at-home child as under 14; when an under-14
+count is available it should be preferred. The <code>"weighted_sqrt"</code>
+default is calibrated to <code>aantalki</code> and unaffected.</p>
     </div>
 
     <div class="section level2">

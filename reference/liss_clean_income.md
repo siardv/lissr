@@ -61,7 +61,10 @@ liss_clean_income(
 - disable, enable_only:
 
   optional character vectors of rule ids to switch off, or to run
-  exclusively.
+  exclusively. `enable_only` is scoped per ruleset section: only
+  sections that contain a named rule are restricted to the named set, so
+  `enable_only = "D06"` isolates one detection rule while the
+  preparation, correction, and finalization machinery keeps running.
 
 - params:
 
