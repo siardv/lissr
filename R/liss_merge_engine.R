@@ -396,7 +396,7 @@ discover_wave_files <- function(recipe, data_dir) {
     candidates <- list.files(data_dir, pattern = pattern, full.names = TRUE,
                              ignore.case = TRUE)
     candidates[tolower(tools::file_ext(candidates)) %in%
-                 c("sav", "zsav", "dta", "csv") & file_test("-f", candidates)]
+                 c("sav", "zsav", "dta", "csv") & utils::file_test("-f", candidates)]
   }
   wave_idx <- recipe$wave_index
   files <- purrr::map(wave_idx, function(w) {

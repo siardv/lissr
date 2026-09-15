@@ -1,31 +1,68 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-*.Rcheck/
-*.tar.gz
-.DS_Store
-inst/doc
-*.bak
-*.bak.*
-**/.DS_Store
-.Renviron
-*.sav
-*.dta
-*.por
-*.zsav
-*.Rproj
+# admit maintained paths and file types; update this list for new asset types
+*
 
-# keep pre-built vignettes tracked (overrides any doc/ rule above)
+# repository guidance, metadata and maintained historical evidence
+!/.gitignore
+!/.Rbuildignore
+!/AGENTS.md
+!/CITATION.cff
+!/DESCRIPTION
+!/LICENSE
+!/LICENSE.md
+!/NAMESPACE
+!/NEWS.md
+!/PATCH_NOTES.md
+!/README.md
+!/TODO.md
+!/handoff.md
+!/lissr-review.md
+!/lissr-verification-report.md
+!/project_direction.md
+!/_pkgdown.yml
+
+# open each parent before admitting its contents
+!/.github/
+!/.github/workflows/
+!/.github/workflows/*.yml
+!/.github/workflows/*.yaml
+!/R/
+!/R/*.[Rr]
+!/man/
+!/man/*.Rd
+!/tests/
+!/tests/testthat.R
+!/tests/testthat/
+!/tests/testthat/*.[Rr]
+!/vignettes/
+!/vignettes/*.Rmd
+
+# installed recipes, registries and scripts
+!/inst/
+!/inst/cleaning/
+!/inst/cleaning/*.yml
+!/inst/cleaning/*.yaml
+!/inst/extdata/
+!/inst/extdata/*.yml
+!/inst/extdata/*.yaml
+!/inst/recipes/
+!/inst/recipes/*.yml
+!/inst/recipes/*.yaml
+!/inst/recipes/taxonomies/
+!/inst/recipes/taxonomies/*.yml
+!/inst/recipes/taxonomies/*.yaml
+!/inst/schema/
+!/inst/schema/*.md
+!/inst/schema/*.yml
+!/inst/schema/*.yaml
+!/inst/scripts/
+!/inst/scripts/*.[Rr]
+!/inst/scripts/verification/
+!/inst/scripts/verification/*.[Rr]
+
+# keep the pre-rendered vignettes and their package index
 !/inst/doc/
-!/inst/doc/**
+!/inst/doc/*.R
+!/inst/doc/*.Rmd
+!/inst/doc/*.html
 !/build/
-!/build/**
-income/
-
-# local pkgdown builds (the site is deployed from gh-pages)
-/docs/
-
-v1.4/
-INCOME_CLEANING_DESIGN.md
-INCOME_CLEANING_PATCH_NOTES.md
+!/build/vignette.rds
