@@ -1,3 +1,11 @@
+# lissr (development)
+
+* Wave discovery filters primary, fallback and auxiliary candidates to existing
+  supported data files before release selection. Codebooks, directories and
+  dangling symlinks no longer become inputs or suppress fallback matches.
+  Release ranking, ambiguity errors, auxiliary separation and release pins
+  retain their existing behavior, with mixed-folder regression coverage.
+
 # lissr 1.4.0
 
 A nine-stage, evidence-driven overhaul of the merge engine, the bundled

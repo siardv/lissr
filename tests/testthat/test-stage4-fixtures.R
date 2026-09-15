@@ -280,10 +280,11 @@ test_that("the overwrite guard refuses to clobber an existing output", {
     "already exists")
 })
 
-test_that("expected_release pins report, invalidate, and abort under strict", {
+test_that("expected_release pins report, invalidate, and abort in mixed folders", {
   skip_if_not_installed("haven")
   # release ranking keeps 1.1p; a 1.0p pin is then violated
   fx <- .mini_fixture(pin = "1.0p", extra_file = TRUE)
+  file.create(file.path(fx$data_dir, "yy01a_codebook_9.0_EN.pdf"))
   on.exit(unlink(c(fx$data_dir, fx$out_dir), recursive = TRUE), add = TRUE)
   res <- suppressWarnings(suppressMessages(
     merge_liss_module(fx$recipe, fx$data_dir, fx$out_dir)))
@@ -300,6 +301,7 @@ test_that("expected_release pins report, invalidate, and abort under strict", {
 
   # a matching pin stays valid
   fx2 <- .mini_fixture(pin = "1.0p")
+  file.create(file.path(fx2$data_dir, "yy01a_codebook_9.0_EN.pdf"))
   on.exit(unlink(c(fx2$data_dir, fx2$out_dir), recursive = TRUE), add = TRUE)
   res2 <- suppressWarnings(suppressMessages(
     merge_liss_module(fx2$recipe, fx2$data_dir, fx2$out_dir)))

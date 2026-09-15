@@ -391,19 +391,24 @@ load_recipes <- function(...) {
 #' discover data files for each wave in a recipe (internal)
 #' @noRd
 discover_wave_files <- function(recipe, data_dir) {
+  # use the same data-file filter for primary, fallback and auxiliary matches
+  find_data_files <- function(pattern) {
+    candidates <- list.files(data_dir, pattern = pattern, full.names = TRUE,
+                             ignore.case = TRUE)
+    candidates[tolower(tools::file_ext(candidates)) %in%
+                 c("sav", "zsav", "dta", "csv") & file_test("-f", candidates)]
+  }
   wave_idx <- recipe$wave_index
   files <- purrr::map(wave_idx, function(w) {
     pat <- w$file_pattern %||% paste0(w$id, "_*")
     pat_re <- if (grepl("[*?]", pat)) utils::glob2rx(pat) else pat
-    found <- list.files(data_dir, pattern = pat_re, full.names = TRUE,
-                        ignore.case = TRUE)
+    found <- find_data_files(pat_re)
 
     # fallback: wave_id prefix limited to data extensions, so codebooks and
     # other sidecar files can never be swept in (handles .sav/.csv/.dta mismatch)
     if (length(found) == 0) {
       fallback_re <- paste0("^", w$id, "[_.].*\\.(sav|zsav|dta|csv)$")
-      found <- list.files(data_dir, pattern = fallback_re, full.names = TRUE,
-                          ignore.case = TRUE)
+      found <- find_data_files(fallback_re)
       if (length(found) > 0)
         cli::cli_inform("  wave {.val {w$id}}: matched via fallback pattern")
     }
@@ -434,12 +439,10 @@ discover_wave_files <- function(recipe, data_dir) {
       missing_aux <- aux_decl[!(aux_decl %in% have |
                                   tools::file_path_sans_ext(aux_decl) %in% have)]
       for (ad in missing_aux) {
-        hit <- list.files(data_dir, pattern = utils::glob2rx(ad),
-                          full.names = TRUE, ignore.case = TRUE)
+        hit <- find_data_files(utils::glob2rx(ad))
         if (length(hit) == 0) {
           ext_agnostic <- paste0(tools::file_path_sans_ext(ad), ".*")
-          hit <- list.files(data_dir, pattern = utils::glob2rx(ext_agnostic),
-                            full.names = TRUE, ignore.case = TRUE)
+          hit <- find_data_files(utils::glob2rx(ext_agnostic))
         }
         if (length(hit) > 0) {
           aux <- c(aux, hit)
