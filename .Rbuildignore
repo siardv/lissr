@@ -8,6 +8,9 @@
 ^pkgdown$
 \.DS_Store$
 ^TODO\.md$
+^AGENTS\.md$
+^project_direction\.md$
+^handoff\.md$
 ^PATCH_NOTES\.md$
 ^lissr-review\.md$
 ^lissr-verification-report\.md$
