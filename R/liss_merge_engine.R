@@ -2388,6 +2388,60 @@ safe_eval_condition <- function(cond, df) {
   })
 }
 
+#' resolve structural absence and per-wave presence scopes (internal)
+#' @noRd
+.resolve_structural_scope <- function(df, chk) {
+  cols <- .check_cols(df, chk,
+    keys = c("suffixes", "variables", "variable", "scope"),
+    details = TRUE, numeric_selectors = FALSE)
+  na_keys <- c("waves_must_be_all_na", "must_be_na_in", "expected_na_waves",
+               "wave_filter", "waves")
+  has_na <- any(na_keys %in% names(chk))
+  has_present <- "waves_expected_present" %in% names(chk)
+  if (!has_na && !has_present)
+    stop("structural missingness requires an all-NA or expected-present wave scope",
+         call. = FALSE)
+  empty_scope <- list(rows = rep(FALSE, nrow(df)), requested = character(0),
+                      missing = character(0))
+  present <- if (has_present) {
+    .check_rows(df, chk, keys = "waves_expected_present", details = TRUE)
+  } else empty_scope
+  complement <- has_present &&
+    identical(chk[["expect_elsewhere"]] %||% chk[["expect"]], "all_na")
+  absent <- if (complement) {
+    list(rows = !present$rows,
+         requested = paste0("outside expected-present waves: ",
+                             paste(present$requested, collapse = ", ")),
+         missing = character(0))
+  } else if (has_na) {
+    .check_rows(df, chk, keys = na_keys, details = TRUE)
+  } else empty_scope
+  # resolve both scopes and all targets before any observed violation can win
+  .require_check_scope(cols, list(
+    missing = unique(c(absent$missing, present$missing)),
+    requested = paste0("all-NA: ", paste(absent$requested, collapse = ", "),
+                       "; expected-present: ", paste(present$requested, collapse = ", "))))
+  wave_ids <- character(0)
+  present_waves <- present$requested
+  if (has_present) {
+    # even an all-row presence scope needs known per-wave membership
+    if (!("wave_id" %in% names(df)))
+      stop("expected-present scope requires the wave_id column", call. = FALSE)
+    if (!is.atomic(df[["wave_id"]]) || !is.null(dim(df[["wave_id"]])))
+      stop("expected-present scope requires an atomic wave_id vector", call. = FALSE)
+    wave_ids <- as.character(df[["wave_id"]])
+    if (anyNA(wave_ids) || any(!nzchar(trimws(wave_ids))))
+      stop("expected-present scope cannot evaluate missing or blank wave_id values",
+           call. = FALSE)
+    if (identical(present_waves, "all")) present_waves <- unique(wave_ids)
+    if (!length(present_waves))
+      stop("expected-present scope has no observed waves", call. = FALSE)
+  }
+  list(columns = cols$resolved, na_rows = absent$rows,
+       na_detail = paste(absent$requested, collapse = ", "),
+       present_waves = present_waves, wave_ids = wave_ids)
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
@@ -2403,34 +2457,20 @@ run_validations <- function(df, checks, log_entries) {
     result <- tryCatch({
       switch(type,
         "structural_missingness" = {
-          suffixes <- chk$suffixes %||% chk$variables %||% chk$variable %||%
-                      chk$scope %||% list()
-          na_waves <- as.character(unlist(
-            chk$waves_must_be_all_na %||% chk$must_be_na_in %||%
-            chk$expected_na_waves %||% chk$wave_filter %||% chk$waves %||% list()))
-          present_waves <- as.character(unlist(chk$waves_expected_present %||% list()))
-          # missingness_check shorthand: expected-present waves plus all-NA
-          # everywhere else (cf VAL-005 shape)
-          if (length(present_waves) > 0 &&
-              identical(chk$expect_elsewhere %||% chk$expect, "all_na"))
-            na_waves <- setdiff(unique(as.character(df$wave_id)), present_waves)
+          scope <- .resolve_structural_scope(df, chk)
           passed <- TRUE
           detail <- NULL
-          for (sfx in unlist(suffixes)) {
-            col <- find_col(df, as.character(sfx))
-            if (is.null(col) || !(col %in% names(df))) next
-            if (length(na_waves) > 0) {
-              subset <- df[as.character(df$wave_id) %in% na_waves, col, drop = TRUE]
-              if (any(!is.na(subset))) {
-                passed <- FALSE
-                detail <- paste0(sum(!is.na(subset)), " non-NA value(s) in ",
-                                 col, " within all-NA waves")
-                break
-              }
+          for (col in scope$columns) {
+            subset <- df[[col]][scope$na_rows]
+            if (any(!is.na(subset))) {
+              passed <- FALSE
+              detail <- paste0(sum(!is.na(subset)), " non-NA value(s) in ",
+                               col, " within all-NA waves: ", scope$na_detail)
+              break
             }
-            for (w in present_waves) {
-              subset <- df[as.character(df$wave_id) == w, col, drop = TRUE]
-              if (length(subset) > 0 && all(is.na(subset))) {
+            for (w in scope$present_waves) {
+              subset <- df[[col]][scope$wave_ids == w]
+              if (all(is.na(subset))) {
                 passed <- FALSE
                 detail <- paste0(col, " all-NA in expected-present wave ", w)
                 break

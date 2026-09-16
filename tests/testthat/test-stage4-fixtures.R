@@ -103,6 +103,17 @@
   unique(targets[grepl("^[0-9]{3}$", targets)])
 }
 
+.required_structural_targets <- function(recipe) {
+  types <- c("structural_missingness", "structural_absence", "all_na",
+             "structural_na_count", "missingness_check")
+  checks <- Filter(function(check) check$type %in% types,
+                   recipe$validation_checks %||% list())
+  targets <- unlist(lapply(checks, function(check) {
+    check$suffixes %||% check$variables %||% check$variable %||% check$scope
+  }))
+  unique(sub("^(s|stem_|q|Q)([0-9]{3})$", "\\2", as.character(targets)))
+}
+
 .absent_specs <- function(recipe) {
   # suffix x wave combinations that checks declare structurally all-NA;
   # the generator must not plant values there
@@ -116,11 +127,17 @@
                   "structural_na_count", "missingness_check")) {
       sfx <- as.character(unlist(chk$suffixes %||% chk$variables %||%
                                    chk$variable %||% chk$scope %||% list()))
+      sfx <- sub("^(s|stem_|q|Q)([0-9]{3})$", "\\2", sfx)
       waves <- as.character(unlist(chk$waves_must_be_all_na %||%
                                      chk$must_be_na_in %||%
                                      chk$expected_na_waves %||%
                                      chk$wave_filter %||% chk$waves %||%
                                      list()))
+      present <- as.character(unlist(chk$waves_expected_present %||% list()))
+      if (length(present) &&
+          identical(chk$expect_elsewhere %||% chk$expect, "all_na"))
+        waves <- setdiff(recipe$meta$covered_waves, present)
+      if (identical(waves, "all")) waves <- recipe$meta$covered_waves
       if (length(sfx) && length(waves)) add(sfx, waves)
     }
     if (ty %in% c("na_rate", "na_rate_above") &&
@@ -147,11 +164,13 @@
   sfx <- utils::head(sort(unique(sfx)), 40)
   plant <- .plant_specs(recipe)
   absent <- .absent_specs(recipe)
+  structural_targets <- .required_structural_targets(recipe)
   # planted/constrained suffixes must exist even beyond the cap
   extra <- setdiff(grep("^[0-9]{3}$",
                         c(names(plant$allowed), names(plant$present)),
                         value = TRUE), sfx)
-  sfx <- unique(c(sfx, extra, .required_absence_suffixes(recipe)))
+  sfx <- unique(c(sfx, extra, .required_absence_suffixes(recipe),
+                 structural_targets[grepl("^[0-9]{3}$", structural_targets)]))
   # boundary split_variable sources must exist for era-scoped outputs
   bnd <- unlist(lapply(recipe$boundary_rules %||% list(), function(r) {
     c(r$suffix %||% character(0),
@@ -165,6 +184,10 @@
     wid <- w$id
     n <- 3L
     df <- data.frame(nomem_encr = seq_len(n))
+    # household ids exist before the recipe's declared structural absence
+    if ("nohouse_encr" %in% structural_targets)
+      df$nohouse_encr <- if (wid %in% absent$nohouse_encr) rep(NA_real_, n) else
+        as.numeric(seq_len(n))
     df[[paste0(wid, "_m")]] <- rep(as.numeric(paste0(w$year, "03")), n)
     for (s in sfx) {
       col <- paste0(wid, s)
@@ -275,6 +298,55 @@ test_that("ch gender restriction checks the declared column and allowed waves", 
   expect_match(result$detail, "forbidden value(s) in s001", fixed = TRUE)
 })
 
+test_that("ch structural checks match split outputs without requiring presence", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "ch_merge_recipe.yml",
+                                             package = "lissr"))
+  rules <- stats::setNames(recipe$boundary_rules,
+    vapply(recipe$boundary_rules, function(rule) rule$rule_id, character(1)))
+  checks <- stats::setNames(recipe$validation_checks,
+    vapply(recipe$validation_checks, function(check) check$check_id, character(1)))
+  for (pair in list(c("CHK04", "B04"), c("CHK07", "B01"))) {
+    check <- checks[[pair[[1]]]]
+    output <- Filter(function(output) output$name == check[["variable"]],
+                     rules[[pair[[2]]]]$output_vars)[[1]]
+    expect_identical(check$waves_must_be_all_na,
+                     setdiff(recipe$meta$covered_waves, output$waves))
+    expect_null(check[["waves_expected_present"]])
+    df <- data.frame(wave_id = recipe$meta$covered_waves)
+    df[[output$name]] <- NA_real_
+    evaluate <- function(data) {
+      suppressWarnings(suppressMessages(
+        lissr:::run_validations(data, list(check), list())))$results[[1]]
+    }
+    expect_true(evaluate(df)$passed)
+    df[[output$name]][df$wave_id %in% output$waves] <- 1
+    expect_true(evaluate(df)$passed)
+    df[[output$name]][match(check$waves_must_be_all_na[[1]], df$wave_id)] <- 1
+    result <- evaluate(df)
+    expect_false(result$passed)
+    expect_match(result$detail, output$name, fixed = TRUE)
+  }
+})
+
+test_that("cs structural scope preserves the zero-padded target", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cs_merge_recipe.yml",
+                                             package = "lissr"))
+  check <- Filter(function(check) check$check_id == "V08_stem002_absent_post_cs19l",
+                  recipe$validation_checks)[[1]]
+  expect_identical(check$scope, "002")
+  df <- data.frame(wave_id = recipe$meta$covered_waves, s002 = NA_real_)
+  df$s002[!(df$wave_id %in% check$wave_filter)] <- 1
+  evaluate <- function(data) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  expect_true(evaluate(df)$passed)
+  df$s002[match(check$wave_filter[[1]], df$wave_id)] <- 1
+  result <- evaluate(df)
+  expect_false(result$passed)
+  expect_match(result$detail, "s002", fixed = TRUE)
+})
+
 test_that("every bundled recipe merges a synthetic panel end to end", {
   skip_if_not_installed("haven")
   mods <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")
@@ -329,6 +401,18 @@ test_that("every bundled recipe merges a synthetic panel end to end", {
       problems <- c(problems, paste0(mod, ": error-severity FAIL: ",
         paste(vapply(res$validation[err_fails],
                      function(r) r$check_id, character(1)), collapse = ", ")))
+
+    structural_types <- c("structural_missingness", "structural_absence", "all_na",
+                          "structural_na_count", "missingness_check")
+    structural_ids <- vapply(Filter(function(check) check$type %in% structural_types,
+                                    recipe$validation_checks),
+                              function(check) check$check_id, character(1))
+    structural_fails <- vapply(res$validation, function(check)
+      check$check_id %in% structural_ids && !isTRUE(check$passed), logical(1))
+    if (any(structural_fails))
+      problems <- c(problems, paste0(mod, ": unresolved/failed structural checks: ",
+        paste(vapply(res$validation[structural_fails], function(check) check$check_id,
+                     character(1)), collapse = ", ")))
 
     unlink(c(data_dir, out_dir), recursive = TRUE)
   }

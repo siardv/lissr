@@ -1,5 +1,14 @@
 # lissr (development)
 
+* `structural_missingness` and its aliases now resolve every required target
+  and wave scope before testing values. Missing inputs and malformed scopes are
+  unevaluable, preserving severity and strict/report output handling. All-NA
+  scopes, per-wave expected presence and expected-present complements support
+  scalar/list `"all"`. Presence-only checks no longer inherit an all-NA scope
+  through partial field-name matching. Health CHK04/CHK07 declare all-NA scopes for
+  their existing derived outputs; Social Integration V08 preserves target `002`
+  as a string. These changes affect validation, not harmonization rules.
+
 * `value_absence` and its aliases now require resolved targets and wave scopes
   in every block. Missing inputs and malformed scopes are unevaluable; explicit
   missing block targets no longer fall back to parent targets. Valid parent and

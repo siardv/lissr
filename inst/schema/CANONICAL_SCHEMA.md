@@ -562,6 +562,45 @@ The same behavior applies to `assert_absent_values`, `none_equal`,
 `sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
 `value_absence_check`, and `value_restriction`.
 
+#### `structural_missingness` target and wave scopes
+
+Every required target and wave scope must resolve before structural values are
+tested. Missing targets (including partial matches), absent requested waves,
+malformed scopes and unavailable required wave membership are unevaluable
+(`passed = NA`). A non-NA value in an all-NA scope, or an entirely NA target in
+an expected-present wave, fails (`passed = FALSE`). Both outcomes preserve
+severity and the strict/report output handling above.
+
+- Target keys, in precedence order, are `suffixes`, `variables`, `variable`,
+  and `scope`; the first non-null key is used. Exact names, suffix aliases,
+  numeric suffix inputs and flat lists follow the required-target rules above.
+  Structural checks do not expand item ranges or numeric-column selectors.
+  Quote zero-padded suffixes such as `"002"` to preserve them through YAML.
+- All-NA wave keys, in precedence order, are `waves_must_be_all_na`,
+  `must_be_na_in`, `expected_na_waves`, `wave_filter`, and `waves`. The first
+  declared key is used. Scalar/list `"all"` checks every row, without requiring
+  `wave_id`; an existing all-NA column or a zero-row target can pass.
+- `waves_expected_present` requires at least one non-NA value in each requested
+  wave for every target. Scalar/list `"all"` means every observed wave and needs
+  at least one observed wave. Presence scopes always require valid `wave_id`.
+- Specific wave requests in either scope require each named wave to have rows
+  and all row memberships to be known and nonblank. Null/empty declarations,
+  nested lists, noncharacter wave names and mixing `"all"` with wave names are
+  unevaluable. Values outside a valid all-NA scope are not tested for absence.
+- At least one all-NA or expected-present scope must be declared. A present-only
+  check imposes no absence requirement elsewhere. When both scopes are supplied,
+  both apply; overlapping all-NA and presence requirements can therefore fail.
+- With `waves_expected_present`, `expect_elsewhere: all_na` (or fallback
+  `expect: all_na`) replaces the ordinary all-NA scope with the complement of
+  the validated presence scope. An empty complement may pass, but every
+  requested presence wave must still exist and contain a non-NA target value.
+  This shorthand enforces presence inside the declared waves. To permit all-NA
+  values inside an allowed era, declare only its explicit all-NA complement.
+
+These semantics also apply to `structural_absence`, `all_na`,
+`structural_na_count`, and `missingness_check`. They do not change the distinct
+`expected_presence` failure contract below or other validation executors.
+
 #### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does not

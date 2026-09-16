@@ -1153,9 +1153,25 @@ validation_checks:
   description: extra_questions_flag must be non-NA only in ch11e
   type: structural_missingness
   severity: error
-  derived_var: extra_questions_flag
-  waves_may_have_data:
-  - ch11e
+  variable: extra_questions_flag
+  waves_must_be_all_na:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch12f
+  - ch13g
+  - ch15h
+  - ch16i
+  - ch17j
+  - ch18k
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  - ch25r
 - check_id: CHK05
   anomaly_ref: A-17
   description: gender category 3 ('other') may appear only from ch22o onward
@@ -1181,12 +1197,22 @@ validation_checks:
   description: ecig_count_per_day must be NA outside ch15h-ch18k
   type: structural_missingness
   severity: error
-  derived_var: ecig_count_per_day
-  waves_may_have_data:
-  - ch15h
-  - ch16i
-  - ch17j
-  - ch18k
+  variable: ecig_count_per_day
+  waves_must_be_all_na:
+  - ch07a
+  - ch08b
+  - ch09c
+  - ch10d
+  - ch11e
+  - ch12f
+  - ch13g
+  - ch19l
+  - ch20m
+  - ch21n
+  - ch22o
+  - ch23p
+  - ch24q
+  - ch25r
 - check_id: CHK08
   anomaly_ref: A-09
   description: cancer endorsement rate check around ch17j/ch18k boundary

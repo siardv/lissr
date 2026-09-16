@@ -1110,7 +1110,7 @@ validation_checks:
   description: 002 should be all-NA in waves cs20m-cs24q.
   type: all_na
   severity: error
-  scope: 002
+  scope: '002'
   wave_filter:
   - cs20m
   - cs21n
