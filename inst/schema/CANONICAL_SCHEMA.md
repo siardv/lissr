@@ -667,6 +667,43 @@ Aliases are `na_rate_check`, `na_rate_above`, `na_rate_below`, and `not_missing`
 An explicit direction overrides that default. This contract does not introduce
 general threshold/direction validation or change the condition evaluator.
 
+#### `per_wave_mean` required targets and wave membership
+
+`per_wave_mean` requires every selected target to resolve before comparing
+means. Missing targets, including partial matches, malformed requests and
+unavailable wave membership are unevaluable (`passed = NA`). An observed finite
+mean outside the bounds fails (`passed = FALSE`). Both outcomes retain the
+declared severity and the strict/report handling above.
+
+- Target keys, in precedence order, are `suffixes`, `variables`, `scope`,
+  `applies_to`, `items`, `stems`, `variable`, and `column`; the first non-null
+  key is used. Existing exact/suffix lookup accepts numeric suffix inputs and
+  flat lists. Every target must resolve; empty or malformed requests are
+  unevaluable. `items` uses literal names, without range expansion.
+- Scalar character `"numeric"` and `"all_numeric"` select numeric columns and
+  require at least one such column. List-wrapped forms retain their existing
+  literal-name meaning, so `items: [numeric]` requests a column named `numeric`.
+- Every row requires known, nonblank membership in an atomic, undimensioned
+  `wave_id` column. Numeric and factor wave identifiers retain their character
+  representation for grouping. This executor checks every observed wave and
+  has no wave-filter support; `waves`, `wave_filter` and other wave-scope fields
+  do not restrict its comparisons.
+- Resolved targets and a valid zero-row `wave_id` column retain a pass result
+  on empty data, with the diagnostic `no observed waves; no means calculated`.
+  Empty data cannot excuse missing targets or a missing `wave_id` column.
+- Means use the existing numeric coercion and `na.rm = TRUE`, separately for
+  every target in every observed wave. Every finite mean must be within the
+  inclusive bounds, `min_mean` (default `-Inf`) and `max_mean` (default `Inf`).
+  Values are not pooled across waves or targets.
+- Non-finite means, including all-NA, NaN and infinite means, retain their
+  existing exclusion from bound comparisons. If the check passes, its detail
+  reports the number of these means and the first affected column and wave.
+  A finite bound violation still fails even when other means are non-finite.
+
+This check has no registered type aliases. The contract does not add general
+numeric-value or bounds-payload validation; coercion and non-finite handling
+remain unchanged.
+
 #### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does not

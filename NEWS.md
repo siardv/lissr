@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `per_wave_mean` now requires every target to resolve and every row to have
+  known wave membership. Missing inputs and malformed targets are unevaluable
+  with the declared severity. Valid empty data and non-finite means retain
+  their existing outcomes, with diagnostics identifying uncalculated or
+  uncompared means. Target lookup, numeric coercion, inclusive bounds and
+  separate comparisons for every target in every observed wave are preserved.
+
 * `na_rate` and its aliases now require every target and requested wave to
   resolve before applying conditions. Missing inputs and malformed scopes are
   unevaluable with the declared severity. Scalar/list `"all"` scopes are

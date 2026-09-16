@@ -248,6 +248,55 @@
   unique(out)
 }
 
+test_that("cp mean-spike check requires every item and tests every observed wave", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- Filter(function(check) check$check_id == "V03_dk_mean_spike",
+                   recipe$validation_checks)
+  expect_length(checks, 1L)
+  check <- checks[[1]]
+  targets <- as.character(unlist(check$items))
+  columns <- paste0("s", targets)
+  df <- data.frame(wave_id = recipe$meta$covered_waves)
+  for (column in columns) df[[column]] <- 1
+  evaluate <- function(data) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  expect_true(evaluate(df)$passed)
+
+  for (i in seq_along(columns)) {
+    missing <- df
+    missing[[columns[[i]]]] <- NULL
+    result <- evaluate(missing)
+    expect_identical(result$passed, NA)
+    expect_identical(result$severity, "error")
+    expect_match(result$detail %||% "", targets[[i]], fixed = TRUE)
+
+    contaminated <- df
+    contaminated[[columns[[i]]]][i] <- 999
+    result <- evaluate(contaminated)
+    expect_false(result$passed)
+    expect_match(result$detail, columns[[i]], fixed = TRUE)
+    expect_match(result$detail, df$wave_id[[i]], fixed = TRUE)
+  }
+
+  # an undefined earlier mean must not conceal a later finite violation
+  partial <- df
+  partial[[columns[[1]]]] <- NA_real_
+  expect_true(evaluate(partial)$passed)
+  partial[[utils::tail(columns, 1)]][nrow(df)] <- 999
+  result <- evaluate(partial)
+  expect_false(result$passed)
+  expect_match(result$detail, utils::tail(columns, 1), fixed = TRUE)
+  expect_match(result$detail, utils::tail(df$wave_id, 1), fixed = TRUE)
+
+  for (column in columns) df[[column]] <- NA_real_
+  result <- evaluate(df)
+  expect_true(result$passed)
+  expect_match(result$detail %||% "", "finite", fixed = TRUE)
+})
+
 test_that("cp all-NA rate checks require every item and honor declared waves", {
   recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
                                              package = "lissr"))

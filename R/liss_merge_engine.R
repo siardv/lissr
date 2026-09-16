@@ -2812,15 +2812,42 @@ run_validations <- function(df, checks, log_entries) {
                                if (is.finite(hi)) hi else "Inf", ")"))
         },
         "per_wave_mean" = {
-          cols <- .check_cols(df, chk)
+          target_keys <- c("suffixes", "variables", "scope", "applies_to",
+                           "items", "stems", "variable", "column")
+          targets <- NULL
+          for (key in target_keys) {
+            targets <- chk[[key]]
+            if (!is.null(targets)) break
+          }
+          # list-wrapped numeric selectors retain their literal-name meaning
+          cols <- .check_cols(df, chk, keys = target_keys, details = TRUE,
+                              numeric_selectors = is.character(targets))
+          .require_check_scope(cols, list(requested = "all observed waves",
+                                          missing = character(0)))
+          if (!("wave_id" %in% names(df)))
+            stop("per_wave_mean requires the wave_id column", call. = FALSE)
+          if (!is.atomic(df[["wave_id"]]) || !is.null(dim(df[["wave_id"]])))
+            stop("per_wave_mean requires an atomic wave_id vector", call. = FALSE)
+          wave_ids <- as.character(df[["wave_id"]])
+          if (anyNA(wave_ids) || any(!nzchar(trimws(wave_ids))))
+            stop("per_wave_mean cannot evaluate missing or blank wave_id values",
+                 call. = FALSE)
+          waves <- unique(wave_ids)
           max_mean <- chk$max_mean %||% Inf
           min_mean <- chk$min_mean %||% -Inf
           passed <- TRUE
-          detail <- NULL
-          for (w in unique(as.character(df$wave_id))) {
-            rows <- as.character(df$wave_id) == w
-            for (col in cols) {
+          detail <- if (!length(waves)) "no observed waves; no means calculated" else NULL
+          n_uncompared <- 0L
+          first_uncompared <- NULL
+          for (w in waves) {
+            rows <- wave_ids == w
+            for (col in cols$resolved) {
               m <- suppressWarnings(mean(as.numeric(df[[col]][rows]), na.rm = TRUE))
+              if (!is.finite(m)) {
+                n_uncompared <- n_uncompared + 1L
+                if (is.null(first_uncompared))
+                  first_uncompared <- paste0(col, " in wave ", w)
+              }
               if (is.finite(m) && (m > max_mean || m < min_mean)) {
                 passed <- FALSE
                 detail <- paste0("mean(", col, ") = ", round(m, 2),
@@ -2831,6 +2858,9 @@ run_validations <- function(df, checks, log_entries) {
             }
             if (!passed) break
           }
+          if (passed && n_uncompared > 0L)
+            detail <- paste0(n_uncompared, " non-finite mean(s) not compared with bounds; ",
+                             "first: ", first_uncompared)
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         # documentary or unknown
