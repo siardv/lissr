@@ -1,5 +1,13 @@
 # lissr (development)
 
+* `value_absence` and its aliases now require resolved targets and wave scopes
+  in every block. Missing inputs and malformed scopes are unevaluable; explicit
+  missing block targets no longer fall back to parent targets. Valid parent and
+  block filters intersect, and `waves_allowed` checks the validated complement.
+  Exclusion precedence, numeric/character matching and legitimate empty/all-NA
+  checks are preserved. Health CHK05 and Religion VC04/VC05 now declare explicit
+  targets, with the Religion checks scoped to their existing recode rules.
+
 * `value_range` and `value_in_set` checks now report missing required columns
   and requested waves as unevaluable, including partial target matches. Invalid
   target/wave scopes retain the declared severity and diagnostic details.

@@ -1161,7 +1161,7 @@ validation_checks:
   description: gender category 3 ('other') may appear only from ch22o onward
   type: value_restriction
   severity: error
-  suffix: '001'
+  variable: '001'
   value: 3
   waves_allowed:
   - ch22o

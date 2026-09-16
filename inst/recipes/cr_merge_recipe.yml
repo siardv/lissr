@@ -730,13 +730,24 @@ validation_checks:
   - check_id: VC04
     description: "no residual positive don't-know sentinels (99, 999) after HR01-HR02"
     type: no_residual_sentinels
-    sentinel_values: [99, 999]
+    # mirror each recode's target/code scope; duration and metadata stay outside it
+    targets:
+      - suffixes: ["003", "013", "022"]
+        waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+        sentinel_values: [999]
+      - suffixes: ["002", "004", "005", "006", "011", "012", "014", "015", "021",
+                   "023", "024", "041", "042", "053", "057", "060",
+                   "121", "124", "127", "130", "133"]
+        waves: [cr08a, cr09b, cr10c, cr11d, cr12e, cr13f, cr14g, cr15h, cr16i, cr17j, cr18k]
+        sentinel_values: [99]
     exclude_variables: ["s120", "fieldwork_ym", "wave_year"]
     severity: error
 
   - check_id: VC05
     description: "no residual negative sentinel (-9) after HR03"
     type: no_residual_sentinels
+    suffixes: ["041", "042", "134", "135", "136", "142", "143", "144", "145", "162"]
+    waves: [cr19l, cr20m, cr21n, cr22o, cr23p, cr24q, cr25r]
     sentinel_values: [-9]
     severity: error
 

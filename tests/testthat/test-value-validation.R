@@ -259,7 +259,6 @@ test_that("value-check failures and unevaluable inputs preserve severity", {
 test_that("other validation consumers retain existing resolver behavior", {
   df <- data.frame(wave_id = "w1", s005 = NA_real_)
   checks <- list(
-    list(type = "value_absence", variables = c("005", "absent_column"), value = 99),
     list(type = "structural_missingness", variable = "005", waves = "w1"),
     list(type = "row_count", min_rows = 0, max_rows = 0))
   for (check in checks) {

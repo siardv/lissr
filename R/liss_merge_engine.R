@@ -2320,6 +2320,74 @@ safe_eval_condition <- function(cond, df) {
                 paste(rows$requested, collapse = ", ")), call. = FALSE)
 }
 
+#' resolve all absence blocks before evaluating any forbidden values (internal)
+#' @noRd
+.resolve_absence_blocks <- function(df, chk) {
+  block_keys <- intersect(c("targets", "checks"), names(chk))
+  blocks <- if (length(block_keys)) chk[[block_keys[[1]]]] else list(chk)
+  if (!is.list(blocks) || !length(blocks) || !is.null(dim(blocks)))
+    stop("absence blocks must be a non-empty list of mappings", call. = FALSE)
+  target_keys <- c("suffixes", "variables", "scope", "applies_to", "items",
+                   "stems", "variable", "column")
+  use_complement <- "waves_allowed" %in% names(chk)
+  parent_rows <- if (use_complement) {
+    .check_rows(df, chk, keys = "waves_allowed", details = TRUE)
+  } else .check_rows(df, chk, details = TRUE)
+
+  lapply(seq_along(blocks), function(i) {
+    tryCatch({
+      bl <- blocks[[i]]
+      if (!is.list(bl) || !length(bl) || !is.null(dim(bl)) ||
+          is.null(names(bl)) || anyNA(names(bl)) || any(!nzchar(names(bl))))
+        stop("absence block must be a non-empty named mapping", call. = FALSE)
+      # an explicit but unresolved block scope must not fall back to its parent
+      target <- if (any(target_keys %in% names(bl))) bl else chk
+      cols <- .check_cols(df, target, details = TRUE)
+      selected <- target_keys[vapply(target_keys, function(k) {
+        !is.null(target[[k]])
+      }, logical(1))]
+      # preserve literal item names; expand only ranges that did not resolve
+      if (identical(selected[[1]], "items") &&
+          any(grepl("^[0-9]+-[0-9]+$", cols$missing))) {
+        requested <- unlist(lapply(cols$requested, function(item) {
+          if (item %in% cols$missing) expand_items(item) else item
+        }), use.names = FALSE)
+        cols <- .resolve_check_columns(df, requested)
+      }
+      .require_check_scope(cols, parent_rows)
+      if (use_complement) {
+        rows <- !parent_rows$rows
+        scope_detail <- paste0("outside allowed waves: ",
+                                paste(parent_rows$requested, collapse = ", "))
+      } else {
+        block_rows <- .check_rows(df, bl, details = TRUE)
+        .require_check_scope(cols, block_rows)
+        rows <- parent_rows$rows & block_rows$rows
+        scope_detail <- paste0("parent waves: ",
+          paste(parent_rows$requested, collapse = ", "), "; block waves: ",
+          paste(block_rows$requested, collapse = ", "))
+      }
+      # exclusions are optional matches; retain the existing precedence
+      excl <- chk[["exclude_variables"]] %||% chk[["exclude_suffixes"]] %||%
+        bl[["exclude_variables"]] %||% character(0)
+      columns <- cols$resolved
+      if (length(excl) || !is.null(dim(excl))) {
+        excl <- .check_names(excl, "column exclusions", allow_numeric = TRUE)
+        excluded <- .resolve_check_columns(df, excl)$resolved
+        columns <- setdiff(columns, excluded[!is.na(excluded)])
+      }
+      forbidden <- unlist(bl[["forbidden_values"]] %||% bl[["forbidden_value"]] %||%
+        bl[["sentinel_values"]] %||% bl[["codes"]] %||% bl[["value"]] %||%
+        chk[["forbidden_values"]] %||% chk[["sentinel_values"]] %||%
+        chk[["value"]] %||% list())
+      list(columns = columns, rows = rows, forbidden = forbidden,
+           detail = paste0("block ", i, "; ", scope_detail))
+    }, error = function(e) {
+      stop("block ", i, ": ", conditionMessage(e), call. = FALSE)
+    })
+  })
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
@@ -2404,43 +2472,17 @@ run_validations <- function(df, checks, log_entries) {
         "value_absence" = {
           # block form: `targets` is a list of scoped sub-checks (ci V-01 /
           # cs V06 shape); each block resolves its own columns, waves, values
-          blocks <- chk$targets %||% chk$checks %||% NULL
-          if (is.null(blocks)) blocks <- list(chk)
+          blocks <- .resolve_absence_blocks(df, chk)
           passed <- TRUE
           detail <- NULL
-          all_waves <- unique(as.character(df$wave_id %||% character(0)))
           for (bl in blocks) {
-            if (!is.list(bl)) next
-            forbidden <- unlist(bl$forbidden_values %||% bl$forbidden_value %||%
-                                bl$sentinel_values %||% bl$codes %||%
-                                bl$value %||% chk$forbidden_values %||%
-                                chk$sentinel_values %||% chk$value %||% list())
+            forbidden <- bl$forbidden
             if (length(forbidden) == 0) next
             forbidden_chr <- as.character(forbidden)
             forbidden <- suppressWarnings(as.numeric(forbidden))
             forbidden <- forbidden[!is.na(forbidden)]
-            cols <- .check_cols(df, bl)
-            if (length(cols) == 0) cols <- .check_cols(df, chk)
-            if (length(cols) == 0 && !is.null(chk$items))
-              cols <- vapply(expand_items(chk$items),
-                             function(s) find_col(df, s) %||% NA_character_,
-                             character(1))
-            cols <- cols[!is.na(cols)]
-            excl <- unlist(chk$exclude_variables %||% chk$exclude_suffixes %||%
-                           bl$exclude_variables %||% list())
-            if (length(excl) > 0) {
-              excl_cols <- vapply(as.character(excl),
-                                  function(s) find_col(df, s) %||% NA_character_,
-                                  character(1))
-              cols <- setdiff(cols, excl_cols[!is.na(excl_cols)])
-            }
-            # value_restriction: a value allowed ONLY in waves_allowed means
-            # it is forbidden in the complement
-            row_keep <- if (!is.null(chk$waves_allowed))
-              !(as.character(df$wave_id) %in% as.character(unlist(chk$waves_allowed)))
-            else .check_rows(df, bl) & .check_rows(df, chk)
-            for (col in cols) {
-              raw <- df[[col]][row_keep]
+            for (col in bl$columns) {
+              raw <- df[[col]][bl$rows]
               vals <- suppressWarnings(as.numeric(raw))
               # match numerically where possible and on the character form
               # otherwise, so string-valued codes (e.g. a forbidden wave_id)
@@ -2450,7 +2492,8 @@ run_validations <- function(df, checks, log_entries) {
               n_bad <- sum(hit_num | hit_chr, na.rm = TRUE)
               if (n_bad > 0) {
                 passed <- FALSE
-                detail <- paste0(n_bad, " forbidden value(s) in ", col)
+                detail <- paste0(n_bad, " forbidden value(s) in ", col,
+                                 "; ", bl$detail)
                 break
               }
             }

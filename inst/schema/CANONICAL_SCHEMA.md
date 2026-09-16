@@ -518,6 +518,50 @@ other validators or add support for additional range/set payloads. Range checks
 continue to use numeric columns and `min`/`max`; `valid_range` and sentinel
 exceptions are not implemented by this executor.
 
+#### `value_absence` target and wave scopes
+
+`value_absence` uses the required-target contract above: missing columns or
+requested waves, malformed scopes and unavailable wave membership are
+unevaluable (`passed = NA`). Observed forbidden values fail (`passed = FALSE`).
+Severity is preserved, so error-level outcomes block strict output and invalidate
+report-mode output. Diagnostics identify the block and its scope.
+
+- A check can declare its payload directly or provide `targets`/`checks` as a
+  nonempty list of named block mappings. The first declared block key is used.
+  Empty/null containers and malformed entries are unevaluable. Every block's
+  inputs are resolved before any values are tested, so a missing later block
+  cannot be hidden by an earlier value violation.
+- Target keys and numeric selectors follow shared-set checks above. `items`
+  preserves exact-name/suffix matches, then expands unresolved zero-padded
+  ranges. A block inherits parent targets only when it
+  omits target declarations. Explicit empty, malformed or unresolved block
+  targets never trigger parent fallback.
+- Ordinary parent and block wave filters intersect, using the same wave-key
+  precedence and scalar/list `"all"` behavior as range/set checks. Each explicit
+  requested wave must exist, even if the eventual intersection is empty.
+  A valid empty intersection, or an all-row check on empty data with resolved
+  targets, may pass. All-NA absence targets also retain their meaning.
+- Parent `waves_allowed`, when declared, replaces ordinary parent/block wave
+  filters. Forbidden values are checked outside those allowed waves. Its names
+  must resolve with known wave membership; null/empty/malformed declarations
+  are unevaluable. Scalar/list `"all"` permits all rows, leaving an empty
+  complement that needs no `wave_id` and can pass.
+- Exclusion precedence is unchanged: first non-null parent `exclude_variables`,
+  parent `exclude_suffixes`, then block `exclude_variables`. Lists are not
+  combined. Unknown exclusion names are optional nonmatches; empty exclusions
+  do nothing and malformed names are unevaluable. Every explicit target must
+  resolve before exclusions apply. Excluding every resolved column is allowed.
+- Forbidden-value aliases and numeric/character matching are unchanged. Block
+  `forbidden_values`, `forbidden_value`, `sentinel_values`, `codes`, or `value`
+  take precedence over inherited parent `forbidden_values`, `sentinel_values`,
+  or `value`. Missing/empty forbidden values provide no value constraint, but
+  target and wave resolution still runs. This is not general validation of
+  forbidden-value payloads or the remaining validation executors.
+
+The same behavior applies to `assert_absent_values`, `none_equal`,
+`sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
+`value_absence_check`, and `value_restriction`.
+
 #### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does not

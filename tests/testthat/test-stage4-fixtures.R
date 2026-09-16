@@ -26,7 +26,7 @@
 .plant_specs <- function(recipe) {
   # value constraints implied by executable checks, so the fixture passes
   # error-severity checks by construction
-  allowed <- list(); present <- list()
+  allowed <- list(); present <- list(); restricted <- list()
   for (chk in (recipe$validation_checks %||% list())) {
     ty <- paste0(chk$type %||% "", collapse = "")
     cols <- as.character(unlist(chk$suffixes %||% chk$variables %||%
@@ -49,8 +49,13 @@
       pv <- suppressWarnings(as.numeric(chk$value))
       if (!is.na(pv)) for (cc in cols) present[[cc]] <- pv
     }
+    if (ty == "value_restriction" && !is.null(chk$waves_allowed)) {
+      for (cc in cols)
+        restricted[[cc]] <- list(values = as.numeric(unlist(chk$value)),
+                                waves = as.character(unlist(chk$waves_allowed)))
+    }
   }
-  list(allowed = allowed, present = present)
+  list(allowed = allowed, present = present, restricted = restricted)
 }
 
 .expand_rng <- function(items) {
@@ -63,6 +68,39 @@
     } else out <- c(out, it)
   }
   out
+}
+
+.required_absence_suffixes <- function(recipe) {
+  types <- c("value_absence", "assert_absent_values", "none_equal",
+             "sentinel_absence", "no_residual_sentinels", "assert_no_values",
+             "value_absence_check", "value_restriction")
+  collect <- function(check) {
+    keys <- c("suffixes", "variables", "scope", "applies_to", "items",
+              "stems", "variable", "column")
+    targets <- character(0)
+    for (key in keys) {
+      if (!is.null(check[[key]])) {
+        targets <- as.character(unlist(check[[key]]))
+        if (key == "items") targets <- .expand_rng(targets)
+        break
+      }
+    }
+    for (block in check$targets %||% check$checks %||% list())
+      targets <- c(targets, collect(block))
+    targets
+  }
+  checks <- Filter(function(check) check$type %in% types,
+                   recipe$validation_checks %||% list())
+  targets <- unique(unlist(lapply(checks, collect)))
+  # renamed targets need their raw sources, such as cd's rent-period columns
+  for (rule in c(recipe$variable_rules, recipe$harmonization_rules)) {
+    if (identical(rule$action, "rename")) {
+      mapping <- unlist(rule$mapping)
+      targets <- c(targets, names(mapping)[mapping %in% targets])
+    }
+  }
+  targets <- sub("^(s|stem_|q|Q)([0-9]{3})$", "\\2", targets)
+  unique(targets[grepl("^[0-9]{3}$", targets)])
 }
 
 .absent_specs <- function(recipe) {
@@ -113,7 +151,7 @@
   extra <- setdiff(grep("^[0-9]{3}$",
                         c(names(plant$allowed), names(plant$present)),
                         value = TRUE), sfx)
-  sfx <- c(sfx, extra)
+  sfx <- unique(c(sfx, extra, .required_absence_suffixes(recipe)))
   # boundary split_variable sources must exist for era-scoped outputs
   bnd <- unlist(lapply(recipe$boundary_rules %||% list(), function(r) {
     c(r$suffix %||% character(0),
@@ -135,6 +173,9 @@
         next
       }
       pool <- plant$allowed[[s]] %||% c(1, 2, 3)
+      restriction <- plant$restricted[[s]]
+      if (!is.null(restriction) && !(wid %in% restriction$waves))
+        pool <- setdiff(pool, restriction$values)
       vals <- rep_len(pool, n)
       if (!is.null(plant$present[[s]])) vals[1] <- plant$present[[s]]
       df[[col]] <- as.numeric(vals)
@@ -164,6 +205,75 @@
   }
   unique(out)
 }
+
+test_that("cr sentinel checks match recode scopes and detect residual values", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cr_merge_recipe.yml",
+                                             package = "lissr"))
+  rules <- stats::setNames(recipe$harmonization_rules,
+    vapply(recipe$harmonization_rules, function(rule) rule$rule_id, character(1)))
+  checks <- stats::setNames(recipe$validation_checks,
+    vapply(recipe$validation_checks, function(check) check$check_id, character(1)))
+  blocks <- c(checks$VC04$targets, list(checks$VC05))
+  rule_ids <- c("HR01", "HR02", "HR03")
+  for (i in seq_along(rule_ids)) {
+    rule <- rules[[rule_ids[[i]]]]
+    expect_identical(blocks[[i]]$suffixes, rule$suffixes)
+    expect_identical(blocks[[i]]$waves, rule$waves)
+    expect_identical(blocks[[i]]$sentinel_values, rule$codes)
+  }
+
+  df <- data.frame(wave_id = recipe$meta$covered_waves)
+  for (suffix in unique(unlist(lapply(blocks, function(block) block$suffixes))))
+    df[[paste0("s", suffix)]] <- 1
+  df$s120 <- rep_len(c(99, 999), nrow(df))
+  df$fieldwork_ym <- 999
+  df$wave_year <- 99
+  evaluate <- function(data, check) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  for (check in checks[c("VC04", "VC05")])
+    expect_true(evaluate(df, check)$passed)
+
+  for (i in seq_along(rule_ids)) {
+    rule <- rules[[rule_ids[[i]]]]
+    check <- checks[[if (i <= 2L) "VC04" else "VC05"]]
+    col <- paste0("s", rule$suffixes[[1]])
+    inside <- match(rule$waves[[1]], df$wave_id)
+    outside <- which(!(df$wave_id %in% rule$waves))[[1]]
+    planted <- df
+    planted[[col]][outside] <- rule$codes[[1]]
+    expect_true(evaluate(planted, check)$passed)
+    planted[[col]][inside] <- rule$codes[[1]]
+    result <- evaluate(planted, check)
+    expect_false(result$passed)
+    expect_match(result$detail, paste0("forbidden value(s) in ", col), fixed = TRUE)
+  }
+
+  # the positive codes belong to distinct target sets, not their cross-product
+  df$s003[df$wave_id == "cr08a"] <- 99
+  df$s002[df$wave_id == "cr08a"] <- 999
+  expect_true(evaluate(df, checks$VC04)$passed)
+})
+
+test_that("ch gender restriction checks the declared column and allowed waves", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "ch_merge_recipe.yml",
+                                             package = "lissr"))
+  check <- Filter(function(check) check$check_id == "CHK05",
+                  recipe$validation_checks)[[1]]
+  expect_identical(check[["variable"]], "001")
+  df <- data.frame(wave_id = recipe$meta$covered_waves, s001 = 1)
+  df$s001[df$wave_id %in% check$waves_allowed] <- 3
+  evaluate <- function(data) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  expect_true(evaluate(df)$passed)
+  df$s001[which(!(df$wave_id %in% check$waves_allowed))[[1]]] <- 3
+  result <- evaluate(df)
+  expect_false(result$passed)
+  expect_match(result$detail, "forbidden value(s) in s001", fixed = TRUE)
+})
 
 test_that("every bundled recipe merges a synthetic panel end to end", {
   skip_if_not_installed("haven")
