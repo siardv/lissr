@@ -30,14 +30,18 @@
   for (chk in (recipe$validation_checks %||% list())) {
     ty <- paste0(chk$type %||% "", collapse = "")
     cols <- as.character(unlist(chk$suffixes %||% chk$variables %||%
-                                  chk$scope %||% list()))
+                                  chk$scope %||% chk$variable %||% chk$items %||% list()))
+    # include every required item, including ranges and q-prefixed suffixes
+    range_types <- c("value_range", "value_in_range", "assert_range", "range_check")
+    if (ty %in% range_types) cols <- .expand_rng(cols)
+    cols <- sub("^[qQ]([0-9]{3})$", "\\1", cols)
     if (ty %in% c("value_in_set", "value_set", "assert_values")) {
       av <- suppressWarnings(as.numeric(unlist(chk$allowed_values %||%
                                                  chk$allowed %||% list())))
       av <- av[!is.na(av)]
       if (length(av)) for (cc in cols) allowed[[cc]] <- av
     }
-    if (ty %in% c("value_range", "value_in_range", "assert_range")) {
+    if (ty %in% range_types) {
       lo <- chk$min %||% 0; hi <- chk$max %||% 3
       for (cc in cols) allowed[[cc]] <- unique(pmin(pmax(c(1, 2), lo), hi))
     }

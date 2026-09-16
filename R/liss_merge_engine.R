@@ -2206,16 +2206,63 @@ safe_eval_condition <- function(cond, df) {
   "row_count_match", "row_count_sum", "crosstab"
 )
 
+#' validate names before flattening a required check scope (internal)
+#' @noRd
+.check_names <- function(x, label, allow_numeric = FALSE) {
+  if (!is.null(dim(x)))
+    stop(label, " must be a vector or flat list of names", call. = FALSE)
+  valid_type <- function(v) {
+    is.null(dim(v)) &&
+      (is.character(v) || (allow_numeric && is.numeric(v) && all(is.finite(v))))
+  }
+  if (is.list(x)) {
+    if (!length(x) || !all(vapply(x, function(v) {
+      valid_type(v) && length(v) == 1L
+    }, logical(1))))
+      stop(label, " must be a non-empty flat list of names", call. = FALSE)
+    x <- unlist(x, use.names = FALSE)
+  }
+  if (!valid_type(x) || !length(x) || anyNA(x) ||
+      any(!nzchar(trimws(as.character(x)))))
+    stop(label, " must contain non-empty names", call. = FALSE)
+  unname(as.character(x))
+}
+
+#' retain both resolved and unresolved requested columns (internal)
+#' @noRd
+.resolve_check_columns <- function(df, requested) {
+  resolved <- vapply(requested, function(s) {
+    find_col(df, s) %||% NA_character_
+  }, character(1), USE.NAMES = FALSE)
+  list(requested = requested, resolved = resolved,
+       missing = requested[is.na(resolved)])
+}
+
 #' resolve the suffix/variable scope of a check to column names (internal)
 #' @noRd
 .check_cols <- function(df, chk, keys = c("suffixes", "variables", "scope",
                                           "applies_to", "items", "stems",
-                                          "variable", "column")) {
+                                          "variable", "column"),
+                        details = FALSE, expand_ranges = FALSE,
+                        numeric_selectors = TRUE) {
   vals <- NULL
+  key <- NULL
   for (k in keys) {
     v <- chk[[k]]
-    if (!is.null(v)) { vals <- v; break }
+    if (!is.null(v)) { vals <- v; key <- k; break }
   }
+  if (details) {
+    vals <- .check_names(vals, "column targets", allow_numeric = TRUE)
+    if (expand_ranges && identical(key, "items")) vals <- expand_items(vals)
+    if (numeric_selectors && length(vals) == 1L &&
+        vals %in% c("all_numeric", "numeric")) {
+      cols <- names(df)[vapply(df, is.numeric, logical(1))]
+      return(list(requested = vals, resolved = cols,
+                  missing = if (length(cols)) character(0) else vals))
+    }
+    return(.resolve_check_columns(df, vals))
+  }
+  # legacy consumers keep their permissive resolution until migrated separately
   if (is.null(vals)) return(character(0))
   if (is.character(vals) && length(vals) == 1 &&
       vals %in% c("all_numeric", "numeric"))
@@ -2229,13 +2276,48 @@ safe_eval_condition <- function(cond, df) {
 #' row filter from a check's wave scope (internal)
 #' @noRd
 .check_rows <- function(df, chk, keys = c("in_waves", "waves", "wave_filter",
-                                          "must_be_na_in")) {
+                                          "must_be_na_in"), details = FALSE) {
+  if (details) {
+    selected <- intersect(keys, names(chk))
+    waves <- if (length(selected)) {
+      .check_names(chk[[selected[[1]]]], "wave scope")
+    } else "all"
+    if ("all" %in% waves && length(waves) != 1L)
+      stop("wave scope cannot mix 'all' with wave names", call. = FALSE)
+    if (identical(waves, "all"))
+      return(list(rows = rep(TRUE, nrow(df)), requested = waves,
+                  missing = character(0)))
+    if (!("wave_id" %in% names(df)))
+      stop("wave scope requires the wave_id column", call. = FALSE)
+    if (!is.atomic(df[["wave_id"]]) || !is.null(dim(df[["wave_id"]])))
+      stop("wave scope requires an atomic wave_id vector", call. = FALSE)
+    wave_ids <- as.character(df[["wave_id"]])
+    if (anyNA(wave_ids) || any(!nzchar(trimws(wave_ids))))
+      stop("wave scope cannot evaluate missing or blank wave_id values", call. = FALSE)
+    return(list(rows = wave_ids %in% waves, requested = unique(waves),
+                missing = setdiff(waves, wave_ids)))
+  }
   for (k in keys) {
     w <- chk[[k]]
     if (!is.null(w) && !identical(w, "all"))
       return(as.character(df$wave_id) %in% as.character(unlist(w)))
   }
   rep(TRUE, nrow(df))
+}
+
+#' reject incomplete required scopes before evaluating values (internal)
+#' @noRd
+.require_check_scope <- function(cols, rows) {
+  detail <- character(0)
+  if (length(cols$missing))
+    detail <- c(detail, paste0("unresolved required column(s): ",
+                               paste(unique(cols$missing), collapse = ", ")))
+  if (length(rows$missing))
+    detail <- c(detail, paste0("no rows for required wave(s): ",
+                               paste(rows$missing, collapse = ", ")))
+  if (length(detail))
+    stop(paste0(paste(detail, collapse = "; "), "; wave scope: ",
+                paste(rows$requested, collapse = ", ")), call. = FALSE)
 }
 
 run_validations <- function(df, checks, log_entries) {
@@ -2379,13 +2461,28 @@ run_validations <- function(df, checks, log_entries) {
         "value_in_set" = {
           # either one allowed set for several columns, or per-variable sets
           # via variables: [{name, allowed}] (ci V-04 shape)
-          per_var <- NULL
-          if (is.list(chk$variables) && length(chk$variables) > 0 &&
-              is.list(chk$variables[[1]]) && !is.null(chk$variables[[1]]$name)) {
-            per_var <- chk$variables
+          variables <- chk[["variables"]]
+          per_var <- is.list(variables) && length(variables) > 0 &&
+            any(vapply(variables, is.list, logical(1)))
+          if (per_var) {
+            if (!is.null(dim(variables)))
+              stop("per-variable sets require a flat list of entries", call. = FALSE)
+            targets <- vapply(variables, function(v) {
+              if (!is.list(v))
+                stop("per-variable sets require named entries", call. = FALSE)
+              name <- .check_names(v[["name"]], "per-variable name", allow_numeric = TRUE)
+              if (length(name) != 1L)
+                stop("per-variable sets require one name per entry", call. = FALSE)
+              name
+            }, character(1), USE.NAMES = FALSE)
+            cols <- .resolve_check_columns(df, targets)
+          } else {
+            cols <- .check_cols(df, chk, details = TRUE)
           }
-          allow_na <- !isFALSE(chk$allow_na)
-          row_keep <- .check_rows(df, chk)
+          row_scope <- .check_rows(df, chk, details = TRUE)
+          .require_check_scope(cols, row_scope)
+          allow_na <- !isFALSE(chk[["allow_na"]])
+          row_keep <- row_scope$rows
           passed <- TRUE
           detail <- NULL
           test_col <- function(col, allowed) {
@@ -2395,11 +2492,11 @@ run_validations <- function(df, checks, log_entries) {
             if (allow_na) bad <- bad & !is.na(vals)
             sum(bad, na.rm = TRUE)
           }
-          if (!is.null(per_var)) {
-            for (v in per_var) {
-              col <- find_col(df, as.character(v$name))
-              if (is.null(col)) next
-              n_bad <- test_col(col, v$allowed %||% v$allowed_values)
+          if (per_var) {
+            for (i in seq_along(variables)) {
+              v <- variables[[i]]
+              col <- cols$resolved[[i]]
+              n_bad <- test_col(col, v[["allowed"]] %||% v[["allowed_values"]])
               if (n_bad > 0) {
                 passed <- FALSE
                 detail <- paste0(n_bad, " out-of-set value(s) in ", col)
@@ -2407,8 +2504,8 @@ run_validations <- function(df, checks, log_entries) {
               }
             }
           } else {
-            allowed <- chk$allowed_values %||% chk$allowed %||% chk$values
-            for (col in .check_cols(df, chk)) {
+            allowed <- chk[["allowed_values"]] %||% chk[["allowed"]] %||% chk[["values"]]
+            for (col in cols$resolved) {
               n_bad <- test_col(col, allowed)
               if (n_bad > 0) {
                 passed <- FALSE
@@ -2417,6 +2514,8 @@ run_validations <- function(df, checks, log_entries) {
               }
             }
           }
+          if (!passed)
+            detail <- paste0(detail, "; wave scope: ", paste(row_scope$requested, collapse = ", "))
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "value_present" = {
@@ -2501,21 +2600,24 @@ run_validations <- function(df, checks, log_entries) {
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "value_range" = {
-          suffixes <- chk$suffixes %||% chk$variables %||% chk$variable %||% NULL
-          if (is.null(suffixes)) suffixes <- expand_items(chk$items)
+          cols <- .check_cols(df, chk,
+            keys = c("suffixes", "variables", "variable", "items"),
+            details = TRUE, expand_ranges = TRUE, numeric_selectors = FALSE)
+          row_scope <- .check_rows(df, chk, details = TRUE)
+          .require_check_scope(cols, row_scope)
           lo <- chk$min %||% -Inf
           hi <- chk$max %||% Inf
           passed <- TRUE
           detail <- NULL
-          for (sfx in unlist(suffixes)) {
-            col <- find_col(df, as.character(sfx))
-            if (!is.null(col) && col %in% names(df) && is.numeric(df[[col]])) {
-              vals <- df[[col]][!is.na(df[[col]])]
+          for (col in cols$resolved) {
+            if (is.numeric(df[[col]])) {
+              vals <- df[[col]][row_scope$rows & !is.na(df[[col]])]
               bad <- sum(vals < lo | vals > hi)
               if (bad > 0) {
                 passed <- FALSE
                 detail <- paste0(bad, " out-of-range value(s) in ", col,
-                                 " [", lo, "..", hi, "]")
+                                 " [", lo, "..", hi, "]; wave scope: ",
+                                 paste(row_scope$requested, collapse = ", "))
                 break
               }
             }

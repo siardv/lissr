@@ -477,6 +477,47 @@ The default `strict = FALSE` writes outputs and sets `valid_for_analysis = FALSE
 when either occurs. `merge_liss_modules()` forwards strictness. This relies on
 individual executors detecting failures and unresolved targets correctly.
 
+#### `value_range` and `value_in_set` target and wave scopes
+
+These checks require every requested target to resolve. An absent target,
+including one missing name among otherwise resolved columns, is unevaluable
+(`passed = NA`), as is a malformed or empty target declaration. Diagnostics name
+unresolved targets. An observed value outside the range or allowed set fails
+(`passed = FALSE`). Both outcomes preserve the declared severity and use the
+strict/report-mode handling above.
+
+- Range target keys, in precedence order, are `suffixes`, `variables`, `variable`,
+  and `items`. `items` expands zero-padded ranges such as `"020-069"`.
+- Shared-set target keys are `suffixes`, `variables`, `scope`, `applies_to`,
+  `items`, `stems`, `variable`, and `column`. The first non-null key is used.
+  Set `items` contains individual targets, without range expansion.
+  `variables: [{name: "005", allowed: [1, 2]}]` supplies per-variable sets;
+  `allowed_values` is also supported within each entry. Every entry must resolve.
+- Exact column names take priority, followed by the existing suffix lookup
+  (`s`, `stem_`, `q`, `Q`, including q/Q-prefixed aliases). Names can be supplied
+  as vectors or flat lists; null entries, nested names and blank/missing names
+  are unevaluable. Existing numeric suffix inputs remain supported. Shared-set
+  selectors `"numeric"` and `"all_numeric"` select numeric columns; an empty
+  selection is unevaluable.
+- Wave keys, in precedence order, are `in_waves`, `waves`, `wave_filter`, and
+  `must_be_na_in`. The first declared key is used, including an explicit `"all"`.
+  Omitted scope and scalar/list `"all"` mean all rows and do not require
+  `wave_id`. Otherwise supply a nonempty character vector or flat list of wave
+  names. Empty/null scopes, nested lists, missing/blank names and mixing `"all"`
+  with wave names are unevaluable.
+- A specific wave scope requires `wave_id` with known, nonblank row membership.
+  Missing wave identification or any requested wave without rows is unevaluable.
+  Values outside a valid requested scope are excluded from both checks.
+- Numeric all-NA range targets still pass. Set checks retain `allow_na` behavior
+  (default `TRUE`). Empty data with existing target columns can pass an all-row
+  check; explicitly requested absent waves remain unevaluable.
+
+This contract also applies to range aliases `range_check`, `value_in_range`,
+`assert_range` and set aliases `value_set`, `assert_values`. It does not change
+other validators or add support for additional range/set payloads. Range checks
+continue to use numeric columns and `min`/`max`; `valid_range` and sentinel
+exceptions are not implemented by this executor.
+
 #### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does not

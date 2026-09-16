@@ -1,5 +1,13 @@
 # lissr (development)
 
+* `value_range` and `value_in_set` checks now report missing required columns
+  and requested waves as unevaluable, including partial target matches. Invalid
+  target/wave scopes retain the declared severity and diagnostic details.
+  Range checks now honor wave filters; both checks normalize scalar and list
+  `"all"` scopes. Error-level unevaluable checks block strict output and invalidate
+  report-mode output. Existing aliases, all-NA behavior and other validators
+  retain their behavior.
+
 * Phase-6 `expected_presence` checks now fail for missing required columns,
   absent waves and all-NA wave values. Malformed or empty requests and missing
   wave identifiers are unevaluable, preserving severity. Error-level failures
