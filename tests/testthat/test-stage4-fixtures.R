@@ -114,6 +114,24 @@
   unique(sub("^(s|stem_|q|Q)([0-9]{3})$", "\\2", as.character(targets)))
 }
 
+.required_na_rate_suffixes <- function(recipe) {
+  types <- c("na_rate", "na_rate_check", "na_rate_above", "na_rate_below",
+             "not_missing")
+  checks <- Filter(function(check) check$type %in% types,
+                   recipe$validation_checks %||% list())
+  targets <- unlist(lapply(checks, function(check) {
+    for (key in c("suffixes", "variables", "scope", "items")) {
+      if (!is.null(check[[key]])) {
+        targets <- as.character(unlist(check[[key]]))
+        return(if (key == "items") .expand_rng(targets) else targets)
+      }
+    }
+    character(0)
+  }))
+  targets <- sub("^(s|stem_|q|Q)([0-9]{3})$", "\\2", targets)
+  unique(targets[grepl("^[0-9]{3}$", targets)])
+}
+
 .absent_specs <- function(recipe) {
   # suffix x wave combinations that checks declare structurally all-NA;
   # the generator must not plant values there
@@ -170,6 +188,7 @@
                         c(names(plant$allowed), names(plant$present)),
                         value = TRUE), sfx)
   sfx <- unique(c(sfx, extra, .required_absence_suffixes(recipe),
+                 .required_na_rate_suffixes(recipe),
                  structural_targets[grepl("^[0-9]{3}$", structural_targets)]))
   # boundary split_variable sources must exist for era-scoped outputs
   bnd <- unlist(lapply(recipe$boundary_rules %||% list(), function(r) {
@@ -228,6 +247,44 @@
   }
   unique(out)
 }
+
+test_that("cp all-NA rate checks require every item and honor declared waves", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
+                                             package = "lissr"))
+  ids <- c("V04_structural_na_post_cp19k", "V05_lotr_structural_na_pre_cp12e")
+  checks <- Filter(function(check) check$check_id %in% ids,
+                   recipe$validation_checks)
+  expect_length(checks, 2L)
+  evaluate <- function(data, check) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  for (check in checks) {
+    targets <- .expand_rng(check$items)
+    columns <- paste0("s", targets)
+    df <- data.frame(wave_id = recipe$meta$covered_waves)
+    inside <- df$wave_id %in% check$waves
+    for (column in columns) df[[column]] <- ifelse(inside, NA_real_, 1)
+    expect_true(evaluate(df, check)$passed)
+
+    missing <- df
+    missing[[columns[[2]]]] <- NULL
+    result <- evaluate(missing, check)
+    expect_identical(result$passed, NA)
+    expect_match(result$detail, targets[[2]], fixed = TRUE)
+
+    contaminated <- df
+    contaminated[[columns[[1]]]][which(inside)[[1]]] <- 1
+    result <- evaluate(contaminated, check)
+    expect_false(result$passed)
+    expect_match(result$detail, columns[[1]], fixed = TRUE)
+
+    missing_wave <- as.character(check$waves[[1]])
+    result <- evaluate(df[df$wave_id != missing_wave, , drop = FALSE], check)
+    expect_identical(result$passed, NA)
+    expect_match(result$detail, missing_wave, fixed = TRUE)
+  }
+})
 
 test_that("cr sentinel checks match recode scopes and detect residual values", {
   recipe <- yaml::yaml.load_file(system.file("recipes", "cr_merge_recipe.yml",

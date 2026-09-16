@@ -2720,18 +2720,19 @@ run_validations <- function(df, checks, log_entries) {
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "na_rate" = {
-          suffixes <- chk$suffixes %||% chk$variables %||% chk$scope %||% NULL
-          if (is.null(suffixes)) suffixes <- expand_items(chk$items)
-          waves <- chk[["waves"]] %||% chk[["wave_filter"]] %||% NULL
+          cols <- .check_cols(df, chk,
+            keys = c("suffixes", "variables", "scope", "items"),
+            details = TRUE, expand_ranges = TRUE, numeric_selectors = FALSE)
+          row_scope <- .check_rows(df, chk, keys = c("waves", "wave_filter"),
+                                   details = TRUE)
+          .require_check_scope(cols, row_scope)
           # not_missing alias: zero NA tolerated
           is_not_missing <- identical(type_raw, "not_missing")
           threshold <- chk$threshold %||% chk$max_rate %||%
                        (if (is_not_missing) 0 else 1.0)
           direction <- chk$direction %||%
                        (if (identical(type_raw, "na_rate_above")) "above" else "below")
-          keep <- rep(TRUE, nrow(df))
-          if (!is.null(waves) && !identical(waves, "all") && "wave_id" %in% names(df))
-            keep <- keep & (as.character(df$wave_id) %in% as.character(unlist(waves)))
+          keep <- row_scope$rows
           cond <- chk$condition %||% NULL
           cond_ok <- TRUE
           if (!is.null(cond) && nzchar(as.character(cond))) {
@@ -2746,21 +2747,23 @@ run_validations <- function(df, checks, log_entries) {
                  detail = paste0("condition not evaluable: ", cond))
           } else {
             passed <- TRUE
-            detail <- NULL
-            for (sfx in unlist(suffixes)) {
-              col <- find_col(df, as.character(sfx))
-              if (!is.null(col) && col %in% names(df)) {
-                subset <- df[[col]][keep]
-                rate <- if (length(subset)) mean(is.na(subset)) else NA_real_
-                ok <- if (is.na(rate)) TRUE
-                      else if (direction == "above") rate >= threshold
-                      else rate <= threshold
-                if (!ok) {
-                  passed <- FALSE
-                  detail <- paste0("NA rate ", round(rate, 4), " in ", col,
-                                   " (threshold: ", direction, " ", threshold, ")")
-                  break
-                }
+            detail <- if (!any(keep)) {
+              paste0("no eligible rows after wave and condition filters; ",
+                     "NA rate not calculated; wave scope: ",
+                     paste(row_scope$requested, collapse = ", "))
+            } else NULL
+            for (col in cols$resolved) {
+              subset <- df[[col]][keep]
+              rate <- if (length(subset)) mean(is.na(subset)) else NA_real_
+              ok <- if (is.na(rate)) TRUE
+                    else if (direction == "above") rate >= threshold
+                    else rate <= threshold
+              if (!ok) {
+                passed <- FALSE
+                detail <- paste0("NA rate ", round(rate, 4), " in ", col,
+                                 " (threshold: ", direction, " ", threshold, ")",
+                                 "; wave scope: ", paste(row_scope$requested, collapse = ", "))
+                break
               }
             }
             list(check_id = cid, passed = passed, severity = sev, detail = detail)

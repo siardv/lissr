@@ -628,6 +628,45 @@ resolve before matching begins, even when another column already has a match.
   all-NA target cannot supply a nonmissing numeric value, but another selected
   column may supply it. This contract adds no general value-payload validation.
 
+#### `na_rate` target and wave scopes
+
+`na_rate` requires every requested target and wave to resolve before a condition
+is applied. Missing targets (including partial matches), absent requested waves,
+malformed scopes and unavailable required wave membership are unevaluable
+(`passed = NA`). A measured rate outside the threshold fails (`passed = FALSE`).
+Both outcomes preserve severity and the strict/report handling above.
+
+- Target keys, in precedence order, are `suffixes`, `variables`, `scope`, and
+  `items`; the first non-null key is used. Names use the existing exact/suffix
+  lookup, including numeric suffix inputs and flat lists. `items` expands
+  zero-padded ranges before column lookup, even if a literal range-like column
+  exists. Other target keys retain literal names. Numeric-column selectors are
+  not expanded by this executor. Empty or malformed targets are unevaluable.
+- Wave keys, in precedence order, are `waves` and `wave_filter`; the first
+  declared key is used. Omitted scope and scalar/list `"all"` select all rows
+  without requiring `wave_id`. Specific requests require every named wave to
+  have rows and atomic, undimensioned `wave_id` with known, nonblank membership.
+  Null/empty scopes, nested lists, noncharacter names and mixing `"all"` with
+  wave names are unevaluable.
+- Conditions use the existing restricted evaluator and intersect with the wave
+  filter. False or NA condition results exclude rows. Invalid conditions,
+  unresolved condition references or results of the wrong type/length remain
+  unevaluable. An omitted, null or empty-string condition applies no filter.
+- A valid condition selecting no rows, or empty all-row data with resolved
+  targets, retains its pass result. The diagnostic explicitly says that no rows
+  were eligible and no NA rate was calculated. All required targets and waves
+  must resolve first; an empty selection cannot excuse missing inputs.
+- Rates are calculated separately for each target over the pooled selected rows,
+  not separately per wave. Every target must meet the threshold. An all-NA target
+  has rate 1; a nonmissing target has rate 0. `above` uses `>=`, otherwise the
+  existing `<=` comparison applies. Threshold precedence is `threshold`, then
+  `max_rate`, then the default: 0 for `not_missing`, 1 otherwise.
+
+Aliases are `na_rate_check`, `na_rate_above`, `na_rate_below`, and `not_missing`.
+`na_rate_above` defaults to direction `above`; the others default to `below`.
+An explicit direction overrides that default. This contract does not introduce
+general threshold/direction validation or change the condition evaluator.
+
 #### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does not

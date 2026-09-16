@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `na_rate` and its aliases now require every target and requested wave to
+  resolve before applying conditions. Missing inputs and malformed scopes are
+  unevaluable with the declared severity. Scalar/list `"all"` scopes are
+  normalized. Valid filters selecting no rows retain their pass result with
+  a diagnostic stating that no rate was calculated. Item ranges, pooled NA rates,
+  threshold defaults and safe condition evaluation retain their behavior.
+
 * `value_present` and `value_present_per_wave` now require every requested
   target and wave to resolve. Missing inputs, malformed scopes and unavailable
   wave membership are unevaluable with the declared severity. Omitted and
