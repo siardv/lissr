@@ -347,6 +347,31 @@ test_that("cs structural scope preserves the zero-padded target", {
   expect_match(result$detail, "s002", fixed = TRUE)
 })
 
+test_that("cs value presence checks its zero-padded target in every wave", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cs_merge_recipe.yml",
+                                             package = "lissr"))
+  check <- Filter(function(check) check$check_id == "V02_dk_code_present_all_waves",
+                  recipe$validation_checks)[[1]]
+  expect_identical(check$scope, "001")
+  df <- data.frame(wave_id = rep(recipe$meta$covered_waves, each = 2L),
+                   s001 = rep(c(-9, NA_real_), length(recipe$meta$covered_waves)),
+                   s002 = -9, s1 = -9)
+  evaluate <- function(data) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  expect_true(evaluate(df)$passed)
+  missing_wave <- recipe$meta$covered_waves[[2]]
+  df$s001[df$wave_id == missing_wave] <- 1
+  result <- evaluate(df)
+  expect_false(result$passed)
+  expect_type(result$detail, "character")
+  if (is.character(result$detail))
+    expect_match(result$detail, missing_wave, fixed = TRUE)
+  df$s001 <- NA_real_
+  expect_false(evaluate(df)$passed)
+})
+
 test_that("every bundled recipe merges a synthetic panel end to end", {
   skip_if_not_installed("haven")
   mods <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")
@@ -412,6 +437,17 @@ test_that("every bundled recipe merges a synthetic panel end to end", {
     if (any(structural_fails))
       problems <- c(problems, paste0(mod, ": unresolved/failed structural checks: ",
         paste(vapply(res$validation[structural_fails], function(check) check$check_id,
+                     character(1)), collapse = ", ")))
+
+    presence_types <- c("value_present", "value_present_per_wave")
+    presence_ids <- vapply(Filter(function(check) check$type %in% presence_types,
+                                  recipe$validation_checks),
+                            function(check) check$check_id, character(1))
+    presence_fails <- vapply(res$validation, function(check)
+      check$check_id %in% presence_ids && !isTRUE(check$passed), logical(1))
+    if (any(presence_fails))
+      problems <- c(problems, paste0(mod, ": unresolved/failed value presence checks: ",
+        paste(vapply(res$validation[presence_fails], function(check) check$check_id,
                      character(1)), collapse = ", ")))
 
     unlink(c(data_dir, out_dir), recursive = TRUE)

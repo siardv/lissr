@@ -601,6 +601,33 @@ These semantics also apply to `structural_absence`, `all_na`,
 `structural_na_count`, and `missingness_check`. They do not change the distinct
 `expected_presence` failure contract below or other validation executors.
 
+#### `value_present` target and wave scopes
+
+`value_present` and its alias `value_present_per_wave` require at least one
+matching value in any selected target within each requested wave. Different
+targets can supply the match in different waves. Every requested column must
+resolve before matching begins, even when another column already has a match.
+
+- Target keys, lookup and scalar/list numeric selectors follow the shared-set
+  contract above. The first non-null target key is used; every explicit target
+  and each numeric selection must resolve. `items` contains literal targets,
+  without range expansion. Empty or malformed targets are unevaluable.
+- Wave keys, in precedence order, are `wave_filter` and `waves`. The first
+  declared key is used. Omitted scope and scalar/list `"all"` select all observed
+  waves. Each specifically requested wave must have rows; missing names are
+  never silently dropped. Null/empty scopes, nested lists, noncharacter names
+  and mixing `"all"` with wave names are unevaluable.
+- Every scope, including `"all"`, requires an atomic, undimensioned `wave_id`
+  column with known, nonblank row membership. With no observed waves the check
+  is unevaluable. A valid wave filter excludes other waves from value matching.
+- Missing inputs and malformed scopes report `passed = NA`; an observed wave
+  without a matching value reports `passed = FALSE`. Both retain severity and
+  use the strict/report handling above. Diagnostics identify unresolved names
+  or the wave and resolved columns lacking the value.
+- Existing `value`/`values` numeric coercion and matching are unchanged. An
+  all-NA target cannot supply a nonmissing numeric value, but another selected
+  column may supply it. This contract adds no general value-payload validation.
+
 #### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does not

@@ -2603,25 +2603,37 @@ run_validations <- function(df, checks, log_entries) {
         },
         "value_present" = {
           # asserts a specific value occurs at least once, per wave in scope
+          cols <- .check_cols(df, chk, details = TRUE)
+          row_scope <- .check_rows(df, chk, keys = c("wave_filter", "waves"),
+                                   details = TRUE)
+          .require_check_scope(cols, row_scope)
+          # all-wave presence still needs known membership and observed waves
+          if (!("wave_id" %in% names(df)))
+            stop("value_present requires the wave_id column", call. = FALSE)
+          if (!is.atomic(df[["wave_id"]]) || !is.null(dim(df[["wave_id"]])))
+            stop("value_present requires an atomic wave_id vector", call. = FALSE)
+          wave_ids <- as.character(df[["wave_id"]])
+          if (anyNA(wave_ids) || any(!nzchar(trimws(wave_ids))))
+            stop("value_present cannot evaluate missing or blank wave_id values",
+                 call. = FALSE)
+          waves <- unique(wave_ids[row_scope$rows])
+          if (!length(waves))
+            stop("value_present has no observed waves in scope", call. = FALSE)
           target_val <- suppressWarnings(as.numeric(chk$value %||% chk$values))
-          cols <- .check_cols(df, chk)
-          waves <- unique(as.character(df$wave_id))
-          wf <- chk[["wave_filter"]] %||% chk[["waves"]] %||% NULL
-          if (!is.null(wf) && !identical(wf, "all"))
-            waves <- intersect(waves, as.character(unlist(wf)))
           passed <- TRUE
           detail <- NULL
           for (w in waves) {
-            rows <- as.character(df$wave_id) == w
+            rows <- wave_ids == w
             hit <- FALSE
-            for (col in cols) {
+            for (col in cols$resolved) {
               vals <- suppressWarnings(as.numeric(df[[col]][rows]))
               if (any(vals %in% target_val, na.rm = TRUE)) { hit <- TRUE; break }
             }
             if (!hit) {
               passed <- FALSE
               detail <- paste0("value ", paste(target_val, collapse = "/"),
-                               " absent in wave ", w)
+                               " absent in wave ", w, "; columns: ",
+                               paste(cols$resolved, collapse = ", "))
               break
             }
           }

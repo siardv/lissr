@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `value_present` and `value_present_per_wave` now require every requested
+  target and wave to resolve. Missing inputs, malformed scopes and unavailable
+  wave membership are unevaluable with the declared severity. Omitted and
+  scalar/list `"all"` scopes check every observed wave; empty data are unevaluable.
+  Each wave still needs a matching value in any selected target. Social
+  Integration V02 now preserves its zero-padded target `001` as a string.
+
 * `structural_missingness` and its aliases now resolve every required target
   and wave scope before testing values. Missing inputs and malformed scopes are
   unevaluable, preserving severity and strict/report output handling. All-NA

@@ -977,7 +977,7 @@ validation_checks:
   description: DK code -9 should appear in at least one variable per wave.
   type: value_present_per_wave
   severity: warning
-  scope: 001
+  scope: '001'
   value: -9
 - check_id: V03_hobby_freq_missingness_early
   anomaly_ref: A-02
