@@ -193,7 +193,7 @@ harmonization_rules:
   # the un-collapsed detail is preserved separately.
   - rule_id: H04_debt_bracket_collapse
     action: value_recode
-    description: "collapse ca25j debt brackets 16/17/18 into legacy top bracket 15 (variable 056). NOTE: the un-collapsed detail is not preserved; the engine has no copy-before-recode mechanism yet (tracked in TODO.md), so recover raw detail from the source ca25j file if needed"
+    description: "collapse ca25j debt brackets 16/17/18 into legacy top bracket 15 (variable 056). NOTE: the un-collapsed detail is not preserved; the engine has no copy-before-recode mechanism yet, so recover raw detail from the source ca25j file if needed"
     waves: [ca25j]
     variables: ["056"]
     mapping:

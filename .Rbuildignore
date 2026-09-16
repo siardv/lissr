@@ -7,6 +7,6 @@
 ^inst/(?:cleaning|extdata)/(?![^/]+\.ya?ml$)
 ^inst/doc/(?![^/]+\.(?:R|Rmd|html)$)
 ^inst/recipes/(?!(?:[^/]+\.ya?ml|taxonomies(?:/[^/]+\.ya?ml)?)$)
-^inst/schema/(?![^/]+\.(?:md|ya?ml)$)
+^inst/schema/(?!(?:CANONICAL_SCHEMA\.md|[^/]+\.ya?ml)$)
 ^inst/scripts/(?!(?:[^/]+\.R|verification(?:/[^/]+\.R)?)$)
 ^build/(?!vignette\.rds$)

@@ -2446,16 +2446,59 @@ run_validations <- function(df, checks, log_entries) {
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "expected_presence" = {
-          var <- chk$variable %||% ""
-          waves <- chk$waves %||% list()
-          passed <- TRUE
-          if (nchar(var) > 0 && var %in% names(df)) {
-            for (w in waves) {
-              subset <- df[df$wave_id == w, var, drop = TRUE]
-              if (all(is.na(subset))) { passed <- FALSE; break }
+          var <- chk[["variable"]]
+          waves <- chk[["waves"]]
+          valid_name <- function(x) {
+            is.character(x) && length(x) == 1L && !is.na(x) && nzchar(trimws(x))
+          }
+          if (!valid_name(var))
+            stop("expected_presence requires one non-empty variable name", call. = FALSE)
+          # reject malformed scopes before flattening; unlist() would drop NULLs
+          if (is.list(waves)) {
+            if (!length(waves) || !all(vapply(waves, valid_name, logical(1))))
+              stop("expected_presence waves must be a non-empty flat list of wave names",
+                   call. = FALSE)
+            waves <- unlist(waves, use.names = FALSE)
+          }
+          if (!is.character(waves) || !length(waves) || anyNA(waves) ||
+              any(!nzchar(trimws(waves))) || ("all" %in% waves && length(waves) != 1L))
+            stop("expected_presence waves must be non-empty wave names or the scalar 'all'",
+                 call. = FALSE)
+
+          if (!(var %in% names(df))) {
+            passed <- FALSE
+            detail <- paste0("required column '", var, "' is absent")
+          } else {
+            if (!("wave_id" %in% names(df)))
+              stop("expected_presence requires the wave_id column", call. = FALSE)
+            wave_ids <- as.character(df[["wave_id"]])
+            if (anyNA(wave_ids) || any(!nzchar(trimws(wave_ids))))
+              stop("expected_presence cannot evaluate missing or blank wave_id values",
+                   call. = FALSE)
+            if (identical(unname(waves), "all")) waves <- unique(wave_ids)
+            waves <- unique(waves)
+            missing_waves <- setdiff(waves, wave_ids)
+            if (!length(waves)) {
+              passed <- FALSE
+              detail <- "no waves are present in the data"
+            } else if (length(missing_waves)) {
+              passed <- FALSE
+              detail <- paste0("no rows for required wave(s): ",
+                               paste(missing_waves, collapse = ", "))
+            } else {
+              all_na <- vapply(waves, function(w) {
+                all(is.na(df[[var]][wave_ids == w]))
+              }, logical(1))
+              passed <- !any(all_na)
+              detail <- if (passed) {
+                paste0("column '", var, "' has non-missing values in all requested waves")
+              } else {
+                paste0("column '", var, "' is all-NA in wave(s): ",
+                       paste(waves[all_na], collapse = ", "))
+              }
             }
           }
-          list(check_id = cid, passed = passed, severity = sev)
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "value_range" = {
           suffixes <- chk$suffixes %||% chk$variables %||% chk$variable %||% NULL
@@ -2629,9 +2672,9 @@ run_validations <- function(df, checks, log_entries) {
   if (length(error_skips) > 0)
     cli::cli_warn(c(
       "!" = paste0(length(error_skips), " severity='error' check(s) could not ",
-                   "be evaluated (unknown type): ",
+                   "be evaluated: ",
                    paste(error_skips, collapse = ", ")),
-      "i" = "an error-level check must be executable; fix the check type or downgrade it"))
+      "i" = "an error-level check must be evaluable; check its type, payload and required inputs"))
 
   n_pass <- sum(vapply(results, function(r) isTRUE(r$passed), logical(1)))
   n_fail <- sum(vapply(results, function(r) isFALSE(r$passed), logical(1)))

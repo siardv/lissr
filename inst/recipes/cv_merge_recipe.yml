@@ -984,7 +984,7 @@ derived_variables:
   description: calendar month of fieldwork, derived as fieldwork_ym mod 100.
     fieldwork_ym auto-derives from the per-wave _m variable (engine phase 1,
     since 1.3.2.9000 stage 1); recent cv waves carry no _m, so the month is
-    NA there pending archive-metadata backfill (tracked in TODO.md). the
+    NA there pending archive-metadata backfill. the
     DV06/DV07/DV08 entries that duplicated the BR01/BR02/BR03 flag columns
     as all-NA shadows are deleted in the same pass.
   method: direct

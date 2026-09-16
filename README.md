@@ -211,11 +211,9 @@ assistants, not as authors: to review code, stress-test the merge engine,
 cross-reference recipe rules against codebooks and real data files, propose
 refactorings, draft tests and documentation, and speed up the grueling
 parts of package development. Nothing was accepted on trust. Every
-suggestion was read, questioned, run, and frequently rejected or rewritten;
-for the 1.1.0 release, `lissr-review.md` and `lissr-verification-report.md`
-in this repository document that process in detail. Whatever ships has
-passed the full test suite and R CMD check, and responsibility for every
-line, including the mistakes, is mine alone.
+suggestion was read, questioned, run, and frequently rejected or rewritten.
+Whatever ships has passed the full test suite and R CMD check, and
+responsibility for every line, including the mistakes, is mine alone.
 
 `lissr` exists to make merge and harmonization decisions in panel data
 explicit instead of silent. It seems only consistent to be equally explicit

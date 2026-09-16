@@ -5,7 +5,7 @@
 #   LISSR_VERIFICATION_DIR  the verification bundle root
 #   LISSR_ORIG_RECIPE_DIR   the upstream recipes (for before/after comparisons)
 # expected values below were independently verified with pyreadstat
-# (user_missing = TRUE) and the wave codebooks; see lissr-verification-report.md
+# (user_missing = TRUE) and the wave codebooks
 options(warn = 1)
 suppressPackageStartupMessages({library(haven); library(dplyr)})
 
