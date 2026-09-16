@@ -762,8 +762,11 @@ vanishing.</p></li>
 <div class="section level3">
 <h3 id="validation-enforcement">Validation enforcement<a class="anchor" aria-label="anchor" href="#validation-enforcement"></a>
 </h3>
-<p><code><a href="../reference/validate_recipe.html">validate_recipe()</a></code> (called by <code><a href="../reference/load_recipe.html">load_recipe()</a></code>
-and <code><a href="../reference/merge_liss_module.html">merge_liss_module()</a></code>) enforces before any merge:</p>
+<p><code><a href="../reference/validate_recipe.html">validate_recipe()</a></code> performs these preflight checks.
+<code><a href="../reference/load_recipe.html">load_recipe()</a></code> invokes it, and
+<code><a href="../reference/merge_liss_module.html">merge_liss_module()</a></code> uses that loader when given a
+recipe-file path. Passing an already parsed recipe list bypasses this
+preflight call.</p>
 <ol style="list-style-type: decimal">
 <li>All required top-level sections present</li>
 <li>All required <code>meta</code> fields non-empty</li>
@@ -787,26 +790,71 @@ is evaluated at merge time, where the engine honors each entry’s
 <div class="section level4">
 <h4 id="check-execution-semantics-v1-1-0">Check execution semantics (v1.1.0)<a class="anchor" aria-label="anchor" href="#check-execution-semantics-v1-1-0"></a>
 </h4>
-<p>Implemented check types, evaluated at merge time in phase 6:
-<code>uniqueness</code> (aliases <code>assert_unique</code>,
-<code>n_duplicates</code>; key column within a grouping variable,
-defaults <code>nomem_encr</code> within <code>wave_id</code>),
-<code>value_absence</code> (alias <code>assert_absent_values</code>),
-<code>value_range</code> (alias <code>range_check</code>),
-<code>na_rate</code> (alias <code>na_rate_check</code>),
-<code>expected_presence</code>, <code>structural_missingness</code>, and
-<code>wave_count</code>. A check whose <code>type</code> is not in this
-list reports <code>SKIP</code> with <code>passed = NA</code> and is
-counted separately from passes and failures; it never reports PASS for
-logic that did not run, and it never contributes to the error count. The
-per-run summary reports <code>n_pass</code>, <code>n_fail</code>, and
-<code>n_skip</code>.</p>
-<p><code>merge_liss_module(..., strict = FALSE)</code>: with
-<code>strict = TRUE</code>, any failed check of
-<code>severity: error</code> aborts the merge before phase 7, so no
-outputs are written. The default keeps v1.0.0 behavior (failures are
-reported and logged; outputs are still written).
-<code><a href="../reference/merge_liss_modules.html">merge_liss_modules()</a></code> forwards the argument.</p>
+<p>Canonical check types with phase-6 executors:
+<code>structural_missingness</code>, <code>uniqueness</code>,
+<code>value_absence</code>, <code>value_in_set</code>,
+<code>value_present</code>, <code>expected_presence</code>,
+<code>value_range</code>, <code>na_rate</code>, <code>wave_count</code>,
+<code>row_count</code>, and <code>per_wave_mean</code>. Registered
+aliases, such as <code>assert_unique</code> and
+<code>range_check</code>, dispatch to their canonical executor. Type
+recognition alone does not establish that every requested target is
+meaningfully evaluated by every executor.</p>
+<p>A failed check has <code>passed = FALSE</code>; an unknown or
+unevaluable check reports <code>SKIP</code> with
+<code>passed = NA</code>. Error-level failures increment
+<code>error_count</code>; error-level skips enter
+<code>error_skips</code>. Documentary diagnostics have
+<code>passed = NA</code> and <code>documentary = TRUE</code> and are
+counted separately (<code>n_doc</code>), rather than entering
+<code>error_skips</code>. The execution console labels them
+<code>DOC</code>; the text report currently labels them
+<code>SKIP</code>. The other counts are <code>n_pass</code>,
+<code>n_fail</code>, and <code>n_skip</code>.</p>
+<p>With <code>merge_liss_module(..., strict = TRUE)</code>, reported
+error-level failures or unevaluable checks abort before phase 7, so no
+output artifacts are written. The default <code>strict = FALSE</code>
+writes outputs and sets <code>valid_for_analysis = FALSE</code> when
+either occurs. <code><a href="../reference/merge_liss_modules.html">merge_liss_modules()</a></code> forwards strictness.
+This relies on individual executors detecting failures and unresolved
+targets correctly.</p>
+<div class="section level5">
+<h5 id="expected_presence-validation-checks">
+<code>expected_presence</code> validation checks<a class="anchor" aria-label="anchor" href="#expected_presence-validation-checks"></a>
+</h5>
+<p>This phase-6 check is separate from
+<code>global.expected_presence</code>; it does not create columns or use
+<code>on_absence</code>.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">validation_checks</span><span class="kw">:</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">check_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"required_measure"</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"expected_presence"</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="at">    </span><span class="fu">severity</span><span class="kw">:</span><span class="at"> </span><span class="st">"error"</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="at">    </span><span class="fu">variable</span><span class="kw">:</span><span class="at"> </span><span class="st">"s005"</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="at">    </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ch07a</span><span class="kw">,</span><span class="at"> ch08b</span><span class="kw">]</span><span class="co">  # or the scalar "all"</span></span></code></pre></div>
+<ul>
+<li>
+<code>variable</code> must be one exact, nonblank character column
+name. There is no suffix lookup or alias for this check type.</li>
+<li>
+<code>waves</code> must be an explicit, nonempty vector or flat list
+of nonblank wave names, or <code>"all"</code> for all observed waves.
+Omitted/empty scopes, null entries, nested lists, noncharacter names and
+mixing <code>"all"</code> with wave names are unevaluable. These payload
+requirements are enforced during phase 6.</li>
+<li>A missing column, a requested wave with no rows, or a requested wave
+whose target values are all <code>NA</code> fails. Otherwise each
+requested wave must have at least one non-NA target value.
+<code>"all"</code> fails on an empty dataset.</li>
+<li>Wave identification uses <code>wave_id</code>. If it is absent, or
+any row has a missing or blank wave identifier, a check whose target
+column exists is unevaluable. Rows with unknown membership are not
+silently treated as outside the scope.</li>
+<li>Failures and unevaluable results include diagnostic details in
+returned validation results and text reports. Severity is preserved.
+<code>assert_presence</code> and <code>presence_matrix</code> remain
+separate documentary types.</li>
+</ul>
+</div>
 </div>
 </div>
 </div>

@@ -461,11 +461,12 @@ fully capture. They are documentary.
 ### Validation enforcement
 
 [`validate_recipe()`](https://siardv.github.io/lissr/reference/validate_recipe.md)
-(called by
+performs these preflight checks.
 [`load_recipe()`](https://siardv.github.io/lissr/reference/load_recipe.md)
-and
-[`merge_liss_module()`](https://siardv.github.io/lissr/reference/merge_liss_module.md))
-enforces before any merge:
+invokes it, and
+[`merge_liss_module()`](https://siardv.github.io/lissr/reference/merge_liss_module.md)
+uses that loader when given a recipe-file path. Passing an already
+parsed recipe list bypasses this preflight call.
 
 1.  All required top-level sections present
 2.  All required `meta` fields non-empty
@@ -484,20 +485,60 @@ at merge time, where the engine honors each entry’s `on_absence`
 
 #### Check execution semantics (v1.1.0)
 
-Implemented check types, evaluated at merge time in phase 6:
-`uniqueness` (aliases `assert_unique`, `n_duplicates`; key column within
-a grouping variable, defaults `nomem_encr` within `wave_id`),
-`value_absence` (alias `assert_absent_values`), `value_range` (alias
-`range_check`), `na_rate` (alias `na_rate_check`), `expected_presence`,
-`structural_missingness`, and `wave_count`. A check whose `type` is not
-in this list reports `SKIP` with `passed = NA` and is counted separately
-from passes and failures; it never reports PASS for logic that did not
-run, and it never contributes to the error count. The per-run summary
-reports `n_pass`, `n_fail`, and `n_skip`.
+Canonical check types with phase-6 executors: `structural_missingness`,
+`uniqueness`, `value_absence`, `value_in_set`, `value_present`,
+`expected_presence`, `value_range`, `na_rate`, `wave_count`,
+`row_count`, and `per_wave_mean`. Registered aliases, such as
+`assert_unique` and `range_check`, dispatch to their canonical executor.
+Type recognition alone does not establish that every requested target is
+meaningfully evaluated by every executor.
 
-`merge_liss_module(..., strict = FALSE)`: with `strict = TRUE`, any
-failed check of `severity: error` aborts the merge before phase 7, so no
-outputs are written. The default keeps v1.0.0 behavior (failures are
-reported and logged; outputs are still written).
+A failed check has `passed = FALSE`; an unknown or unevaluable check
+reports `SKIP` with `passed = NA`. Error-level failures increment
+`error_count`; error-level skips enter `error_skips`. Documentary
+diagnostics have `passed = NA` and `documentary = TRUE` and are counted
+separately (`n_doc`), rather than entering `error_skips`. The execution
+console labels them `DOC`; the text report currently labels them `SKIP`.
+The other counts are `n_pass`, `n_fail`, and `n_skip`.
+
+With `merge_liss_module(..., strict = TRUE)`, reported error-level
+failures or unevaluable checks abort before phase 7, so no output
+artifacts are written. The default `strict = FALSE` writes outputs and
+sets `valid_for_analysis = FALSE` when either occurs.
 [`merge_liss_modules()`](https://siardv.github.io/lissr/reference/merge_liss_modules.md)
-forwards the argument.
+forwards strictness. This relies on individual executors detecting
+failures and unresolved targets correctly.
+
+##### `expected_presence` validation checks
+
+This phase-6 check is separate from `global.expected_presence`; it does
+not create columns or use `on_absence`.
+
+``` yaml
+validation_checks:
+  - check_id: "required_measure"
+    type: "expected_presence"
+    severity: "error"
+    variable: "s005"
+    waves: [ch07a, ch08b]  # or the scalar "all"
+```
+
+- `variable` must be one exact, nonblank character column name. There is
+  no suffix lookup or alias for this check type.
+- `waves` must be an explicit, nonempty vector or flat list of nonblank
+  wave names, or `"all"` for all observed waves. Omitted/empty scopes,
+  null entries, nested lists, noncharacter names and mixing `"all"` with
+  wave names are unevaluable. These payload requirements are enforced
+  during phase 6.
+- A missing column, a requested wave with no rows, or a requested wave
+  whose target values are all `NA` fails. Otherwise each requested wave
+  must have at least one non-NA target value. `"all"` fails on an empty
+  dataset.
+- Wave identification uses `wave_id`. If it is absent, or any row has a
+  missing or blank wave identifier, a check whose target column exists
+  is unevaluable. Rows with unknown membership are not silently treated
+  as outside the scope.
+- Failures and unevaluable results include diagnostic details in
+  returned validation results and text reports. Severity is preserved.
+  `assert_presence` and `presence_matrix` remain separate documentary
+  types.

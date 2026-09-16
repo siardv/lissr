@@ -184,8 +184,7 @@ at home of any age, so passing `aantalki` approximates that scale; see
 
 The ruleset consolidates the income-cleaning procedures of two
 production analysis projects and corrects several latent defects found
-while porting them; `INCOME_CLEANING_DESIGN.md` in the repository maps
-every legacy construct to its rule, documents each deviation, and
-describes how to propose new rules or parameter changes through pull
-requests, so the methodology can improve under community review while
-the audit trail keeps every historical run reproducible.
+while porting them. The declarative rules are maintained in
+`inst/cleaning/income_cleaning_rules.yml`, with regression coverage in
+`tests/testthat/test-clean-income.R`. Proposed rules and parameter
+changes can be reviewed through pull requests.

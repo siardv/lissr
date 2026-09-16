@@ -245,7 +245,7 @@ fixture suite pins every repair
   re-expressed as an executable derivation (`fieldwork_ym` mod 100), so
   it carries real calendar months wherever a wave has a `_m` variable
   instead of being all-NA everywhere; waves without `_m` stay NA pending
-  the archive-metadata backfill tracked in TODO.md. cv recipe 1.2.0.
+  an archive-metadata backfill. cv recipe 1.2.0.
 - cr BR20/BR21/BR30 (the 2019 scale breaks in religious attendance,
   prayer frequency, and afterlife belief) are re-expressed as executable
   `split_variable` rules with explicit `output_vars`: each produces
@@ -452,8 +452,7 @@ non-degeneracy against synthetic data.
   now populated with its three anchor regimes.
 - ca: `B02` (ca25j_redesign) and `B03` (ca20g_largeneg_review) re-keyed
   to executable forms; `H04`’s `preserve_original` promise is removed
-  from the description because no copy mechanism exists yet (tracked in
-  TODO.md).
+  from the description because no copy mechanism exists yet.
 - cw: `HR03_pension_dates` re-expressed as a wave-scoped `value_recode`
   (cw25r: 1 to 2023, 2 to 2024); previously the rule never executed and
   cw25r categorical codes pooled raw against calendar years.
@@ -667,9 +666,8 @@ enforced by the engine. No recipe format or output format changes.
 Feature release: a rule-driven income-cleaning framework for merged LISS
 data. Every behavior below is exercised by the regression tests in
 `tests/testthat/test-clean-income.R` and by a seeded end-to-end smoke
-run (`inst/scripts/verification/income_cleaning_smoke.R`); the
-architecture, rule catalog, and the mapping to the legacy analysis
-scripts live in the repository’s `INCOME_CLEANING_DESIGN.md`.
+run (`inst/scripts/verification/income_cleaning_smoke.R`). The ruleset
+is in `inst/cleaning/income_cleaning_rules.yml`.
 
 ### Income cleaning
 
@@ -740,18 +738,17 @@ scripts live in the repository’s `INCOME_CLEANING_DESIGN.md`.
 
 The framework supersedes the income-cleaning blocks of the two analysis
 scripts it was distilled from. Eleven behaviors were deliberately
-changed, each documented in `INCOME_CLEANING_DESIGN.md` and pinned by a
-regression test, among them: the donor pool no longer offers the flagged
-row as its own donor; the power-of-ten kernel returns a full-length
-vector so zeros and negatives cannot desynchronize magnitudes from rows;
-the target variable resolves by explicit name and alias instead of a
-`net|brut` pattern match that could capture personal-income columns;
-blanket [`abs()`](https://rdrr.io/r/base/MathFun.html) on the target
-became the ledgered sign-rectification rule P03; bound violations rank
-by deviation ratio rather than first index; households process in wave
-order rather than file order; and residual SPSS user-missing codes are
-swept by the declared metadata (P06) rather than trusted to upstream
-reads.
+changed, each pinned by a regression test, among them: the donor pool no
+longer offers the flagged row as its own donor; the power-of-ten kernel
+returns a full-length vector so zeros and negatives cannot desynchronize
+magnitudes from rows; the target variable resolves by explicit name and
+alias instead of a `net|brut` pattern match that could capture
+personal-income columns; blanket
+[`abs()`](https://rdrr.io/r/base/MathFun.html) on the target became the
+ledgered sign-rectification rule P03; bound violations rank by deviation
+ratio rather than first index; households process in wave order rather
+than file order; and residual SPSS user-missing codes are swept by the
+declared metadata (P06) rather than trusted to upstream reads.
 
 ### Tests
 
@@ -767,9 +764,8 @@ reads.
 ## lissr 1.1.0
 
 Correctness release. Every fix below was verified against real LISS
-Panel files; the empirical evidence, per-wave counts, and methodology
-live in the repository’s `lissr-verification-report.md` and in the
-regression tests under `tests/testthat/test-engine-regressions.R`.
+Panel files; regression checks are recorded in
+`tests/testthat/test-engine-regressions.R`.
 
 ### Merge engine
 
