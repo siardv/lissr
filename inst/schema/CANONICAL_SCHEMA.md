@@ -477,6 +477,52 @@ The default `strict = FALSE` writes outputs and sets `valid_for_analysis = FALSE
 when either occurs. `merge_liss_modules()` forwards strictness. This relies on
 individual executors detecting failures and unresolved targets correctly.
 
+#### `uniqueness` required keys
+
+`uniqueness` counts rows belonging to repeated combinations of the selected
+column and grouping keys. Every selected key must resolve before duplicates
+are counted, including default keys. Missing keys, partial matches and malformed
+active declarations are unevaluable (`passed = NA`). Duplicate observations
+fail (`passed = FALSE`). Both retain the declared severity and strict/report
+handling above; an unresolved subset is never treated as the complete key.
+
+- Column precedence is `column`, `key`, `variable`, the first `key_columns`
+  entry, the first `variables` entry, character `scope`, then `nomem_encr`.
+  Grouping precedence is `within`, `group_by`, the second `key_columns` entry,
+  the second `variables` entry, then `wave_id`. These are exact field names;
+  a field such as `scope_wave` cannot supply `scope`.
+- Top-level null values fall through to the next field. Selected declarations
+  must contain nonblank character names, without NA values. Direct column and
+  grouping fields accept nonempty vectors or flat lists of scalar names;
+  `scope` accepts only a character vector. Empty, nested, dimensioned or
+  noncharacter active requests are unevaluable. Fully overridden fields are
+  ignored.
+- Positional `key_columns` and `variables` declarations support one or two
+  names. Their complete structure is validated when needed for either role,
+  before selecting entries; null list elements cannot shift key positions.
+  A singleton can supply the column while grouping falls through. Overridden
+  entries in a valid positional declaration need not resolve. More than two
+  entries are unevaluable; use `column` and `within` vectors/lists for compound
+  keys instead of relying on discarded positional entries.
+- Exact column names take precedence over shorthand aliases: `wave` maps to
+  `wave_id`, `year` to `wave_year`, `person` and `respondent` to `nomem_encr`,
+  and `household` to `nohouse_encr`. There is no suffix lookup, numeric-column
+  selection or range expansion. Repeated or alias-equivalent resolved keys
+  are used once. Missing-key diagnostics include the requested key scope.
+- The duplicate count includes every row in a repeated group, rather than
+  only excess rows. Groups of sizes three and two contribute five duplicates.
+  NA and blank key values retain ordinary grouping behavior: distinct key
+  combinations can pass, and repeated combinations fail. A valid zero-row
+  dataset with all required columns passes with `duplicates: 0`.
+- No wave filtering is applied. Fields such as `scope_wave`, `waves` and
+  `wave_filter` do not restrict comparisons. The selected grouping columns
+  must exist, but this check adds no separate wave-membership or nonmissing-key
+  requirement.
+
+Aliases are `assert_unique`, `n_duplicates`, `unique_key`, `no_duplicate_ids`,
+`unique_per_wave`, and `assert_identifier`. All share this predicate;
+`assert_identifier` does not additionally enforce nonmissing identifiers.
+
 #### `value_range` and `value_in_set` target and wave scopes
 
 These checks require every requested target to resolve. An absent target,

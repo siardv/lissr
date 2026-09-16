@@ -2320,6 +2320,49 @@ safe_eval_condition <- function(cond, df) {
                 paste(rows$requested, collapse = ", ")), call. = FALSE)
 }
 
+#' resolve required uniqueness keys without discarding missing names (internal)
+#' @noRd
+.resolve_uniqueness_keys <- function(df, chk) {
+  select_names <- function(keys) {
+    for (key in keys) {
+      value <- chk[[key]]
+      if (!is.null(value))
+        return(.check_names(value, paste0("uniqueness ", key)))
+    }
+    NULL
+  }
+  # exact indexing preserves precedence without matching fields like scope_wave
+  column <- select_names(c("column", "key", "variable"))
+  group <- select_names(c("within", "group_by"))
+  for (key in c("key_columns", "variables")) {
+    if (!is.null(column) && !is.null(group)) break
+    value <- chk[[key]]
+    if (is.null(value)) next
+    value <- .check_names(value, paste0("uniqueness ", key))
+    if (length(value) > 2L)
+      stop("uniqueness ", key, " must contain one or two names; ",
+           "use column and within for compound keys", call. = FALSE)
+    if (is.null(column)) column <- value[[1]]
+    if (is.null(group) && length(value) == 2L) group <- value[[2]]
+  }
+  if (is.null(column)) {
+    scope <- chk[["scope"]]
+    if (!is.null(scope)) {
+      if (!is.character(scope))
+        stop("uniqueness scope must be a character vector of names", call. = FALSE)
+      column <- .check_names(scope, "uniqueness scope")
+    } else column <- "nomem_encr"
+  }
+  if (is.null(group)) group <- "wave_id"
+  requested <- unique(c(column, group))
+  resolved <- resolve_check_cols(requested, names(df))
+  missing <- requested[!(resolved %in% names(df))]
+  if (length(missing))
+    stop("unresolved required key column(s): ", paste(missing, collapse = ", "),
+         "; key scope: ", paste(requested, collapse = ", "), call. = FALSE)
+  unique(resolved)
+}
+
 #' resolve all absence blocks before evaluating any forbidden values (internal)
 #' @noRd
 .resolve_absence_blocks <- function(df, chk) {
@@ -2481,33 +2524,12 @@ run_validations <- function(df, checks, log_entries) {
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "uniqueness" = {
-          # exact [[ ]] indexing throughout: $ partial matching would let an
-          # unrelated key like scope_wave hijack the scope lookup
-          kc <- unlist(chk[["key_columns"]] %||% list())
-          vv <- unlist(chk[["variables"]] %||% list())
-          col <- chk[["column"]] %||% chk[["key"]] %||% chk[["variable"]] %||%
-                 (if (length(kc) >= 1) kc[[1]] else NULL) %||%
-                 (if (length(vv) >= 1) vv[[1]] else NULL) %||%
-                 (if (is.character(chk[["scope"]] %||% NULL)) chk[["scope"]] else NULL) %||%
-                 "nomem_encr"
-          group <- chk[["within"]] %||% chk[["group_by"]] %||%
-                   (if (length(kc) >= 2) kc[[2]] else NULL) %||%
-                   (if (length(vv) >= 2) vv[[2]] else NULL) %||%
-                   "wave_id"
-          group <- resolve_check_cols(group, names(df))
-          col <- resolve_check_cols(col, names(df))
-          keys <- unique(c(col, group))
-          keys <- intersect(keys, names(df))
-          if (length(keys) == 0) {
-            list(check_id = cid, passed = TRUE, severity = "info",
-                 detail = "key columns not found in data")
-          } else {
-            dupes <- df |>
-              dplyr::group_by(dplyr::across(dplyr::all_of(keys))) |>
-              dplyr::filter(dplyr::n() > 1) |> nrow()
-            list(check_id = cid, passed = (dupes == 0), severity = sev,
-                 detail = paste0("duplicates: ", dupes))
-          }
+          keys <- .resolve_uniqueness_keys(df, chk)
+          dupes <- df |>
+            dplyr::group_by(dplyr::across(dplyr::all_of(keys))) |>
+            dplyr::filter(dplyr::n() > 1) |> nrow()
+          list(check_id = cid, passed = (dupes == 0), severity = sev,
+               detail = paste0("duplicates: ", dupes))
         },
         "value_absence" = {
           # block form: `targets` is a list of scoped sub-checks (ci V-01 /

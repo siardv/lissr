@@ -1,5 +1,13 @@
 # lissr (development)
 
+* `uniqueness` and its aliases now require every selected key column to
+  resolve. Missing keys and malformed active declarations are unevaluable
+  with the declared severity, instead of checking a partial key or passing
+  without keys. Positional key lists longer than two are explicitly unsupported;
+  compound keys remain available through `column` and `within`. Existing key
+  precedence, shorthand aliases, duplicate counts, NA/blank grouping and
+  valid empty-data behavior are preserved.
+
 * `per_wave_mean` now requires every target to resolve and every row to have
   known wave membership. Missing inputs and malformed targets are unevaluable
   with the declared severity. Valid empty data and non-finite means retain

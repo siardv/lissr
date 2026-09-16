@@ -248,6 +248,63 @@
   unique(out)
 }
 
+test_that("bundled uniqueness checks require both keys and detect duplicate rows", {
+  types <- c("uniqueness", "assert_unique", "n_duplicates", "unique_key",
+             "no_duplicate_ids", "unique_per_wave", "assert_identifier")
+  mods <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")
+  checked <- character(0)
+  evaluate <- function(data, check) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  for (mod in mods) {
+    recipe <- yaml::yaml.load_file(system.file("recipes",
+      paste0(mod, "_merge_recipe.yml"), package = "lissr"))
+    checks <- Filter(function(check) check$type %in% types,
+                     recipe$validation_checks)
+    df <- expand.grid(nomem_encr = 1:2, wave_id = recipe$meta$covered_waves,
+                      stringsAsFactors = FALSE)
+    for (check in checks) {
+      checked <- c(checked, paste(mod, check$check_id, sep = ":"))
+      result <- evaluate(df, check)
+      expect_true(result$passed)
+      expect_identical(result$severity, check$severity)
+      expect_identical(result$detail, "duplicates: 0")
+
+      for (column in c("nomem_encr", "wave_id")) {
+        missing <- df
+        missing[[column]] <- NULL
+        result <- evaluate(missing, check)
+        expect_identical(result$passed, NA)
+        expect_identical(result$severity, check$severity)
+        requested <- if (mod == "cv" && column == "wave_id") "wave" else column
+        expect_match(result$detail %||% "", requested, fixed = TRUE)
+      }
+
+      result <- evaluate(rbind(df, df[1, ]), check)
+      expect_false(result$passed)
+      expect_identical(result$severity, check$severity)
+      expect_identical(result$detail, "duplicates: 2")
+
+      # identifier aliases assert uniqueness, not nonmissing key values
+      missing_values <- df
+      missing_values$nomem_encr[1] <- NA
+      missing_values$wave_id[2] <- ""
+      expect_true(evaluate(missing_values, check)$passed)
+
+      if (identical(check$check_id, "CHK11_cd10c_stack_uniqueness")) {
+        # scope_wave remains metadata; duplicate rows in other waves still fail
+        expect_identical(check$scope_wave, "cd10c")
+        outside <- which(df$wave_id != check$scope_wave)[[1]]
+        result <- evaluate(rbind(df, df[outside, ]), check)
+        expect_false(result$passed)
+        expect_identical(result$detail, "duplicates: 2")
+      }
+    }
+  }
+  expect_length(checked, 10L)
+})
+
 test_that("cp mean-spike check requires every item and tests every observed wave", {
   recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
                                              package = "lissr"))
