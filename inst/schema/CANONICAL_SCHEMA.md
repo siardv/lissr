@@ -753,6 +753,40 @@ the declared severity and strict/report handling above.
   coercion and comparison remain in use; this does not add general count/bound
   payload validation or nonmissing-value enforcement.
 
+#### `row_count` required wave scope
+
+`row_count` and its alias `assert_row_count_range` compare the number of rows
+with inclusive `min_rows` and `max_rows` bounds (defaults 0 and `Inf`). An
+observed count outside the bounds fails (`passed = FALSE`). Missing required
+wave inputs or malformed scopes are unevaluable (`passed = NA`). Both retain
+the declared severity and strict/report handling above.
+
+- An omitted or null `wave` counts all rows with `nrow(df)`. No columns are
+  required, including `wave_id`; unrelated missing or malformed wave identifiers
+  do not affect this global count. Empty data have a legitimate count of zero.
+- A non-null `wave` selects one exact wave identifier. Supply one nonmissing,
+  undimensioned atomic value with a nonblank character representation. Scalar
+  character, numeric and factor values retain character conversion for matching;
+  attached scalar names are ignored. Empty, NA/NaN, blank, list, dimensioned and
+  multiple-value requests are unevaluable, not recycled comparisons or wave sets.
+- Scoped counts require an exact `wave_id` column with atomic, undimensioned
+  values. Every row must have known, nonblank membership; NA/NaN identifiers are
+  unevaluable even when other rows match. Identifiers are converted to character
+  for exact, case-sensitive matching; whitespace is not trimmed for matching.
+  The requested wave must contain at least one row. An absent wave, including
+  on empty data, is unevaluable rather than a measured zero.
+- Rows outside a valid requested wave do not contribute to its count. The
+  literal `wave: all` selects a wave actually named `all`; it is not a global
+  selector. No plural/list wave filters are added. Fields such as `waves`,
+  `wave_filter`, `in_waves` and `scope_wave` do not restrict counts.
+- `wave`, `min_rows` and `max_rows` use exact field names; fields such as
+  `wave_note` and `min_rows_note` cannot supply those values. Null bounds use
+  their defaults. Existing scalar bound comparisons and coercion remain in
+  use; this contract does not add general bounds-payload validation.
+
+The distinct documentary types `row_count_match` and `row_count_sum` remain
+documentary diagnostics and do not dispatch to this executor.
+
 #### `per_wave_mean` required targets and wave membership
 
 `per_wave_mean` requires every selected target to resolve before comparing

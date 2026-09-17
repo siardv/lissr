@@ -2841,11 +2841,31 @@ run_validations <- function(df, checks, log_entries) {
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "row_count" = {
-          w <- chk$wave %||% NULL
-          rows <- if (!is.null(w)) sum(as.character(df$wave_id) == as.character(w))
-                  else nrow(df)
-          lo <- chk$min_rows %||% 0
-          hi <- chk$max_rows %||% Inf
+          w <- chk[["wave"]]
+          rows <- nrow(df)
+          if (!is.null(w)) {
+            if (!is.atomic(w) || !is.null(dim(w)) || length(w) != 1L || anyNA(w))
+              stop("row_count wave must be one nonmissing atomic value", call. = FALSE)
+            w <- unname(as.character(w))
+            if (length(w) != 1L || anyNA(w) || !nzchar(trimws(w)))
+              stop("row_count wave must identify one nonblank wave", call. = FALSE)
+            if (!("wave_id" %in% names(df)))
+              stop("row_count requires the wave_id column; requested wave: ", w,
+                   call. = FALSE)
+            if (!is.atomic(df[["wave_id"]]) || !is.null(dim(df[["wave_id"]])))
+              stop("row_count requires an atomic wave_id vector; requested wave: ", w,
+                   call. = FALSE)
+            wave_ids <- as.character(df[["wave_id"]])
+            if (anyNA(df[["wave_id"]]) || anyNA(wave_ids) ||
+                any(!nzchar(trimws(wave_ids))))
+              stop("row_count cannot evaluate missing or blank wave_id values; ",
+                   "requested wave: ", w, call. = FALSE)
+            if (!(w %in% wave_ids))
+              stop("row_count has no rows for required wave: ", w, call. = FALSE)
+            rows <- sum(wave_ids == w)
+          }
+          lo <- chk[["min_rows"]] %||% 0
+          hi <- chk[["max_rows"]] %||% Inf
           passed <- (rows >= lo && rows <= hi)
           list(check_id = cid, passed = passed, severity = sev,
                detail = paste0("rows: ", rows,

@@ -305,6 +305,41 @@ test_that("bundled uniqueness checks require both keys and detect duplicate rows
   expect_length(checked, 10L)
 })
 
+test_that("cv row-count check requires its wave and excludes other observations", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cv_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- Filter(function(check) check$type %in% c("row_count", "assert_row_count_range"),
+                   recipe$validation_checks)
+  expect_length(checks, 1L)
+  check <- checks[[1]]
+  expect_identical(check$check_id, "VC08_cv16h_filter_count")
+  expect_identical(check$wave, "cv16h")
+  expect_equal(check$min_rows, 1)
+  df <- data.frame(wave_id = recipe$meta$covered_waves)
+  evaluate <- function(data, declaration = check) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(declaration), list())))$results[[1]]
+  }
+  result <- evaluate(df)
+  expect_true(result$passed)
+  expect_identical(result$severity, "warning")
+  expect_identical(result$detail, "rows: 1 in wave cv16h (bounds 1..Inf)")
+  expect_identical(evaluate(rbind(df, df))$detail,
+                   "rows: 2 in wave cv16h (bounds 1..Inf)")
+  for (data in list(df[df$wave_id != check$wave, , drop = FALSE],
+                    data.frame(value = 1:3), df[FALSE, , drop = FALSE])) {
+    result <- evaluate(data)
+    expect_identical(result$passed, NA)
+    expect_identical(result$severity, "warning")
+    expect_match(result$detail, "cv16h", fixed = TRUE)
+  }
+  check$min_rows <- 2
+  expect_false(evaluate(df, check)$passed)
+  outside <- df[df$wave_id != check$wave, , drop = FALSE]
+  expect_false(evaluate(rbind(df, outside), check)$passed)
+  expect_true(evaluate(rbind(df, df[df$wave_id == check$wave, , drop = FALSE]), check)$passed)
+})
+
 test_that("cp wave-count check requires inputs and counts distinct waves per person", {
   recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
                                              package = "lissr"))

@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `row_count` and `assert_row_count_range` now require an explicitly requested
+  wave to exist and its row membership to be known. Missing `wave_id`, absent
+  waves and malformed scopes are unevaluable with the declared severity, instead
+  of potentially passing as zero rows. Global counts still allow empty data
+  without wave identifiers. Exact field lookup prevents unintended partial
+  matches; scalar wave conversion and inclusive bound comparisons are preserved.
+
 * `wave_count` and `n_distinct_wave` now require the inputs used by their
   selected counting mode and preserve severity for unevaluable checks. Global
   expected counts need only `wave_id`; per-person limits also require one exact
