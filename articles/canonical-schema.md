@@ -509,6 +509,374 @@ sets `valid_for_analysis = FALSE` when either occurs.
 forwards strictness. This relies on individual executors detecting
 failures and unresolved targets correctly.
 
+##### `uniqueness` required keys
+
+`uniqueness` counts rows belonging to repeated combinations of the
+selected column and grouping keys. Every selected key must resolve
+before duplicates are counted, including default keys. Missing keys,
+partial matches and malformed active declarations are unevaluable
+(`passed = NA`). Duplicate observations fail (`passed = FALSE`). Both
+retain the declared severity and strict/report handling above; an
+unresolved subset is never treated as the complete key.
+
+- Column precedence is `column`, `key`, `variable`, the first
+  `key_columns` entry, the first `variables` entry, character `scope`,
+  then `nomem_encr`. Grouping precedence is `within`, `group_by`, the
+  second `key_columns` entry, the second `variables` entry, then
+  `wave_id`. These are exact field names; a field such as `scope_wave`
+  cannot supply `scope`.
+- Top-level null values fall through to the next field. Selected
+  declarations must contain nonblank character names, without NA values.
+  Direct column and grouping fields accept nonempty vectors or flat
+  lists of scalar names; `scope` accepts only a character vector. Empty,
+  nested, dimensioned or noncharacter active requests are unevaluable.
+  Fully overridden fields are ignored.
+- Positional `key_columns` and `variables` declarations support one or
+  two names. Their complete structure is validated when needed for
+  either role, before selecting entries; null list elements cannot shift
+  key positions. A singleton can supply the column while grouping falls
+  through. Overridden entries in a valid positional declaration need not
+  resolve. More than two entries are unevaluable; use `column` and
+  `within` vectors/lists for compound keys instead of relying on
+  discarded positional entries.
+- Exact column names take precedence over shorthand aliases: `wave` maps
+  to `wave_id`, `year` to `wave_year`, `person` and `respondent` to
+  `nomem_encr`, and `household` to `nohouse_encr`. There is no suffix
+  lookup, numeric-column selection or range expansion. Repeated or
+  alias-equivalent resolved keys are used once. Missing-key diagnostics
+  include the requested key scope.
+- The duplicate count includes every row in a repeated group, rather
+  than only excess rows. Groups of sizes three and two contribute five
+  duplicates. NA and blank key values retain ordinary grouping behavior:
+  distinct key combinations can pass, and repeated combinations fail. A
+  valid zero-row dataset with all required columns passes with
+  `duplicates: 0`.
+- No wave filtering is applied. Fields such as `scope_wave`, `waves` and
+  `wave_filter` do not restrict comparisons. The selected grouping
+  columns must exist, but this check adds no separate wave-membership or
+  nonmissing-key requirement.
+
+Aliases are `assert_unique`, `n_duplicates`, `unique_key`,
+`no_duplicate_ids`, `unique_per_wave`, and `assert_identifier`. All
+share this predicate; `assert_identifier` does not additionally enforce
+nonmissing identifiers.
+
+##### `value_range` and `value_in_set` target and wave scopes
+
+These checks require every requested target to resolve. An absent
+target, including one missing name among otherwise resolved columns, is
+unevaluable (`passed = NA`), as is a malformed or empty target
+declaration. Diagnostics name unresolved targets. An observed value
+outside the range or allowed set fails (`passed = FALSE`). Both outcomes
+preserve the declared severity and use the strict/report-mode handling
+above.
+
+- Range target keys, in precedence order, are `suffixes`, `variables`,
+  `variable`, and `items`. `items` expands zero-padded ranges such as
+  `"020-069"`.
+- Shared-set target keys are `suffixes`, `variables`, `scope`,
+  `applies_to`, `items`, `stems`, `variable`, and `column`. The first
+  non-null key is used. Set `items` contains individual targets, without
+  range expansion. `variables: [{name: "005", allowed: [1, 2]}]`
+  supplies per-variable sets; `allowed_values` is also supported within
+  each entry. Every entry must resolve.
+- Exact column names take priority, followed by the existing suffix
+  lookup (`s`, `stem_`, `q`, `Q`, including q/Q-prefixed aliases). Names
+  can be supplied as vectors or flat lists; null entries, nested names
+  and blank/missing names are unevaluable. Existing numeric suffix
+  inputs remain supported. Shared-set selectors `"numeric"` and
+  `"all_numeric"` select numeric columns; an empty selection is
+  unevaluable.
+- Wave keys, in precedence order, are `in_waves`, `waves`,
+  `wave_filter`, and `must_be_na_in`. The first declared key is used,
+  including an explicit `"all"`. Omitted scope and scalar/list `"all"`
+  mean all rows and do not require `wave_id`. Otherwise supply a
+  nonempty character vector or flat list of wave names. Empty/null
+  scopes, nested lists, missing/blank names and mixing `"all"` with wave
+  names are unevaluable.
+- A specific wave scope requires `wave_id` with known, nonblank row
+  membership. Missing wave identification or any requested wave without
+  rows is unevaluable. Values outside a valid requested scope are
+  excluded from both checks.
+- Numeric all-NA range targets still pass. Set checks retain `allow_na`
+  behavior (default `TRUE`). Empty data with existing target columns can
+  pass an all-row check; explicitly requested absent waves remain
+  unevaluable.
+
+This contract also applies to range aliases `range_check`,
+`value_in_range`, `assert_range` and set aliases `value_set`,
+`assert_values`. It does not change other validators or add support for
+additional range/set payloads. Range checks continue to use numeric
+columns and `min`/`max`; `valid_range` and sentinel exceptions are not
+implemented by this executor.
+
+##### `value_absence` target and wave scopes
+
+`value_absence` uses the required-target contract above: missing columns
+or requested waves, malformed scopes and unavailable wave membership are
+unevaluable (`passed = NA`). Observed forbidden values fail
+(`passed = FALSE`). Severity is preserved, so error-level outcomes block
+strict output and invalidate report-mode output. Diagnostics identify
+the block and its scope.
+
+- A check can declare its payload directly or provide `targets`/`checks`
+  as a nonempty list of named block mappings. The first declared block
+  key is used. Empty/null containers and malformed entries are
+  unevaluable. Every block’s inputs are resolved before any values are
+  tested, so a missing later block cannot be hidden by an earlier value
+  violation.
+- Target keys and numeric selectors follow shared-set checks above.
+  `items` preserves exact-name/suffix matches, then expands unresolved
+  zero-padded ranges. A block inherits parent targets only when it omits
+  target declarations. Explicit empty, malformed or unresolved block
+  targets never trigger parent fallback.
+- Ordinary parent and block wave filters intersect, using the same
+  wave-key precedence and scalar/list `"all"` behavior as range/set
+  checks. Each explicit requested wave must exist, even if the eventual
+  intersection is empty. A valid empty intersection, or an all-row check
+  on empty data with resolved targets, may pass. All-NA absence targets
+  also retain their meaning.
+- Parent `waves_allowed`, when declared, replaces ordinary parent/block
+  wave filters. Forbidden values are checked outside those allowed
+  waves. Its names must resolve with known wave membership;
+  null/empty/malformed declarations are unevaluable. Scalar/list `"all"`
+  permits all rows, leaving an empty complement that needs no `wave_id`
+  and can pass.
+- Exclusion precedence is unchanged: first non-null parent
+  `exclude_variables`, parent `exclude_suffixes`, then block
+  `exclude_variables`. Lists are not combined. Unknown exclusion names
+  are optional nonmatches; empty exclusions do nothing and malformed
+  names are unevaluable. Every explicit target must resolve before
+  exclusions apply. Excluding every resolved column is allowed.
+- Forbidden-value aliases and numeric/character matching are unchanged.
+  Block `forbidden_values`, `forbidden_value`, `sentinel_values`,
+  `codes`, or `value` take precedence over inherited parent
+  `forbidden_values`, `sentinel_values`, or `value`. Missing/empty
+  forbidden values provide no value constraint, but target and wave
+  resolution still runs. This is not general validation of
+  forbidden-value payloads or the remaining validation executors.
+
+The same behavior applies to `assert_absent_values`, `none_equal`,
+`sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
+`value_absence_check`, and `value_restriction`.
+
+##### `structural_missingness` target and wave scopes
+
+Every required target and wave scope must resolve before structural
+values are tested. Missing targets (including partial matches), absent
+requested waves, malformed scopes and unavailable required wave
+membership are unevaluable (`passed = NA`). A non-NA value in an all-NA
+scope, or an entirely NA target in an expected-present wave, fails
+(`passed = FALSE`). Both outcomes preserve severity and the
+strict/report output handling above.
+
+- Target keys, in precedence order, are `suffixes`, `variables`,
+  `variable`, and `scope`; the first non-null key is used. Exact names,
+  suffix aliases, numeric suffix inputs and flat lists follow the
+  required-target rules above. Structural checks do not expand item
+  ranges or numeric-column selectors. Quote zero-padded suffixes such as
+  `"002"` to preserve them through YAML.
+- All-NA wave keys, in precedence order, are `waves_must_be_all_na`,
+  `must_be_na_in`, `expected_na_waves`, `wave_filter`, and `waves`. The
+  first declared key is used. Scalar/list `"all"` checks every row,
+  without requiring `wave_id`; an existing all-NA column or a zero-row
+  target can pass.
+- `waves_expected_present` requires at least one non-NA value in each
+  requested wave for every target. Scalar/list `"all"` means every
+  observed wave and needs at least one observed wave. Presence scopes
+  always require valid `wave_id`.
+- Specific wave requests in either scope require each named wave to have
+  rows and all row memberships to be known and nonblank. Null/empty
+  declarations, nested lists, noncharacter wave names and mixing `"all"`
+  with wave names are unevaluable. Values outside a valid all-NA scope
+  are not tested for absence.
+- At least one all-NA or expected-present scope must be declared. A
+  present-only check imposes no absence requirement elsewhere. When both
+  scopes are supplied, both apply; overlapping all-NA and presence
+  requirements can therefore fail.
+- With `waves_expected_present`, `expect_elsewhere: all_na` (or fallback
+  `expect: all_na`) replaces the ordinary all-NA scope with the
+  complement of the validated presence scope. An empty complement may
+  pass, but every requested presence wave must still exist and contain a
+  non-NA target value. This shorthand enforces presence inside the
+  declared waves. To permit all-NA values inside an allowed era, declare
+  only its explicit all-NA complement.
+
+These semantics also apply to `structural_absence`, `all_na`,
+`structural_na_count`, and `missingness_check`. They do not change the
+distinct `expected_presence` failure contract below or other validation
+executors.
+
+##### `value_present` target and wave scopes
+
+`value_present` and its alias `value_present_per_wave` require at least
+one matching value in any selected target within each requested wave.
+Different targets can supply the match in different waves. Every
+requested column must resolve before matching begins, even when another
+column already has a match.
+
+- Target keys, lookup and scalar/list numeric selectors follow the
+  shared-set contract above. The first non-null target key is used;
+  every explicit target and each numeric selection must resolve. `items`
+  contains literal targets, without range expansion. Empty or malformed
+  targets are unevaluable.
+- Wave keys, in precedence order, are `wave_filter` and `waves`. The
+  first declared key is used. Omitted scope and scalar/list `"all"`
+  select all observed waves. Each specifically requested wave must have
+  rows; missing names are never silently dropped. Null/empty scopes,
+  nested lists, noncharacter names and mixing `"all"` with wave names
+  are unevaluable.
+- Every scope, including `"all"`, requires an atomic, undimensioned
+  `wave_id` column with known, nonblank row membership. With no observed
+  waves the check is unevaluable. A valid wave filter excludes other
+  waves from value matching.
+- Missing inputs and malformed scopes report `passed = NA`; an observed
+  wave without a matching value reports `passed = FALSE`. Both retain
+  severity and use the strict/report handling above. Diagnostics
+  identify unresolved names or the wave and resolved columns lacking the
+  value.
+- Existing `value`/`values` numeric coercion and matching are unchanged.
+  An all-NA target cannot supply a nonmissing numeric value, but another
+  selected column may supply it. This contract adds no general
+  value-payload validation.
+
+##### `na_rate` target and wave scopes
+
+`na_rate` requires every requested target and wave to resolve before a
+condition is applied. Missing targets (including partial matches),
+absent requested waves, malformed scopes and unavailable required wave
+membership are unevaluable (`passed = NA`). A measured rate outside the
+threshold fails (`passed = FALSE`). Both outcomes preserve severity and
+the strict/report handling above.
+
+- Target keys, in precedence order, are `suffixes`, `variables`,
+  `scope`, and `items`; the first non-null key is used. Names use the
+  existing exact/suffix lookup, including numeric suffix inputs and flat
+  lists. `items` expands zero-padded ranges before column lookup, even
+  if a literal range-like column exists. Other target keys retain
+  literal names. Numeric-column selectors are not expanded by this
+  executor. Empty or malformed targets are unevaluable.
+- Wave keys, in precedence order, are `waves` and `wave_filter`; the
+  first declared key is used. Omitted scope and scalar/list `"all"`
+  select all rows without requiring `wave_id`. Specific requests require
+  every named wave to have rows and atomic, undimensioned `wave_id` with
+  known, nonblank membership. Null/empty scopes, nested lists,
+  noncharacter names and mixing `"all"` with wave names are unevaluable.
+- Conditions use the existing restricted evaluator and intersect with
+  the wave filter. False or NA condition results exclude rows. Invalid
+  conditions, unresolved condition references or results of the wrong
+  type/length remain unevaluable. An omitted, null or empty-string
+  condition applies no filter.
+- A valid condition selecting no rows, or empty all-row data with
+  resolved targets, retains its pass result. The diagnostic explicitly
+  says that no rows were eligible and no NA rate was calculated. All
+  required targets and waves must resolve first; an empty selection
+  cannot excuse missing inputs.
+- Rates are calculated separately for each target over the pooled
+  selected rows, not separately per wave. Every target must meet the
+  threshold. An all-NA target has rate 1; a nonmissing target has
+  rate 0. `above` uses `>=`, otherwise the existing `<=` comparison
+  applies. Threshold precedence is `threshold`, then `max_rate`, then
+  the default: 0 for `not_missing`, 1 otherwise.
+
+Aliases are `na_rate_check`, `na_rate_above`, `na_rate_below`, and
+`not_missing`. `na_rate_above` defaults to direction `above`; the others
+default to `below`. An explicit direction overrides that default. This
+contract does not introduce general threshold/direction validation or
+change the condition evaluator.
+
+##### `wave_count` required inputs and counting modes
+
+`wave_count` and its alias `n_distinct_wave` require the columns used by
+the selected mode to exist, including on empty data. Missing inputs,
+malformed active person-key requests and unsupported column shapes are
+unevaluable (`passed = NA`). Observed count violations fail
+(`passed = FALSE`). Both retain the declared severity and strict/report
+handling above.
+
+- A non-null `expected` selects the global distinct-wave mode. Only
+  `wave_id` is required; person-key fields and `max_waves` are ignored,
+  even when malformed. The count uses `dplyr::n_distinct(wave_id)` and
+  compares with `as.integer(expected)`. Existing scalar coercion,
+  including truncation of fractional expected counts, is preserved. A
+  valid empty dataset has count 0.
+- Otherwise, the check limits distinct waves per person. Person-key
+  precedence is `column`, then `key`, then `nomem_encr`, using the first
+  non-null value. The key must be one nonblank character column name.
+  Empty, NA, list, dimensioned, noncharacter or multiple-name requests
+  are unevaluable. Names attached to a scalar key cannot rename its
+  grouping column.
+- Person keys use exact column lookup, without shorthand aliases, suffix
+  lookup, numeric selectors, range expansion or compound-key selection.
+  Both `wave_id` and the selected key must exist. Only required columns
+  are checked for atomic, undimensioned values; list and matrix columns
+  are unevaluable.
+- NA, blank and whitespace values retain their existing distinct-value
+  and grouping behavior. NA waves are counted, and NA person keys form a
+  group. Values are not converted to character before counting; factors
+  and numeric identifiers retain their counting behavior. Repeated
+  observations of the same person-wave combination do not increase the
+  distinct-wave count.
+- Per-person mode compares the largest count with `max_waves` using
+  `<=`; its default is `Inf`. With no observed persons, the existing
+  empty-set comparison uses `-Inf` without calculating a maximum or
+  emitting a warning. The detail states
+  `no observed persons; no per-person wave counts calculated`. This is
+  not a measured zero count, and required inputs must still resolve.
+- Payload fields use exact names. Fields such as `expected_wave` or
+  `column_note` cannot supply `expected` or `column`. No wave filters
+  are applied; `waves`, `wave_filter` and `scope_wave` do not restrict
+  counts.
+- A comparison that produces an empty, nonscalar, dimensioned or NA
+  result is unevaluable, with a diagnostic naming the selected bound.
+  Existing scalar coercion and comparison remain in use; this does not
+  add general count/bound payload validation or nonmissing-value
+  enforcement.
+
+##### `per_wave_mean` required targets and wave membership
+
+`per_wave_mean` requires every selected target to resolve before
+comparing means. Missing targets, including partial matches, malformed
+requests and unavailable wave membership are unevaluable
+(`passed = NA`). An observed finite mean outside the bounds fails
+(`passed = FALSE`). Both outcomes retain the declared severity and the
+strict/report handling above.
+
+- Target keys, in precedence order, are `suffixes`, `variables`,
+  `scope`, `applies_to`, `items`, `stems`, `variable`, and `column`; the
+  first non-null key is used. Existing exact/suffix lookup accepts
+  numeric suffix inputs and flat lists. Every target must resolve; empty
+  or malformed requests are unevaluable. `items` uses literal names,
+  without range expansion.
+- Scalar character `"numeric"` and `"all_numeric"` select numeric
+  columns and require at least one such column. List-wrapped forms
+  retain their existing literal-name meaning, so `items: [numeric]`
+  requests a column named `numeric`.
+- Every row requires known, nonblank membership in an atomic,
+  undimensioned `wave_id` column. Numeric and factor wave identifiers
+  retain their character representation for grouping. This executor
+  checks every observed wave and has no wave-filter support; `waves`,
+  `wave_filter` and other wave-scope fields do not restrict its
+  comparisons.
+- Resolved targets and a valid zero-row `wave_id` column retain a pass
+  result on empty data, with the diagnostic
+  `no observed waves; no means calculated`. Empty data cannot excuse
+  missing targets or a missing `wave_id` column.
+- Means use the existing numeric coercion and `na.rm = TRUE`, separately
+  for every target in every observed wave. Every finite mean must be
+  within the inclusive bounds, `min_mean` (default `-Inf`) and
+  `max_mean` (default `Inf`). Values are not pooled across waves or
+  targets.
+- Non-finite means, including all-NA, NaN and infinite means, retain
+  their existing exclusion from bound comparisons. If the check passes,
+  its detail reports the number of these means and the first affected
+  column and wave. A finite bound violation still fails even when other
+  means are non-finite.
+
+This check has no registered type aliases. The contract does not add
+general numeric-value or bounds-payload validation; coercion and
+non-finite handling remain unchanged.
+
 ##### `expected_presence` validation checks
 
 This phase-6 check is separate from `global.expected_presence`; it does
