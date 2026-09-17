@@ -1101,7 +1101,7 @@ validation_checks:
     forbidden_value: 4
 - check_id: V07_wave_count
   anomaly_ref: null
-  description: Merged dataset must contain exactly 17 distinct wave_ids.
+  description: Merged dataset must contain exactly 18 distinct wave_ids.
   type: n_distinct_wave
   severity: error
   expected: 18

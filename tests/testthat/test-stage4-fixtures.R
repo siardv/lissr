@@ -305,6 +305,69 @@ test_that("bundled uniqueness checks require both keys and detect duplicate rows
   expect_length(checked, 10L)
 })
 
+test_that("cp wave-count check requires inputs and counts distinct waves per person", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- Filter(function(check) check$check_id == "V07_wave_count",
+                   recipe$validation_checks)
+  expect_length(checks, 1L)
+  check <- checks[[1]]
+  expect_equal(check$max_waves, 17)
+  expect_length(recipe$meta$covered_waves, 17L)
+  df <- data.frame(wave_id = recipe$meta$covered_waves, nomem_encr = 1)
+  evaluate <- function(data) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  expect_true(evaluate(df)$passed)
+  expect_identical(evaluate(df)$detail, "max waves per person: 17")
+  expect_true(evaluate(rbind(df, df))$passed)
+  extra <- rbind(df, data.frame(wave_id = "extra_wave", nomem_encr = 1))
+  result <- evaluate(extra)
+  expect_false(result$passed)
+  expect_identical(result$severity, "error")
+  expect_identical(result$detail, "max waves per person: 18")
+
+  for (column in c("wave_id", "nomem_encr")) {
+    missing <- df
+    missing[[column]] <- NULL
+    result <- evaluate(missing)
+    expect_identical(result$passed, NA)
+    expect_identical(result$severity, "error")
+    expect_match(result$detail %||% "", column, fixed = TRUE)
+  }
+})
+
+test_that("cs wave-count check compares all covered waves without a person key", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cs_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- Filter(function(check) check$check_id == "V07_wave_count",
+                   recipe$validation_checks)
+  expect_length(checks, 1L)
+  check <- checks[[1]]
+  expect_equal(check$expected, 18)
+  expect_length(recipe$meta$covered_waves, 18L)
+  expect_match(check$description, "exactly 18 distinct wave_ids", fixed = TRUE)
+  df <- data.frame(wave_id = recipe$meta$covered_waves)
+  evaluate <- function(data) {
+    suppressWarnings(suppressMessages(
+      lissr:::run_validations(data, list(check), list())))$results[[1]]
+  }
+  expect_true(evaluate(df)$passed)
+  expect_identical(evaluate(df)$detail, "distinct waves: 18 (expected 18)")
+  expect_true(evaluate(rbind(df, df))$passed)
+  for (data in list(df[-1, , drop = FALSE],
+                   rbind(df, data.frame(wave_id = "extra_wave")))) {
+    result <- evaluate(data)
+    expect_false(result$passed)
+    expect_identical(result$severity, "error")
+  }
+  result <- evaluate(data.frame(nomem_encr = 1))
+  expect_identical(result$passed, NA)
+  expect_identical(result$severity, "error")
+  expect_match(result$detail %||% "", "wave_id", fixed = TRUE)
+})
+
 test_that("cp mean-spike check requires every item and tests every observed wave", {
   recipe <- yaml::yaml.load_file(system.file("recipes", "cp_merge_recipe.yml",
                                              package = "lissr"))

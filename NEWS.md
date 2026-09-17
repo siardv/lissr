@@ -1,5 +1,14 @@
 # lissr (development)
 
+* `wave_count` and `n_distinct_wave` now require the inputs used by their
+  selected counting mode and preserve severity for unevaluable checks. Global
+  expected counts need only `wave_id`; per-person limits also require one exact
+  person-key column. Field lookup no longer partially matches unrelated names,
+  and named scalar keys no longer rename grouping columns. Existing NA/blank
+  counting and scalar count coercion are preserved. Empty per-person scopes
+  report that no counts were calculated, without the former empty-maximum warning.
+  The `cs` V07 description now matches its existing 18-wave setting.
+
 * `uniqueness` and its aliases now require every selected key column to
   resolve. Missing keys and malformed active declarations are unevaluable
   with the declared severity, instead of checking a partial key or passing

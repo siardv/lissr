@@ -2792,33 +2792,53 @@ run_validations <- function(df, checks, log_entries) {
           }
         },
         "wave_count" = {
-          col <- chk$column %||% chk$key %||% "nomem_encr"
-          max_waves <- chk$max_waves %||% Inf
-          expected  <- chk$expected %||% NULL
-          if ("wave_id" %in% names(df)) {
-            n_waves <- dplyr::n_distinct(df$wave_id)
-            if (!is.null(expected)) {
-              passed <- (n_waves == as.integer(expected))
-              list(check_id = cid, passed = passed, severity = sev,
-                   detail = paste0("distinct waves: ", n_waves,
-                                   " (expected ", expected, ")"))
-            } else if (col %in% names(df)) {
-              per_person <- df |>
-                dplyr::group_by(dplyr::across(dplyr::all_of(col))) |>
-                dplyr::summarise(n = dplyr::n_distinct(.data$wave_id),
-                                 .groups = "drop")
-              max_seen <- max(per_person$n)
-              passed <- max_seen <= max_waves
-              list(check_id = cid, passed = passed, severity = sev,
-                   detail = paste0("max waves per person: ", max_seen))
-            } else {
-              list(check_id = cid, passed = TRUE, severity = "info",
-                   detail = "key columns not found")
-            }
-          } else {
-            list(check_id = cid, passed = TRUE, severity = "info",
-                 detail = "wave_id not found")
+          expected <- chk[["expected"]]
+          col <- NULL
+          if (is.null(expected)) {
+            col <- chk[["column"]] %||% chk[["key"]] %||% "nomem_encr"
+            if (!is.character(col) || !is.null(dim(col)) || length(col) != 1L ||
+                anyNA(col) || !nzchar(trimws(col)))
+              stop("wave_count person key must be one nonblank character column name",
+                   call. = FALSE)
+            # names on a scalar key must not rename the grouping column
+            col <- unname(col)
           }
+          required <- unique(c("wave_id", col))
+          missing <- setdiff(required, names(df))
+          if (length(missing))
+            stop("wave_count unresolved required column(s): ",
+                 paste(missing, collapse = ", "), "; required inputs: ",
+                 paste(required, collapse = ", "), call. = FALSE)
+          for (column in required) {
+            value <- df[[column]]
+            if (!is.atomic(value) || !is.null(dim(value)))
+              stop("wave_count requires atomic, undimensioned values in ", column,
+                   call. = FALSE)
+          }
+          if (!is.null(expected)) {
+            n_waves <- dplyr::n_distinct(df[["wave_id"]])
+            passed <- (n_waves == as.integer(expected))
+            bound <- "expected"
+            detail <- paste0("distinct waves: ", n_waves,
+                             " (expected ", expected, ")")
+          } else {
+            max_waves <- chk[["max_waves"]] %||% Inf
+            per_person <- df |>
+              dplyr::group_by(dplyr::across(dplyr::all_of(col))) |>
+              dplyr::summarise(n = dplyr::n_distinct(.data$wave_id),
+                               .groups = "drop")
+            # preserve the empty-set comparison without max(numeric(0)) warnings
+            max_seen <- if (nrow(per_person)) max(per_person$n) else -Inf
+            passed <- max_seen <= max_waves
+            bound <- "max_waves"
+            detail <- if (nrow(per_person)) paste0("max waves per person: ", max_seen)
+                      else "no observed persons; no per-person wave counts calculated"
+          }
+          if (!is.logical(passed) || length(passed) != 1L ||
+              !is.null(dim(passed)) || is.na(passed))
+            stop("wave_count ", bound,
+                 " comparison must yield one non-missing logical value", call. = FALSE)
+          list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "row_count" = {
           w <- chk$wave %||% NULL

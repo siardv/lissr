@@ -713,6 +713,46 @@ Aliases are `na_rate_check`, `na_rate_above`, `na_rate_below`, and `not_missing`
 An explicit direction overrides that default. This contract does not introduce
 general threshold/direction validation or change the condition evaluator.
 
+#### `wave_count` required inputs and counting modes
+
+`wave_count` and its alias `n_distinct_wave` require the columns used by the
+selected mode to exist, including on empty data. Missing inputs, malformed
+active person-key requests and unsupported column shapes are unevaluable
+(`passed = NA`). Observed count violations fail (`passed = FALSE`). Both retain
+the declared severity and strict/report handling above.
+
+- A non-null `expected` selects the global distinct-wave mode. Only `wave_id`
+  is required; person-key fields and `max_waves` are ignored, even when malformed.
+  The count uses `dplyr::n_distinct(wave_id)` and compares with
+  `as.integer(expected)`. Existing scalar coercion, including truncation of
+  fractional expected counts, is preserved. A valid empty dataset has count 0.
+- Otherwise, the check limits distinct waves per person. Person-key precedence
+  is `column`, then `key`, then `nomem_encr`, using the first non-null value.
+  The key must be one nonblank character column name. Empty, NA, list,
+  dimensioned, noncharacter or multiple-name requests are unevaluable. Names
+  attached to a scalar key cannot rename its grouping column.
+- Person keys use exact column lookup, without shorthand aliases, suffix lookup,
+  numeric selectors, range expansion or compound-key selection. Both `wave_id`
+  and the selected key must exist. Only required columns are checked for atomic,
+  undimensioned values; list and matrix columns are unevaluable.
+- NA, blank and whitespace values retain their existing distinct-value and
+  grouping behavior. NA waves are counted, and NA person keys form a group.
+  Values are not converted to character before counting; factors and numeric
+  identifiers retain their counting behavior. Repeated observations of the
+  same person-wave combination do not increase the distinct-wave count.
+- Per-person mode compares the largest count with `max_waves` using `<=`;
+  its default is `Inf`. With no observed persons, the existing empty-set
+  comparison uses `-Inf` without calculating a maximum or emitting a warning.
+  The detail states `no observed persons; no per-person wave counts calculated`.
+  This is not a measured zero count, and required inputs must still resolve.
+- Payload fields use exact names. Fields such as `expected_wave` or
+  `column_note` cannot supply `expected` or `column`. No wave filters are
+  applied; `waves`, `wave_filter` and `scope_wave` do not restrict counts.
+- A comparison that produces an empty, nonscalar, dimensioned or NA result is
+  unevaluable, with a diagnostic naming the selected bound. Existing scalar
+  coercion and comparison remain in use; this does not add general count/bound
+  payload validation or nonmissing-value enforcement.
+
 #### `per_wave_mean` required targets and wave membership
 
 `per_wave_mean` requires every selected target to resolve before comparing
