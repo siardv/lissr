@@ -6,9 +6,9 @@ modules and waves, interactively select and download data files, and
 merge longitudinal waves using recipe-driven YAML specifications.
 
 > **Repository history note:** The `v1.4.0` history was amended during
-> release finalization while the GitHub workflow was being refined. A
-> forthcoming update will add concise provenance documentation for the
-> preserved release states; the current release remains canonical.
+> release finalization while the GitHub workflow was being refined. For
+> reproducibility, record the package version and Git commit used for an
+> analysis.
 
 ## Installation
 

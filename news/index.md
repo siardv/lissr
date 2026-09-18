@@ -1,5 +1,121 @@
 # Changelog
 
+## lissr 1.4.1
+
+Correctness fixes for data-file discovery and validation of required
+inputs. Checks now detect unresolved targets and wave scopes before
+evaluating their values. Error-level failures or unevaluable checks stop
+strict-mode output; the default report mode writes output with
+`valid_for_analysis = FALSE`.
+
+Previously accepted recipes that omit required targets or scopes may now
+report unevaluable checks. Consult the canonical schema for each check’s
+supported fields and empty-data behavior. General value/bound payload
+validation and comprehensive empirical verification remain outside this
+release’s guarantees.
+
+- The packaged canonical-schema vignette now includes rendered HTML,
+  extracted R code and its vignette index entry. It is available through
+  [`vignette()`](https://rdrr.io/r/utils/vignette.html) and
+  [`browseVignettes()`](https://rdrr.io/r/utils/browseVignettes.html)
+  without rebuilding, and tests detect stale schema renders.
+
+- `row_count` and `assert_row_count_range` now require an explicitly
+  requested wave to exist and its row membership to be known. Missing
+  `wave_id`, absent waves and malformed scopes are unevaluable with the
+  declared severity, instead of potentially passing as zero rows. Global
+  counts still allow empty data without wave identifiers. Exact field
+  lookup prevents unintended partial matches; scalar wave conversion and
+  inclusive bound comparisons are preserved.
+
+- `wave_count` and `n_distinct_wave` now require the inputs used by
+  their selected counting mode and preserve severity for unevaluable
+  checks. Global expected counts need only `wave_id`; per-person limits
+  also require one exact person-key column. Field lookup no longer
+  partially matches unrelated names, and named scalar keys no longer
+  rename grouping columns. Existing NA/blank counting and scalar count
+  coercion are preserved. Empty per-person scopes report that no counts
+  were calculated, without the former empty-maximum warning. The `cs`
+  V07 description now matches its existing 18-wave setting.
+
+- `uniqueness` and its aliases now require every selected key column to
+  resolve. Missing keys and malformed active declarations are
+  unevaluable with the declared severity, instead of checking a partial
+  key or passing without keys. Positional key lists longer than two are
+  explicitly unsupported; compound keys remain available through
+  `column` and `within`. Existing key precedence, shorthand aliases,
+  duplicate counts, NA/blank grouping and valid empty-data behavior are
+  preserved.
+
+- `per_wave_mean` now requires every target to resolve and every row to
+  have known wave membership. Missing inputs and malformed targets are
+  unevaluable with the declared severity. Valid empty data and
+  non-finite means retain their existing outcomes, with diagnostics
+  identifying uncalculated or uncompared means. Target lookup, numeric
+  coercion, inclusive bounds and separate comparisons for every target
+  in every observed wave are preserved.
+
+- `na_rate` and its aliases now require every target and requested wave
+  to resolve before applying conditions. Missing inputs and malformed
+  scopes are unevaluable with the declared severity. Scalar/list `"all"`
+  scopes are normalized. Valid filters selecting no rows retain their
+  pass result with a diagnostic stating that no rate was calculated.
+  Item ranges, pooled NA rates, threshold defaults and safe condition
+  evaluation retain their behavior.
+
+- `value_present` and `value_present_per_wave` now require every
+  requested target and wave to resolve. Missing inputs, malformed scopes
+  and unavailable wave membership are unevaluable with the declared
+  severity. Omitted and scalar/list `"all"` scopes check every observed
+  wave; empty data are unevaluable. Each wave still needs a matching
+  value in any selected target. Social Integration V02 now preserves its
+  zero-padded target `001` as a string.
+
+- `structural_missingness` and its aliases now resolve every required
+  target and wave scope before testing values. Missing inputs and
+  malformed scopes are unevaluable, preserving severity and
+  strict/report output handling. All-NA scopes, per-wave expected
+  presence and expected-present complements support scalar/list `"all"`.
+  Presence-only checks no longer inherit an all-NA scope through partial
+  field-name matching. Health CHK04/CHK07 declare all-NA scopes for
+  their existing derived outputs; Social Integration V08 preserves
+  target `002` as a string. These changes affect validation, not
+  harmonization rules.
+
+- `value_absence` and its aliases now require resolved targets and wave
+  scopes in every block. Missing inputs and malformed scopes are
+  unevaluable; explicit missing block targets no longer fall back to
+  parent targets. Valid parent and block filters intersect, and
+  `waves_allowed` checks the validated complement. Exclusion precedence,
+  numeric/character matching and legitimate empty/all-NA checks are
+  preserved. Health CHK05 and Religion VC04/VC05 now declare explicit
+  targets, with the Religion checks scoped to their existing recode
+  rules.
+
+- `value_range` and `value_in_set` checks now report missing required
+  columns and requested waves as unevaluable, including partial target
+  matches. Invalid target/wave scopes retain the declared severity and
+  diagnostic details. Range checks now honor wave filters; both checks
+  normalize scalar and list `"all"` scopes. Error-level unevaluable
+  checks block strict output and invalidate report-mode output. Existing
+  aliases, all-NA behavior and other validators retain their behavior.
+
+- Phase-6 `expected_presence` checks now fail for missing required
+  columns, absent waves and all-NA wave values. Malformed or empty
+  requests and missing wave identifiers are unevaluable, preserving
+  severity. Error-level failures and unevaluable checks block strict
+  output and invalidate report-mode output. Checks require an exact
+  column name and explicit waves or `"all"`; the separate
+  `global.expected_presence` rules and other validation executors are
+  unchanged.
+
+- Wave discovery filters primary, fallback and auxiliary candidates to
+  existing supported data files before release selection. Codebooks,
+  directories and dangling symlinks no longer become inputs or suppress
+  fallback matches. Release ranking, ambiguity errors, auxiliary
+  separation and release pins retain their existing behavior, with
+  mixed-folder regression coverage.
+
 ## lissr 1.4.0
 
 A nine-stage, evidence-driven overhaul of the merge engine, the bundled

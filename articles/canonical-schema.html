@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -83,11 +83,11 @@
     
     
 <p>This article renders the packaged schema document
-(<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time, so it can
-never drift from the file the validator actually enforces. The same
+(<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"schema"</span>, <span class="st">"CANONICAL_SCHEMA.md"</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span></code></pre></div>
+<!-- schema-source-md5: d02c78b7735a297d5ee06404ae76d414 -->
 <div class="section level2">
 <h2 id="liss-panel-merge-recipe-canonical-schema-v1-1-0">LISS Panel Merge Recipe: Canonical Schema v1.1.0<a class="anchor" aria-label="anchor" href="#liss-panel-merge-recipe-canonical-schema-v1-1-0"></a>
 </h2>
@@ -1195,6 +1195,53 @@ Existing scalar coercion and comparison remain in use; this does not add
 general count/bound payload validation or nonmissing-value
 enforcement.</li>
 </ul>
+</div>
+<div class="section level5">
+<h5 id="row_count-required-wave-scope">
+<code>row_count</code> required wave scope<a class="anchor" aria-label="anchor" href="#row_count-required-wave-scope"></a>
+</h5>
+<p><code>row_count</code> and its alias
+<code>assert_row_count_range</code> compare the number of rows with
+inclusive <code>min_rows</code> and <code>max_rows</code> bounds
+(defaults 0 and <code>Inf</code>). An observed count outside the bounds
+fails (<code>passed = FALSE</code>). Missing required wave inputs or
+malformed scopes are unevaluable (<code>passed = NA</code>). Both retain
+the declared severity and strict/report handling above.</p>
+<ul>
+<li>An omitted or null <code>wave</code> counts all rows with
+<code>nrow(df)</code>. No columns are required, including
+<code>wave_id</code>; unrelated missing or malformed wave identifiers do
+not affect this global count. Empty data have a legitimate count of
+zero.</li>
+<li>A non-null <code>wave</code> selects one exact wave identifier.
+Supply one nonmissing, undimensioned atomic value with a nonblank
+character representation. Scalar character, numeric and factor values
+retain character conversion for matching; attached scalar names are
+ignored. Empty, NA/NaN, blank, list, dimensioned and multiple-value
+requests are unevaluable, not recycled comparisons or wave sets.</li>
+<li>Scoped counts require an exact <code>wave_id</code> column with
+atomic, undimensioned values. Every row must have known, nonblank
+membership; NA/NaN identifiers are unevaluable even when other rows
+match. Identifiers are converted to character for exact, case-sensitive
+matching; whitespace is not trimmed for matching. The requested wave
+must contain at least one row. An absent wave, including on empty data,
+is unevaluable rather than a measured zero.</li>
+<li>Rows outside a valid requested wave do not contribute to its count.
+The literal <code>wave: all</code> selects a wave actually named
+<code>all</code>; it is not a global selector. No plural/list wave
+filters are added. Fields such as <code>waves</code>,
+<code>wave_filter</code>, <code>in_waves</code> and
+<code>scope_wave</code> do not restrict counts.</li>
+<li>
+<code>wave</code>, <code>min_rows</code> and <code>max_rows</code>
+use exact field names; fields such as <code>wave_note</code> and
+<code>min_rows_note</code> cannot supply those values. Null bounds use
+their defaults. Existing scalar bound comparisons and coercion remain in
+use; this contract does not add general bounds-payload validation.</li>
+</ul>
+<p>The distinct documentary types <code>row_count_match</code> and
+<code>row_count_sum</code> remain documentary diagnostics and do not
+dispatch to this executor.</p>
 </div>
 <div class="section level5">
 <h5 id="per_wave_mean-required-targets-and-wave-membership">
