@@ -1,25 +1,10 @@
----
-title: "The Canonical Recipe Schema"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{The Canonical Recipe Schema}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
-```{r, include = FALSE}
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
-```
 
-This article renders the packaged schema document
-(`inst/schema/CANONICAL_SCHEMA.md`) at build time. The same document ships
-inside every installation:
+## ----eval = FALSE-------------------------------------------------------------
+# system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
 
-```{r, eval = FALSE}
-system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
-```
-
-```{r schema-body, echo = FALSE, results = "asis"}
+## ----schema-body, echo = FALSE, results = "asis"------------------------------
 schema_path <- system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
 schema <- readLines(schema_path, warn = FALSE, encoding = "UTF-8")
 # normalize line endings for a portable source fingerprint
@@ -30,4 +15,3 @@ unlink(schema_copy)
 # demote headings one level so the vignette title stays the only h1
 schema <- sub("^#", "##", schema)
 cat(schema, sep = "\n")
-```

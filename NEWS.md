@@ -1,4 +1,18 @@
-# lissr (development)
+# lissr 1.4.1
+
+Correctness fixes for data-file discovery and validation of required inputs.
+Checks now detect unresolved targets and wave scopes before evaluating their
+values. Error-level failures or unevaluable checks stop strict-mode output;
+the default report mode writes output with `valid_for_analysis = FALSE`.
+
+Previously accepted recipes that omit required targets or scopes may now report
+unevaluable checks. Consult the canonical schema for each check's supported
+fields and empty-data behavior. General value/bound payload validation and
+comprehensive empirical verification remain outside this release's guarantees.
+
+* The packaged canonical-schema vignette now includes rendered HTML, extracted
+  R code and its vignette index entry. It is available through `vignette()` and
+  `browseVignettes()` without rebuilding, and tests detect stale schema renders.
 
 * `row_count` and `assert_row_count_range` now require an explicitly requested
   wave to exist and its row membership to be known. Missing `wave_id`, absent

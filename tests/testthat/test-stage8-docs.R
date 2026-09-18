@@ -155,3 +155,44 @@ test_that("README covers all ten modules and every shipped vignette", {
                  label = paste("vignette", slug, "linked in README"))
   }
 })
+
+test_that("every shipped vignette has rendered output and a complete index entry", {
+  files <- .all_doc_files()
+  expect_gt(length(files), 0L)
+  for (file in files) {
+    for (extension in c("html", "R")) {
+      output <- sub("Rmd$", extension, file)
+      expect_true(nzchar(system.file("doc", output, package = "lissr")),
+                  label = paste("missing vignette output", output))
+    }
+  }
+  index_path <- system.file("Meta", "vignette.rds", package = "lissr")
+  if (!nzchar(index_path))
+    index_path <- system.file("build", "vignette.rds", package = "lissr")
+  expect_true(nzchar(index_path))
+  if (nzchar(index_path)) {
+    index <- readRDS(index_path)
+    expect_setequal(index$File, files)
+    expect_setequal(index$PDF, sub("Rmd$", "html", files))
+    expect_setequal(index$R, sub("Rmd$", "R", files))
+  }
+})
+
+test_that("the rendered schema vignette matches the packaged schema source", {
+  html <- system.file("doc", "canonical-schema.html", package = "lissr")
+  expect_true(nzchar(html))
+  if (nzchar(html)) {
+    schema <- system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
+    source <- readLines(schema, encoding = "UTF-8")
+    schema_copy <- withr::local_tempfile()
+    writeBin(charToRaw(enc2utf8(paste0(paste(source, collapse = "\n"), "\n"))), schema_copy)
+    fingerprint <- paste0("<!-- schema-source-md5: ", unname(tools::md5sum(schema_copy)), " -->")
+    expect_true(any(grepl(fingerprint, readLines(html, warn = FALSE), fixed = TRUE)))
+    headings <- xml2::xml_text(xml2::xml_find_all(xml2::read_html(html), "//h5"))
+    headings <- gsub("[[:space:]]+", " ", trimws(headings))
+    contract_titles <- grep("^#### ", source, value = TRUE)
+    contract_titles <- gsub("`", "", sub("^#### ", "", contract_titles), fixed = TRUE)
+    expect_gt(length(contract_titles), 0L)
+    expect_true(all(contract_titles %in% headings))
+  }
+})
