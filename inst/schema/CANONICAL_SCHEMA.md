@@ -467,8 +467,10 @@ A failed check has `passed = FALSE`; an unknown or unevaluable check reports
 `SKIP` with `passed = NA`. Error-level
 failures increment `error_count`; error-level skips enter `error_skips`.
 Documentary diagnostics have `passed = NA` and `documentary = TRUE` and are
-counted separately (`n_doc`), rather than entering `error_skips`. The execution
-console labels them `DOC`; the text report currently labels them `SKIP`.
+counted separately (`n_doc`), rather than entering `error_skips`. Both the
+execution console and text report label them `DOC`, including at error severity.
+Documentary diagnostics do not assert a pass or affect strict-mode output
+eligibility or `valid_for_analysis`.
 The other counts are `n_pass`, `n_fail`, and `n_skip`.
 
 With `merge_liss_module(..., strict = TRUE)`, reported error-level failures or

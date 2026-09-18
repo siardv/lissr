@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: d02c78b7735a297d5ee06404ae76d414 -->
+<!-- schema-source-md5: cebd00c822b375bd2c4247ae9c499e3b -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1041,10 +1041,11 @@ unevaluable check reports <code>SKIP</code> with
 <code>error_skips</code>. Documentary diagnostics have
 <code>passed = NA</code> and <code>documentary = TRUE</code> and are
 counted separately (<code>n_doc</code>), rather than entering
-<code>error_skips</code>. The execution console labels them
-<code>DOC</code>; the text report currently labels them
-<code>SKIP</code>. The other counts are <code>n_pass</code>,
-<code>n_fail</code>, and <code>n_skip</code>.</p>
+<code>error_skips</code>. Both the execution console and text report
+label them <code>DOC</code>, including at error severity. Documentary
+diagnostics do not assert a pass or affect strict-mode output
+eligibility or <code>valid_for_analysis</code>. The other counts are
+<code>n_pass</code>, <code>n_fail</code>, and <code>n_skip</code>.</p>
 <p>With <code>merge_liss_module(..., strict = TRUE)</code>, reported
 error-level failures or unevaluable checks abort before phase 7, so no
 output artifacts are written. The default <code>strict = FALSE</code>

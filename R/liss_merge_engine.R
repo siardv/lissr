@@ -3603,7 +3603,8 @@ write_report <- function(merged, validation_results, log_entries, recipe, path,
 
   for (vr in validation_results) {
     status <- if (isTRUE(vr$passed)) "PASS"
-              else if (isFALSE(vr$passed)) "FAIL" else "SKIP"
+              else if (isFALSE(vr$passed)) "FAIL"
+              else if (isTRUE(vr[["documentary"]])) "DOC" else "SKIP"
     lines <- c(lines, paste0("[", vr$severity, "] ", vr$check_id, ": ", status,
                              if (!is.null(vr$detail)) paste0(" -- ", vr$detail) else ""))
   }

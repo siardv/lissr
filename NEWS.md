@@ -1,3 +1,10 @@
+# lissr (development)
+
+* Text reports now label documentary validation checks `DOC`, matching the
+  execution console. Unknown and unevaluable executable checks remain `SKIP`.
+  Severities, diagnostic details, validation results and strict/report output
+  eligibility are unchanged.
+
 # lissr 1.4.1
 
 Correctness fixes for data-file discovery and validation of required inputs.
