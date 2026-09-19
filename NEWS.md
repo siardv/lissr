@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `row_count` and `assert_row_count_range` now parse both bounds numerically
+  before comparison. Malformed or reversed bounds are unevaluable with the
+  declared severity, even when another comparison fails or global data are
+  empty. Flat scalar lists are supported for both bounds. Reports show the
+  applied numeric limits, including negative infinity. Defaults, inclusive
+  comparisons, valid fractional/infinite bounds and wave resolution are preserved.
+
 * `wave_count` and `n_distinct_wave` now parse their active bound before
   comparing counts. Numeric text limits use numeric comparisons; malformed
   bounds are unevaluable with the declared severity, including on empty data.

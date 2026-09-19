@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: f6bfaf4b8c18800ef7af124368b689d9 -->
+<!-- schema-source-md5: 546a680d3a6b06561e4a03855904b9ec -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1437,9 +1437,10 @@ nonmissing-value requirements on the counted identifiers.</li>
 <code>assert_row_count_range</code> compare the number of rows with
 inclusive <code>min_rows</code> and <code>max_rows</code> bounds
 (defaults 0 and <code>Inf</code>). An observed count outside the bounds
-fails (<code>passed = FALSE</code>). Missing required wave inputs or
-malformed scopes are unevaluable (<code>passed = NA</code>). Both retain
-the declared severity and strict/report handling above.</p>
+fails (<code>passed = FALSE</code>). Missing required wave inputs,
+malformed scopes or invalid bounds are unevaluable
+(<code>passed = NA</code>). Both retain the declared severity and
+strict/report handling above.</p>
 <ul>
 <li>An omitted or null <code>wave</code> counts all rows with
 <code>nrow(df)</code>. No columns are required, including
@@ -1468,8 +1469,32 @@ filters are added. Fields such as <code>waves</code>,
 <li><code>wave</code>, <code>min_rows</code> and <code>max_rows</code>
 use exact field names; fields such as <code>wave_note</code> and
 <code>min_rows_note</code> cannot supply those values. Null bounds use
-their defaults. Existing scalar bound comparisons and coercion remain in
-use; this contract does not add general bounds-payload validation.</li>
+their defaults. After wave resolution, both bounds are parsed before
+comparing the count, so a failed comparison cannot conceal a malformed
+other bound.</li>
+<li>Bounds accept a plain integer, double or numeric-character scalar,
+named or unnamed, including an atomic one-cell array (such as a matrix).
+A one-element flat list containing an undimensioned scalar is supported
+for either bound. Classed objects (including factors/dates), logical,
+raw or complex values, empty/multiple values, nested or dimensioned
+lists, list-wrapped arrays, NA/NaN and blank/nonnumeric strings are
+unevaluable. The restrictions also apply inside wrappers. Character
+values use R’s numeric parser, so <code>&quot;10&quot;</code> means ten rather
+than a text-ordering limit.</li>
+<li>Fractional and negative bounds and both signed infinities retain
+numeric comparison without integer truncation.
+<code>min_rows &gt; max_rows</code> is an invalid declaration, reporting
+unevaluable instead of an observed count failure. Otherwise an interval
+is valid even if no integer count can satisfy it; for example,
+<code>1.2..1.8</code>, <code>Inf..Inf</code> and <code>-Inf..-Inf</code>
+fail for finite counts. Bounds are validated on empty global data too.
+Malformed-input diagnostics name the affected field; reversed-bound
+diagnostics name both fields.</li>
+<li>Count diagnostics display the parsed numeric endpoints, including
+the sign of infinity. Scalar lists are normalized for both endpoints;
+unlike earlier versions, a maximum list does not fail during report
+formatting. This contract applies only to this executor, without
+changing wave selection or other checks.</li>
 </ul>
 <p>The distinct documentary types <code>row_count_match</code> and
 <code>row_count_sum</code> remain documentary diagnostics and do not

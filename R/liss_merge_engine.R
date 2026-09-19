@@ -2508,6 +2508,25 @@ safe_eval_condition <- function(cond, df) {
   unname(value)
 }
 
+#' parse one row-count endpoint before testing the interval (internal)
+#' @noRd
+.row_count_bound <- function(value, field) {
+  invalid <- function() {
+    stop("row_count ", field, " must contain one numeric value", call. = FALSE)
+  }
+  if (is.object(value) || length(value) != 1L) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- value[[1]]
+    if (!is.null(dim(value))) invalid()
+  }
+  if (is.object(value) || length(value) != 1L ||
+      !(typeof(value) %in% c("integer", "double", "character"))) invalid()
+  value <- suppressWarnings(as.numeric(value))
+  if (is.na(value)) invalid()
+  unname(value)
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
@@ -2882,14 +2901,15 @@ run_validations <- function(df, checks, log_entries) {
               stop("row_count has no rows for required wave: ", w, call. = FALSE)
             rows <- sum(wave_ids == w)
           }
-          lo <- chk[["min_rows"]] %||% 0
-          hi <- chk[["max_rows"]] %||% Inf
+          lo <- .row_count_bound(chk[["min_rows"]] %||% 0, "min_rows")
+          hi <- .row_count_bound(chk[["max_rows"]] %||% Inf, "max_rows")
+          if (lo > hi)
+            stop("row_count min_rows must not exceed max_rows", call. = FALSE)
           passed <- (rows >= lo && rows <= hi)
           list(check_id = cid, passed = passed, severity = sev,
                detail = paste0("rows: ", rows,
                                if (!is.null(w)) paste0(" in wave ", w) else "",
-                               " (bounds ", lo, "..",
-                               if (is.finite(hi)) hi else "Inf", ")"))
+                               " (bounds ", lo, "..", hi, ")"))
         },
         "per_wave_mean" = {
           target_keys <- c("suffixes", "variables", "scope", "applies_to",

@@ -773,8 +773,8 @@ the declared severity and strict/report handling above.
 `row_count` and its alias `assert_row_count_range` compare the number of rows
 with inclusive `min_rows` and `max_rows` bounds (defaults 0 and `Inf`). An
 observed count outside the bounds fails (`passed = FALSE`). Missing required
-wave inputs or malformed scopes are unevaluable (`passed = NA`). Both retain
-the declared severity and strict/report handling above.
+wave inputs, malformed scopes or invalid bounds are unevaluable (`passed = NA`).
+Both retain the declared severity and strict/report handling above.
 
 - An omitted or null `wave` counts all rows with `nrow(df)`. No columns are
   required, including `wave_id`; unrelated missing or malformed wave identifiers
@@ -796,8 +796,27 @@ the declared severity and strict/report handling above.
   `wave_filter`, `in_waves` and `scope_wave` do not restrict counts.
 - `wave`, `min_rows` and `max_rows` use exact field names; fields such as
   `wave_note` and `min_rows_note` cannot supply those values. Null bounds use
-  their defaults. Existing scalar bound comparisons and coercion remain in
-  use; this contract does not add general bounds-payload validation.
+  their defaults. After wave resolution, both bounds are parsed before comparing
+  the count, so a failed comparison cannot conceal a malformed other bound.
+- Bounds accept a plain integer, double or numeric-character scalar, named or
+  unnamed, including an atomic one-cell array (such as a matrix). A one-element
+  flat list containing an undimensioned scalar is supported for either bound.
+  Classed objects (including factors/dates), logical, raw or complex values,
+  empty/multiple values, nested or dimensioned lists, list-wrapped arrays,
+  NA/NaN and blank/nonnumeric strings are unevaluable. The restrictions also
+  apply inside wrappers. Character values use R's numeric parser, so `"10"`
+  means ten rather than a text-ordering limit.
+- Fractional and negative bounds and both signed infinities retain numeric
+  comparison without integer truncation. `min_rows > max_rows` is an invalid
+  declaration, reporting unevaluable instead of an observed count failure.
+  Otherwise an interval is valid even if no integer count can satisfy it;
+  for example, `1.2..1.8`, `Inf..Inf` and `-Inf..-Inf` fail for finite counts.
+  Bounds are validated on empty global data too. Malformed-input diagnostics
+  name the affected field; reversed-bound diagnostics name both fields.
+- Count diagnostics display the parsed numeric endpoints, including the sign
+  of infinity. Scalar lists are normalized for both endpoints; unlike earlier
+  versions, a maximum list does not fail during report formatting. This contract
+  applies only to this executor, without changing wave selection or other checks.
 
 The distinct documentary types `row_count_match` and `row_count_sum` remain
 documentary diagnostics and do not dispatch to this executor.

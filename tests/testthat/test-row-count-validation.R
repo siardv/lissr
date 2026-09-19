@@ -104,6 +104,7 @@ test_that("global row counts need no columns and preserve legitimate zero rows",
         expect_true(result$passed)
         expect_identical(result$detail, "rows: 0 (bounds 0..0)")
         check$min_rows <- 1
+        check$max_rows <- Inf
         expect_false(.row_count_validation(check, df)$results[[1]]$passed)
       }
       check$min_rows <- check$max_rows <- 5
@@ -197,6 +198,105 @@ test_that("row counts retain inclusive bounds defaults and scalar comparisons", 
   }
 })
 
+test_that("row-count numeric text uses numeric comparisons and reported bounds", {
+  for (type in c("row_count", "assert_row_count_range")) {
+    for (scoped in c(FALSE, TRUE)) {
+      for (n in c(2L, 12L)) {
+        df <- data.frame(wave_id = rep("w1", n))
+        if (scoped) df <- rbind(df, data.frame(wave_id = rep("outside", 20)))
+        for (bounds in list(c("0", "2"), c("2", "10"), c(" 10 ", "2e1"), c("-Inf", "Inf"),
+                            c("2.5", "12.5"), c("-Inf", "-Inf"))) {
+          check <- .row_count_check()
+          check$type <- type
+          if (!scoped) check$wave <- NULL
+          check$min_rows <- bounds[[1]]
+          check$max_rows <- bounds[[2]]
+          result <- .row_count_validation(check, df)$results[[1]]
+          lo <- as.numeric(bounds[[1]])
+          hi <- as.numeric(bounds[[2]])
+          expect_identical(result$passed, lo <= n && n <= hi)
+          expect_identical(result$detail, paste0("rows: ", n,
+            if (scoped) " in wave w1" else "", " (bounds ", lo, "..", hi, ")"))
+          check$min_rows <- lo
+          check$max_rows <- hi
+          expect_identical(result, .row_count_validation(check, df)$results[[1]])
+        }
+      }
+    }
+  }
+})
+
+test_that("row-count bounds normalize scalar wrappers and preserve numeric predicates", {
+  for (value in list(2L, c(limit = "2"), list(2), list(limit = "2"),
+                     matrix(2), array("2", c(1, 1, 1)))) {
+    check <- .row_count_check()
+    check$min_rows <- check$max_rows <- value
+    result <- .row_count_validation(check)$results[[1]]
+    expect_true(result$passed)
+    expect_identical(result$detail, "rows: 2 in wave w1 (bounds 2..2)")
+  }
+  for (bounds in list(c(-2, -1), c(-Inf, -Inf), c(Inf, Inf), c(2.1, 2.9))) {
+    check <- .row_count_check()
+    check$min_rows <- bounds[[1]]
+    check$max_rows <- bounds[[2]]
+    result <- .row_count_validation(check)$results[[1]]
+    expect_false(result$passed)
+    expect_identical(result$detail, paste0("rows: 2 in wave w1 (bounds ",
+                                          bounds[[1]], "..", bounds[[2]], ")"))
+  }
+})
+
+test_that("malformed row-count bounds cannot hide behind count failures or empty data", {
+  invalid <- list("garbage", "", " \t", "2 rows", "NaN", NA_real_, NaN,
+                  numeric(), c(1, 2), TRUE, as.raw(2), 2 + 1i, factor("2"),
+                  as.Date("1970-01-03"), structure(2, class = "bound"),
+                  list(), list(NULL), list(list(2)), list(c(1, 2)), list(TRUE),
+                  list(factor("2")), list(matrix(2)), matrix(list(2)), matrix(TRUE),
+                  matrix(c(1, 2)), data.frame(x = 2))
+  for (field in c("min_rows", "max_rows")) {
+    for (empty in c(FALSE, TRUE)) {
+      df <- if (empty) data.frame() else .row_count_data()
+      for (masking in c(FALSE, TRUE)) {
+        for (value in invalid) {
+          check <- .row_count_check()
+          check$wave <- NULL
+          # test type rejection separately from a failed opposite comparison
+          check$min_rows <- if (masking) 20 else -Inf
+          check$max_rows <- if (masking) -1 else Inf
+          check[field] <- list(value)
+          .expect_row_count_unevaluable(check, df, field)
+        }
+      }
+    }
+  }
+})
+
+test_that("reversed row-count bounds are malformed and retain severity", {
+  for (type in c("row_count", "assert_row_count_range")) {
+    for (severity in c("error", "warning", "info")) {
+      for (bounds in list(c(3, 1), c("10", "2"), c(Inf, -Inf), c(1, 0))) {
+        check <- .row_count_check(severity)
+        check$type <- type
+        check$min_rows <- bounds[[1]]
+        check$max_rows <- bounds[[2]]
+        .expect_row_count_unevaluable(check, pattern = "min_rows")
+        check$wave <- NULL
+        .expect_row_count_unevaluable(check, data.frame(), "max_rows")
+      }
+      for (field in c("min_rows", "max_rows")) {
+        check <- .row_count_check(severity)
+        check$type <- type
+        check[[field]] <- "garbage"
+        .expect_row_count_unevaluable(check, pattern = field)
+      }
+    }
+  }
+  check <- .row_count_check("info")
+  check$max_rows <- "garbage"
+  expect_warning(suppressMessages(
+    lissr:::run_validations(.row_count_data(), list(check), list())), NA)
+})
+
 .row_count_merge_fixture <- function(check, drop_wave = FALSE,
                                       .local_envir = parent.frame()) {
   root <- withr::local_tempdir("lissr_row_count_", .local_envir = .local_envir)
@@ -232,7 +332,20 @@ test_that("strict and report modes handle unresolved and violated row counts", {
   violated$max_rows <- 1
   missing_column <- .row_count_check()
   missing_column$wave <- "yy01a"
-  checks <- list(missing, malformed, violated, missing_column)
+  bad_minimum <- .row_count_check()
+  bad_minimum$wave <- "yy01a"
+  bad_minimum$min_rows <- TRUE
+  bad_maximum <- bad_minimum
+  bad_maximum$min_rows <- 0
+  bad_maximum$max_rows <- "garbage"
+  hidden_maximum <- bad_maximum
+  hidden_maximum$min_rows <- 20
+  hidden_maximum$max_rows <- NA_real_
+  reversed <- bad_maximum
+  reversed$min_rows <- 3
+  reversed$max_rows <- 1
+  checks <- list(missing, malformed, violated, bad_minimum, bad_maximum,
+                 hidden_maximum, reversed, missing_column)
   for (i in seq_along(checks)) {
     fx <- .row_count_merge_fixture(checks[[i]], drop_wave = i == length(checks))
     expect_error(suppressWarnings(suppressMessages(
@@ -270,7 +383,8 @@ test_that("valid row counts preserve strict output and actual values", {
       check <- .row_count_check()
       check$type <- type
       check$wave <- if (scoped) "yy01a" else NULL
-      check$min_rows <- check$max_rows <- if (scoped) 2 else 4
+      check$min_rows <- if (scoped) "2" else "4"
+      check$max_rows <- "10"
       fx <- .row_count_merge_fixture(check, drop_wave = !scoped)
       result <- suppressWarnings(suppressMessages(
         merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
@@ -285,20 +399,27 @@ test_that("valid row counts preserve strict output and actual values", {
 
 test_that("warning and info row-count outcomes retain strict output eligibility", {
   for (severity in c("warning", "info")) {
-    for (unresolved in c(FALSE, TRUE)) {
+    for (outcome in c("failed", "unresolved", "bad_minimum", "bad_maximum", "reversed")) {
       check <- .row_count_check(severity)
-      check$wave <- if (unresolved) "absent_wave" else "yy01a"
-      if (!unresolved) check$max_rows <- 1
+      check$wave <- if (outcome == "unresolved") "absent_wave" else "yy01a"
+      if (outcome == "failed") check$max_rows <- 1
+      if (outcome == "bad_minimum") check$min_rows <- TRUE
+      if (outcome == "bad_maximum") check$max_rows <- "garbage"
+      if (outcome == "reversed") {
+        check$min_rows <- 3
+        check$max_rows <- 1
+      }
+      unevaluable <- outcome != "failed"
       fx <- .row_count_merge_fixture(check)
       result <- suppressWarnings(suppressMessages(
         merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
       expect_true(result$valid_for_analysis)
-      expect_identical(result$validation[[1]]$passed, if (unresolved) NA else FALSE)
+      expect_identical(result$validation[[1]]$passed, if (unevaluable) NA else FALSE)
       expect_identical(result$validation[[1]]$severity, severity)
       report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
       expect_true(any(grepl("Valid for analysis: TRUE", report, fixed = TRUE)))
       expect_true(any(grepl(paste0("[", severity, "] ROW_COUNT: ",
-        if (unresolved) "SKIP" else "FAIL"), report, fixed = TRUE)))
+        if (unevaluable) "SKIP" else "FAIL"), report, fixed = TRUE)))
       expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
     }
   }
