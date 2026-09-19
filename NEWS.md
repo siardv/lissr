@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `per_wave_mean` now parses both bounds before iterating over means. Numeric
+  text compares numerically; malformed or reversed bounds are unevaluable with
+  the declared severity, including on empty or all-nonfinite data. Exact field
+  lookup prevents unrelated fields from supplying limits. Scalar wrappers,
+  defaults, inclusive comparisons and valid empty/nonfinite-mean behavior are
+  preserved; violation details show the parsed numeric endpoints.
+
 * `row_count` and `assert_row_count_range` now parse both bounds numerically
   before comparison. Malformed or reversed bounds are unevaluable with the
   declared severity, even when another comparison fails or global data are

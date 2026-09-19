@@ -825,8 +825,8 @@ documentary diagnostics and do not dispatch to this executor.
 
 `per_wave_mean` requires every selected target to resolve before comparing
 means. Missing targets, including partial matches, malformed requests and
-unavailable wave membership are unevaluable (`passed = NA`). An observed finite
-mean outside the bounds fails (`passed = FALSE`). Both outcomes retain the
+unavailable wave membership or invalid bounds are unevaluable (`passed = NA`).
+An observed finite mean outside the bounds fails (`passed = FALSE`). Both outcomes retain the
 declared severity and the strict/report handling above.
 
 - Target keys, in precedence order, are `suffixes`, `variables`, `scope`,
@@ -843,20 +843,38 @@ declared severity and the strict/report handling above.
   has no wave-filter support; `waves`, `wave_filter` and other wave-scope fields
   do not restrict its comparisons.
 - Resolved targets and a valid zero-row `wave_id` column retain a pass result
-  on empty data, with the diagnostic `no observed waves; no means calculated`.
-  Empty data cannot excuse missing targets or a missing `wave_id` column.
+  on empty data when the bounds are valid, with the diagnostic
+  `no observed waves; no means calculated`. Empty data cannot excuse missing
+  targets, a missing `wave_id` column or invalid bounds.
 - Means use the existing numeric coercion and `na.rm = TRUE`, separately for
   every target in every observed wave. Every finite mean must be within the
   inclusive bounds, `min_mean` (default `-Inf`) and `max_mean` (default `Inf`).
   Values are not pooled across waves or targets.
+- Bounds use exact field names; fields such as `min_mean_note` and
+  `max_mean_note` do not supply limits. Omitted/null bounds use their defaults.
+  After targets and wave membership resolve, both bounds are parsed before
+  iterating over means, even when no finite means are available for comparison.
+- Each bound accepts a plain integer, double or numeric-character scalar, named
+  or unnamed, including an atomic one-cell array or a flat one-element list of
+  an undimensioned scalar. Classed objects (including factors/dates), logical,
+  raw or complex values, empty/multiple values, nested or dimensioned lists,
+  list-wrapped arrays, NA/NaN and blank/nonnumeric strings are unevaluable.
+  Restrictions also apply inside wrappers. Strings use R's numeric parser
+  before comparison. Negative/fractional bounds and both signed infinities are
+  supported; no integer truncation is applied.
+- `min_mean > max_mean` is an invalid declaration, rather than an observed
+  mean violation. Malformed-input diagnostics name the affected field;
+  reversed-bound diagnostics name both. Violation details show the parsed
+  numeric endpoints. A violation at one endpoint cannot conceal a malformed
+  other endpoint.
 - Non-finite means, including all-NA, NaN and infinite means, retain their
-  existing exclusion from bound comparisons. If the check passes, its detail
+  existing exclusion from valid bound comparisons. If the check passes, its detail
   reports the number of these means and the first affected column and wave.
   A finite bound violation still fails even when other means are non-finite.
 
-This check has no registered type aliases. The contract does not add general
-numeric-value or bounds-payload validation; coercion and non-finite handling
-remain unchanged.
+This check has no registered type aliases. Numeric coercion of the data and
+non-finite-mean handling remain unchanged; these bound requirements apply only
+to this executor.
 
 #### `expected_presence` validation checks
 

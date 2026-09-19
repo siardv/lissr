@@ -247,6 +247,7 @@ test_that("per-wave means allow valid empty data and explain that no means were 
 test_that("per-wave-mean failures and unavailable inputs retain declared severity", {
   for (severity in c("error", "warning", "info")) {
     check <- .per_wave_mean_check(severity = severity)
+    check$min_mean <- -Inf
     check$max_mean <- 1
     result <- .per_wave_mean_validation(check)
     expect_false(result$results[[1]]$passed)
@@ -256,6 +257,107 @@ test_that("per-wave-mean failures and unavailable inputs retain declared severit
     check$variables <- "absent_column"
     .expect_per_wave_mean_unevaluable(check, pattern = "absent_column")
   }
+})
+
+test_that("per-wave-mean text bounds compare numerically and report parsed endpoints", {
+  for (m in c(2, 12)) {
+    df <- data.frame(wave_id = c("w1", "w1"), s005 = c(m - 1, m + 1))
+    for (bounds in list(c("0", "2"), c("2", "10"), c(" 10 ", "2e1"),
+                        c("-Inf", "Inf"), c("-Inf", "-Inf"), c("Inf", "Inf"))) {
+      check <- .per_wave_mean_check()
+      check$min_mean <- bounds[[1]]
+      check$max_mean <- bounds[[2]]
+      result <- .per_wave_mean_validation(check, df)$results[[1]]
+      lo <- as.numeric(bounds[[1]])
+      hi <- as.numeric(bounds[[2]])
+      expect_identical(result$passed, lo <= m && m <= hi)
+      if (!isTRUE(result$passed))
+        expect_identical(result$detail, paste0("mean(s005) = ", m,
+          " in wave w1 outside [", lo, ", ", hi, "]"))
+      check$min_mean <- lo
+      check$max_mean <- hi
+      expect_identical(result, .per_wave_mean_validation(check, df)$results[[1]])
+    }
+  }
+})
+
+test_that("per-wave-mean bounds preserve scalar wrappers and use exact fields", {
+  df <- data.frame(wave_id = "w1", s005 = -1.5)
+  for (value in list(-1.5, c(limit = "-1.5"), list(-1.5), list(limit = "-1.5"),
+                     matrix(-1.5), array("-1.5", c(1, 1, 1)))) {
+    check <- .per_wave_mean_check()
+    check$min_mean <- check$max_mean <- value
+    expect_true(.per_wave_mean_validation(check, df)$results[[1]]$passed)
+  }
+  cases <- data.frame(mean = c(2, 12, 2), lower = c(-Inf, 0, 10),
+                       upper = c(10, 2, Inf), passed = c(TRUE, FALSE, FALSE))
+  for (wrap in list(function(value) list(value), matrix,
+                    function(value) array(value, c(1, 1, 1)))) {
+    for (i in seq_len(nrow(cases))) {
+      check <- .per_wave_mean_check()
+      check$min_mean <- wrap(as.character(cases$lower[[i]]))
+      check$max_mean <- wrap(as.character(cases$upper[[i]]))
+      df$s005 <- cases$mean[[i]]
+      expect_identical(.per_wave_mean_validation(check, df)$results[[1]]$passed,
+                       cases$passed[[i]])
+    }
+  }
+  for (field in c("min_mean", "max_mean")) {
+    check <- .per_wave_mean_check()
+    check$min_mean <- check$max_mean <- NULL
+    check[[paste0(field, "_note")]] <- if (field == "min_mean") 99 else -99
+    expect_true(.per_wave_mean_validation(check)$results[[1]]$passed)
+    check[field] <- list(NULL)
+    expect_true(.per_wave_mean_validation(check)$results[[1]]$passed)
+  }
+})
+
+test_that("malformed mean bounds cannot hide behind missing or skipped comparisons", {
+  invalid <- list("garbage", "", " \t", "2 units", "NaN", NA_real_, NaN,
+                  numeric(), c(1, 2), TRUE, as.raw(2), 2 + 1i, factor("2"),
+                  as.Date("1970-01-03"), structure(2, class = "bound"), list(),
+                  list(NULL), list(list(2)), list(c(1, 2)), list(TRUE), list(factor("2")),
+                  list(2 + 1i), list(matrix(2)), matrix(list(2)), matrix(TRUE),
+                  matrix(c(1, 2)), data.frame(x = 2))
+  for (shape in c("finite", "all_na", "infinite", "empty", "opposite_violation")) {
+    df <- .per_wave_mean_data()
+    if (shape == "all_na") df$s005 <- NA_real_
+    if (shape == "infinite") df$s005 <- Inf
+    if (shape == "empty") df <- df[FALSE, ]
+    for (field in c("min_mean", "max_mean")) {
+      for (value in invalid) {
+        check <- .per_wave_mean_check()
+        check$min_mean <- if (shape == "opposite_violation") 20 else -Inf
+        check$max_mean <- if (shape == "opposite_violation") 1 else Inf
+        check[field] <- list(value)
+        .expect_per_wave_mean_unevaluable(check, df, field)
+      }
+    }
+  }
+})
+
+test_that("reversed and malformed mean bounds preserve severity before evaluation", {
+  for (severity in c("error", "warning", "info")) {
+    for (bounds in list(list(4, 1), list(Inf, -Inf), list(NA_real_, 1),
+                        list(20, NA_real_), list(-Inf, "garbage"))) {
+      check <- .per_wave_mean_check(severity = severity)
+      check$min_mean <- bounds[[1]]
+      check$max_mean <- bounds[[2]]
+      for (values in list(c(1, 3, 2, 4), rep(NA_real_, 4), rep(Inf, 4), numeric())) {
+        df <- .per_wave_mean_data()
+        if (!length(values)) df <- df[FALSE, ] else df$s005 <- values
+        .expect_per_wave_mean_unevaluable(check, df, "mean")
+      }
+    }
+  }
+  check <- .per_wave_mean_check(severity = "info")
+  check$max_mean <- "garbage"
+  expect_warning(suppressMessages(
+    lissr:::run_validations(.per_wave_mean_data(), list(check), list())), NA)
+  check$variables <- "absent_column"
+  .expect_per_wave_mean_unevaluable(check, pattern = "absent_column")
+  check$variables <- "005"
+  .expect_per_wave_mean_unevaluable(check, .per_wave_mean_data()["s005"], "wave_id")
 })
 
 .per_wave_mean_merge_fixture <- function(check, all_na = FALSE,
@@ -287,8 +389,18 @@ test_that("strict and report modes handle unresolved and violated per-wave means
   malformed_target <- .per_wave_mean_check(character())
   violated <- .per_wave_mean_check()
   violated$max_mean <- 2
-  for (check in list(missing_target, malformed_target, violated)) {
-    fx <- .per_wave_mean_merge_fixture(check)
+  bad_minimum <- .per_wave_mean_check()
+  bad_minimum$min_mean <- NA_real_
+  bad_minimum$max_mean <- 1
+  bad_maximum <- .per_wave_mean_check()
+  bad_maximum$max_mean <- "garbage"
+  reversed <- .per_wave_mean_check()
+  reversed$min_mean <- 4
+  reversed$max_mean <- 1
+  checks <- c(list(missing_target, malformed_target, violated),
+              rep(list(bad_minimum, bad_maximum, reversed), 2))
+  for (i in seq_along(checks)) {
+    fx <- .per_wave_mean_merge_fixture(checks[[i]], all_na = i > 6L)
     expect_error(suppressWarnings(suppressMessages(
       merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
       "strict mode: no outputs were written")
@@ -305,6 +417,7 @@ test_that("strict and report modes handle unresolved and violated per-wave means
       merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir)))
     expect_false(result$valid_for_analysis)
     expect_false(isTRUE(result$validation[[1]]$passed))
+    if (i >= 4L) expect_identical(result$validation[[1]]$passed, NA)
     report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
     expect_true(any(grepl("Valid for analysis: FALSE", report, fixed = TRUE)))
     expect_true(any(grepl("[error] PER_WAVE_MEAN:", report, fixed = TRUE)))
@@ -317,7 +430,10 @@ test_that("strict and report modes handle unresolved and violated per-wave means
 
 test_that("passing and all-NA per-wave means retain strict output and actual values", {
   for (all_na in c(FALSE, TRUE)) {
-    fx <- .per_wave_mean_merge_fixture(.per_wave_mean_check(), all_na = all_na)
+    check <- .per_wave_mean_check()
+    check$min_mean <- "0"
+    check$max_mean <- "10"
+    fx <- .per_wave_mean_merge_fixture(check, all_na = all_na)
     result <- suppressWarnings(suppressMessages(
       merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
     expect_true(result$valid_for_analysis)
@@ -331,6 +447,27 @@ test_that("passing and all-NA per-wave means retain strict output and actual val
                    "2 non-finite mean(s) not compared", fixed = TRUE)
       report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
       expect_true(any(grepl("2 non-finite mean(s) not compared", report, fixed = TRUE)))
+    }
+  }
+})
+
+test_that("non-error malformed mean bounds retain strict output eligibility", {
+  for (severity in c("warning", "info")) {
+    for (field in c("min_mean", "max_mean")) {
+      for (all_na in c(FALSE, TRUE)) {
+        check <- .per_wave_mean_check(severity = severity)
+        check[[field]] <- "garbage"
+        fx <- .per_wave_mean_merge_fixture(check, all_na = all_na)
+        result <- suppressWarnings(suppressMessages(
+          merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
+        expect_true(result$valid_for_analysis)
+        expect_identical(result$validation[[1]]$passed, NA)
+        expect_identical(result$validation[[1]]$severity, severity)
+        report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
+        expect_true(any(grepl(paste0("[", severity, "] PER_WAVE_MEAN: SKIP"),
+                              report, fixed = TRUE)))
+        expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
+      }
     }
   }
 })

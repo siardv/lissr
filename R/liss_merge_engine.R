@@ -2527,6 +2527,25 @@ safe_eval_condition <- function(cond, df) {
   unname(value)
 }
 
+#' parse one per-wave-mean endpoint before iterating over means (internal)
+#' @noRd
+.per_wave_mean_bound <- function(value, field) {
+  invalid <- function() {
+    stop("per_wave_mean ", field, " must contain one numeric value", call. = FALSE)
+  }
+  if (is.object(value) || length(value) != 1L) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- value[[1]]
+    if (!is.null(dim(value))) invalid()
+  }
+  if (is.object(value) || length(value) != 1L ||
+      !(typeof(value) %in% c("integer", "double", "character"))) invalid()
+  value <- suppressWarnings(as.numeric(value))
+  if (is.na(value)) invalid()
+  unname(value)
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
@@ -2933,8 +2952,10 @@ run_validations <- function(df, checks, log_entries) {
             stop("per_wave_mean cannot evaluate missing or blank wave_id values",
                  call. = FALSE)
           waves <- unique(wave_ids)
-          max_mean <- chk$max_mean %||% Inf
-          min_mean <- chk$min_mean %||% -Inf
+          min_mean <- .per_wave_mean_bound(chk[["min_mean"]] %||% -Inf, "min_mean")
+          max_mean <- .per_wave_mean_bound(chk[["max_mean"]] %||% Inf, "max_mean")
+          if (min_mean > max_mean)
+            stop("per_wave_mean min_mean must not exceed max_mean", call. = FALSE)
           passed <- TRUE
           detail <- if (!length(waves)) "no observed waves; no means calculated" else NULL
           n_uncompared <- 0L
