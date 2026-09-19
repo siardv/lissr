@@ -719,15 +719,17 @@ general threshold/direction validation or change the condition evaluator.
 
 `wave_count` and its alias `n_distinct_wave` require the columns used by the
 selected mode to exist, including on empty data. Missing inputs, malformed
-active person-key requests and unsupported column shapes are unevaluable
+active bounds or person-key requests and unsupported column shapes are unevaluable
 (`passed = NA`). Observed count violations fail (`passed = FALSE`). Both retain
 the declared severity and strict/report handling above.
 
 - A non-null `expected` selects the global distinct-wave mode. Only `wave_id`
   is required; person-key fields and `max_waves` are ignored, even when malformed.
-  The count uses `dplyr::n_distinct(wave_id)` and compares with
-  `as.integer(expected)`. Existing scalar coercion, including truncation of
-  fractional expected counts, is preserved. A valid empty dataset has count 0.
+  The count uses `dplyr::n_distinct(wave_id)` and compares with the parsed bound
+  converted by `as.integer()`. Fractional expected counts still truncate toward
+  zero; negative counts are not separately prohibited. The conversion must yield
+  a nonmissing integer, so infinite and out-of-range expected counts are
+  unevaluable. A valid empty dataset has count 0.
 - Otherwise, the check limits distinct waves per person. Person-key precedence
   is `column`, then `key`, then `nomem_encr`, using the first non-null value.
   The key must be one nonblank character column name. Empty, NA, list,
@@ -743,17 +745,28 @@ the declared severity and strict/report handling above.
   identifiers retain their counting behavior. Repeated observations of the
   same person-wave combination do not increase the distinct-wave count.
 - Per-person mode compares the largest count with `max_waves` using `<=`;
-  its default is `Inf`. With no observed persons, the existing empty-set
+  its omitted/null default is `Inf`. Fractional and negative limits and both
+  signed infinities remain supported. With no observed persons, the empty-set
   comparison uses `-Inf` without calculating a maximum or emitting a warning.
   The detail states `no observed persons; no per-person wave counts calculated`.
-  This is not a measured zero count, and required inputs must still resolve.
+  This is not a measured zero count; required inputs must still resolve and the
+  active bound must be valid.
+- Both bounds accept a plain integer, double or numeric-character scalar,
+  optionally in a one-element flat list. Names on a scalar do not affect its
+  value. Character values use R's numeric parser before comparison, so `"10"`
+  means ten rather than a text-ordering limit. `expected` additionally accepts
+  an atomic one-cell array (including a matrix); `max_waves` does not accept
+  arrays. A list's element must be an undimensioned scalar, not another container.
+  Empty/multiple values, classed objects (including factors and dates), logical,
+  raw and complex values, NA/NaN, blank strings and nonnumeric text are
+  unevaluable. These restrictions also apply inside accepted wrappers.
 - Payload fields use exact names. Fields such as `expected_wave` or
   `column_note` cannot supply `expected` or `column`. No wave filters are
   applied; `waves`, `wave_filter` and `scope_wave` do not restrict counts.
-- A comparison that produces an empty, nonscalar, dimensioned or NA result is
-  unevaluable, with a diagnostic naming the selected bound. Existing scalar
-  coercion and comparison remain in use; this does not add general count/bound
-  payload validation or nonmissing-value enforcement.
+- Only the active bound is validated, with a diagnostic naming `expected` or
+  `max_waves` on malformed input. Malformed `expected` never falls back to
+  per-person mode. This bound contract does not change other check types or
+  impose nonmissing-value requirements on the counted identifiers.
 
 #### `row_count` required wave scope
 

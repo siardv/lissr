@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: cebd00c822b375bd2c4247ae9c499e3b -->
+<!-- schema-source-md5: f6bfaf4b8c18800ef7af124368b689d9 -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1367,18 +1367,21 @@ threshold/direction validation or change the condition evaluator.</p>
 <h5><code>wave_count</code> required inputs and counting modes</h5>
 <p><code>wave_count</code> and its alias <code>n_distinct_wave</code>
 require the columns used by the selected mode to exist, including on
-empty data. Missing inputs, malformed active person-key requests and
-unsupported column shapes are unevaluable (<code>passed = NA</code>).
-Observed count violations fail (<code>passed = FALSE</code>). Both
-retain the declared severity and strict/report handling above.</p>
+empty data. Missing inputs, malformed active bounds or person-key
+requests and unsupported column shapes are unevaluable
+(<code>passed = NA</code>). Observed count violations fail
+(<code>passed = FALSE</code>). Both retain the declared severity and
+strict/report handling above.</p>
 <ul>
 <li>A non-null <code>expected</code> selects the global distinct-wave
 mode. Only <code>wave_id</code> is required; person-key fields and
 <code>max_waves</code> are ignored, even when malformed. The count uses
-<code>dplyr::n_distinct(wave_id)</code> and compares with
-<code>as.integer(expected)</code>. Existing scalar coercion, including
-truncation of fractional expected counts, is preserved. A valid empty
-dataset has count 0.</li>
+<code>dplyr::n_distinct(wave_id)</code> and compares with the parsed
+bound converted by <code>as.integer()</code>. Fractional expected counts
+still truncate toward zero; negative counts are not separately
+prohibited. The conversion must yield a nonmissing integer, so infinite
+and out-of-range expected counts are unevaluable. A valid empty dataset
+has count 0.</li>
 <li>Otherwise, the check limits distinct waves per person. Person-key
 precedence is <code>column</code>, then <code>key</code>, then
 <code>nomem_encr</code>, using the first non-null value. The key must be
@@ -1397,23 +1400,35 @@ and numeric identifiers retain their counting behavior. Repeated
 observations of the same person-wave combination do not increase the
 distinct-wave count.</li>
 <li>Per-person mode compares the largest count with
-<code>max_waves</code> using <code>&lt;=</code>; its default is
-<code>Inf</code>. With no observed persons, the existing empty-set
-comparison uses <code>-Inf</code> without calculating a maximum or
-emitting a warning. The detail states
+<code>max_waves</code> using <code>&lt;=</code>; its omitted/null
+default is <code>Inf</code>. Fractional and negative limits and both
+signed infinities remain supported. With no observed persons, the
+empty-set comparison uses <code>-Inf</code> without calculating a
+maximum or emitting a warning. The detail states
 <code>no observed persons; no per-person wave counts calculated</code>.
-This is not a measured zero count, and required inputs must still
-resolve.</li>
+This is not a measured zero count; required inputs must still resolve
+and the active bound must be valid.</li>
+<li>Both bounds accept a plain integer, double or numeric-character
+scalar, optionally in a one-element flat list. Names on a scalar do not
+affect its value. Character values use R’s numeric parser before
+comparison, so <code>&quot;10&quot;</code> means ten rather than a text-ordering
+limit. <code>expected</code> additionally accepts an atomic one-cell
+array (including a matrix); <code>max_waves</code> does not accept
+arrays. A list’s element must be an undimensioned scalar, not another
+container. Empty/multiple values, classed objects (including factors and
+dates), logical, raw and complex values, NA/NaN, blank strings and
+nonnumeric text are unevaluable. These restrictions also apply inside
+accepted wrappers.</li>
 <li>Payload fields use exact names. Fields such as
 <code>expected_wave</code> or <code>column_note</code> cannot supply
 <code>expected</code> or <code>column</code>. No wave filters are
 applied; <code>waves</code>, <code>wave_filter</code> and
 <code>scope_wave</code> do not restrict counts.</li>
-<li>A comparison that produces an empty, nonscalar, dimensioned or NA
-result is unevaluable, with a diagnostic naming the selected bound.
-Existing scalar coercion and comparison remain in use; this does not add
-general count/bound payload validation or nonmissing-value
-enforcement.</li>
+<li>Only the active bound is validated, with a diagnostic naming
+<code>expected</code> or <code>max_waves</code> on malformed input.
+Malformed <code>expected</code> never falls back to per-person mode.
+This bound contract does not change other check types or impose
+nonmissing-value requirements on the counted identifiers.</li>
 </ul>
 </div>
 <div id="row_count-required-wave-scope" class="section level5">

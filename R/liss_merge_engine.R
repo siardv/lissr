@@ -2485,6 +2485,29 @@ safe_eval_condition <- function(cond, df) {
        present_waves = present_waves, wave_ids = wave_ids)
 }
 
+#' parse the active wave-count bound without implicit comparison coercion (internal)
+#' @noRd
+.wave_count_bound <- function(value, field) {
+  invalid <- function() {
+    stop("wave_count ", field, " must contain one numeric value",
+         if (field == "expected") " convertible to a non-missing integer" else "",
+         call. = FALSE)
+  }
+  if (is.object(value) || length(value) != 1L) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- value[[1]]
+    if (!is.null(dim(value))) invalid()
+  }
+  if (is.object(value) || length(value) != 1L ||
+      !(typeof(value) %in% c("integer", "double", "character")) ||
+      (field == "max_waves" && !is.null(dim(value)))) invalid()
+  value <- suppressWarnings(as.numeric(value))
+  if (field == "expected") value <- suppressWarnings(as.integer(value))
+  if (is.na(value)) invalid()
+  unname(value)
+}
+
 run_validations <- function(df, checks, log_entries) {
   results <- list()
   error_count <- 0L
@@ -2816,13 +2839,13 @@ run_validations <- function(df, checks, log_entries) {
                    call. = FALSE)
           }
           if (!is.null(expected)) {
+            limit <- .wave_count_bound(expected, "expected")
             n_waves <- dplyr::n_distinct(df[["wave_id"]])
-            passed <- (n_waves == as.integer(expected))
-            bound <- "expected"
+            passed <- (n_waves == limit)
             detail <- paste0("distinct waves: ", n_waves,
                              " (expected ", expected, ")")
           } else {
-            max_waves <- chk[["max_waves"]] %||% Inf
+            max_waves <- .wave_count_bound(chk[["max_waves"]] %||% Inf, "max_waves")
             per_person <- df |>
               dplyr::group_by(dplyr::across(dplyr::all_of(col))) |>
               dplyr::summarise(n = dplyr::n_distinct(.data$wave_id),
@@ -2830,14 +2853,9 @@ run_validations <- function(df, checks, log_entries) {
             # preserve the empty-set comparison without max(numeric(0)) warnings
             max_seen <- if (nrow(per_person)) max(per_person$n) else -Inf
             passed <- max_seen <= max_waves
-            bound <- "max_waves"
             detail <- if (nrow(per_person)) paste0("max waves per person: ", max_seen)
                       else "no observed persons; no per-person wave counts calculated"
           }
-          if (!is.logical(passed) || length(passed) != 1L ||
-              !is.null(dim(passed)) || is.na(passed))
-            stop("wave_count ", bound,
-                 " comparison must yield one non-missing logical value", call. = FALSE)
           list(check_id = cid, passed = passed, severity = sev, detail = detail)
         },
         "row_count" = {

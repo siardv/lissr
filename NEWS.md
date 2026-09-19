@@ -1,5 +1,12 @@
 # lissr (development)
 
+* `wave_count` and `n_distinct_wave` now parse their active bound before
+  comparing counts. Numeric text limits use numeric comparisons; malformed
+  bounds are unevaluable with the declared severity, including on empty data.
+  Existing scalar wrappers, expected-count truncation, signed infinite maximum
+  bounds, mode precedence and null defaults are preserved. Classed, logical,
+  raw and complex payloads no longer supply accidental counts through coercion.
+
 * Text reports now label documentary validation checks `DOC`, matching the
   execution console. Unknown and unevaluable executable checks remain `SKIP`.
   Severities, diagnostic details, validation results and strict/report output

@@ -228,6 +228,94 @@ test_that("wave-count comparisons report non-scalar and unknown verdicts", {
   }
 })
 
+test_that("wave-count numeric text is compared numerically", {
+  for (type in c("wave_count", "n_distinct_wave")) {
+    for (n in c(2L, 12L)) {
+      df <- data.frame(nomem_encr = rep(1, n), wave_id = seq_len(n))
+      for (text in c("2", "10", " 20 ", "1e1", "Inf", "-Inf", "-1", "2.5")) {
+        check <- .wave_count_check()
+        check$type <- type
+        check$max_waves <- text
+        result <- .wave_count_validation(check, df)$results[[1]]
+        expect_identical(result$passed, n <= as.numeric(text))
+        check$max_waves <- as.numeric(text)
+        expect_identical(result, .wave_count_validation(check, df)$results[[1]])
+      }
+    }
+  }
+})
+
+test_that("wave-count bounds retain scalar wrappers and integer conversion", {
+  for (value in list(list(2), list("2"), list(limit = 2.5), c(limit = "10"))) {
+    check <- .wave_count_check()
+    check$max_waves <- value
+    expect_true(.wave_count_validation(check)$results[[1]]$passed)
+  }
+  for (value in list(list("3.9"), matrix("3.9"), array(3, c(1, 1, 1)),
+                     " 3 ", "3e0")) {
+    check <- .wave_count_check()
+    check$expected <- value
+    expect_true(.wave_count_validation(check)$results[[1]]$passed)
+  }
+  for (expected in c(-1, .Machine$integer.max)) {
+    check <- .wave_count_check()
+    check$expected <- expected
+    expect_false(.wave_count_validation(check)$results[[1]]$passed)
+  }
+})
+
+test_that("malformed active wave-count bounds are unevaluable even on empty data", {
+  common <- list("garbage", "", " ", "2 waves", "NA", "NaN", NA_real_, NaN,
+                 TRUE, as.raw(2), 3 + 1i, factor("3"), as.Date("2026-01-01"),
+                 structure(3, class = "bound"), list(), list(NULL), list(list(3)),
+                 list(c(2, 3)), list(TRUE), list(matrix(3)), list(factor("3")),
+                 list(as.Date("1970-01-04")), list(as.raw(3)), list(3 + 1i),
+                 data.frame(x = 3), matrix(list(3)), c(2, 3), numeric())
+  for (field in c("expected", "max_waves")) {
+    invalid <- c(common, if (field == "expected")
+      list(Inf, -Inf, "Inf", "-Inf", 2147483648, -2147483648,
+           "2147483648", matrix(TRUE), matrix(c(2, 3))) else
+      list(matrix(2), array(2, c(1, 1, 1))))
+    for (empty in c(FALSE, TRUE)) {
+      df <- .wave_count_data()
+      if (empty) df <- df[FALSE, ]
+      for (value in invalid) {
+        check <- .wave_count_check()
+        check[field] <- list(value)
+        .expect_wave_count_unevaluable(check, df, field)
+      }
+    }
+  }
+})
+
+test_that("bound parsing preserves modes, severity and null defaults", {
+  for (type in c("wave_count", "n_distinct_wave")) {
+    for (severity in c("error", "warning", "info")) {
+      check <- .wave_count_check(severity)
+      check$type <- type
+      check$max_waves <- "garbage"
+      .expect_wave_count_unevaluable(check, pattern = "max_waves")
+      check$expected <- "3"
+      check$column <- list(list("ignored"))
+      expect_true(.wave_count_validation(check)$results[[1]]$passed)
+      check$expected <- factor("3")
+      .expect_wave_count_unevaluable(check, pattern = "expected")
+      check["expected"] <- list(NULL)
+      check$column <- NULL
+      .expect_wave_count_unevaluable(check, pattern = "max_waves")
+      check["max_waves"] <- list(NULL)
+      expect_true(.wave_count_validation(check)$results[[1]]$passed)
+    }
+  }
+  check <- .wave_count_check("info")
+  for (field in c("expected", "max_waves")) {
+    check[field] <- list("garbage")
+    expect_warning(suppressMessages(
+      lissr:::run_validations(.wave_count_data(), list(check), list())), NA)
+    check[[field]] <- NULL
+  }
+})
+
 test_that("empty wave-count data preserve zero global and uncalculated person counts", {
   df <- .wave_count_data()[FALSE, ]
   for (maximum in c(-Inf, -1, 0, Inf)) {
@@ -303,8 +391,12 @@ test_that("strict and report modes handle unresolved and violated wave counts", 
   global_missing$expected <- 2
   unknown <- .wave_count_check()
   unknown$expected <- c(1, 2)
+  malformed_maximum <- .wave_count_check()
+  malformed_maximum$max_waves <- "garbage"
+  malformed_expected <- .wave_count_check()
+  malformed_expected$expected <- TRUE
   checks <- list(missing, malformed, person_violation, global_violation,
-                 unknown, global_missing)
+                 unknown, malformed_maximum, malformed_expected, global_missing)
   for (i in seq_along(checks)) {
     fx <- .wave_count_merge_fixture(checks[[i]], drop_wave = i == length(checks))
     expect_error(suppressWarnings(suppressMessages(
@@ -324,6 +416,7 @@ test_that("strict and report modes handle unresolved and violated wave counts", 
     expect_false(result$valid_for_analysis)
     expect_false(isTRUE(result$validation[[1]]$passed))
     expect_identical(result$validation[[1]]$severity, "error")
+    if (i %in% c(6L, 7L)) expect_identical(result$validation[[1]]$passed, NA)
     report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
     expect_true(any(grepl("Valid for analysis: FALSE", report, fixed = TRUE)))
     expect_true(any(grepl("[error] WAVE_COUNT:", report, fixed = TRUE)))
@@ -341,8 +434,9 @@ test_that("valid wave counts preserve strict output and actual values", {
     for (global in c(FALSE, TRUE)) {
       check <- .wave_count_check()
       check$type <- type
+      check$max_waves <- "10"
       if (global) {
-        check$expected <- 2
+        check$expected <- "2"
         check$column <- "absent_person"
       }
       fx <- .wave_count_merge_fixture(check)
@@ -360,19 +454,23 @@ test_that("valid wave counts preserve strict output and actual values", {
 
 test_that("warning and info wave-count outcomes retain strict output eligibility", {
   for (severity in c("warning", "info")) {
-    for (unresolved in c(FALSE, TRUE)) {
+    for (outcome in c("failed", "unresolved", "malformed_maximum", "malformed_expected")) {
       check <- .wave_count_check(severity)
-      if (unresolved) check$column <- "absent_person" else check$max_waves <- 1
+      if (outcome == "failed") check$max_waves <- 1
+      if (outcome == "unresolved") check$column <- "absent_person"
+      if (outcome == "malformed_maximum") check$max_waves <- "garbage"
+      if (outcome == "malformed_expected") check$expected <- TRUE
+      unevaluable <- outcome != "failed"
       fx <- .wave_count_merge_fixture(check)
       result <- suppressWarnings(suppressMessages(
         merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
       expect_true(result$valid_for_analysis)
-      expect_identical(result$validation[[1]]$passed, if (unresolved) NA else FALSE)
+      expect_identical(result$validation[[1]]$passed, if (unevaluable) NA else FALSE)
       expect_identical(result$validation[[1]]$severity, severity)
       report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
       expect_true(any(grepl("Valid for analysis: TRUE", report, fixed = TRUE)))
       expect_true(any(grepl(paste0("[", severity, "] WAVE_COUNT: ",
-        if (unresolved) "SKIP" else "FAIL"), report, fixed = TRUE)))
+        if (unevaluable) "SKIP" else "FAIL"), report, fixed = TRUE)))
       expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
     }
   }
