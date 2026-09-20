@@ -274,7 +274,7 @@ test_that("NA rates remain pooled per target and preserve inclusive alias defaul
   expect_true(.na_rate_validation(check)$results[[1]]$passed)
   check$direction <- "unrecognized"
   check$threshold <- 0
-  expect_false(.na_rate_validation(check)$results[[1]]$passed)
+  .expect_na_rate_unevaluable(check, pattern = "direction")
   check <- .na_rate_check()
   check$waves <- "w2"
   check$threshold <- 1
@@ -295,6 +295,167 @@ test_that("NA-rate failures and unavailable scopes preserve severity", {
     check$variables <- "absent_column"
     .expect_na_rate_unevaluable(check, pattern = "absent_column")
   }
+})
+
+test_that("NA-rate text thresholds compare numerically through supported wrappers", {
+  wrappers <- list(identity, function(value) c(limit = value),
+                   function(value) list(value), function(value) list(limit = value),
+                   matrix, function(value) array(value, c(1, 1, 1)))
+  for (field in c("threshold", "max_rate")) {
+    for (direction in c("above", "below")) {
+      for (text in c("1e-1", ".6", " 0.5 ", "-1.5", "1.5", "-Inf", "Inf")) {
+        number <- as.numeric(text)
+        check <- .na_rate_check()
+        check$threshold <- NULL
+        check$direction <- direction
+        expected <- if (direction == "above") 0.5 >= number else 0.5 <= number
+        check[[field]] <- number
+        numeric_result <- .na_rate_validation(check)$results[[1]]
+        expect_identical(numeric_result$passed, expected)
+        for (wrap in wrappers) {
+          check[[field]] <- wrap(text)
+          result <- .na_rate_validation(check)$results[[1]]
+          expect_identical(result, numeric_result)
+          if (!expected) expect_match(if (is.null(result$detail)) "" else result$detail,
+            paste0("(threshold: ", direction, " ", number, ")"), fixed = TRUE)
+        }
+      }
+    }
+  }
+  for (value in list(1L, c(limit = 1L), list(1L), matrix(1L))) {
+    check <- .na_rate_check()
+    check$threshold <- value
+    expect_true(.na_rate_validation(check)$results[[1]]$passed)
+  }
+})
+
+test_that("NA-rate directions preserve supported character wrappers and alias overrides", {
+  for (type in c("na_rate", "na_rate_check", "na_rate_above", "na_rate_below",
+                 "not_missing")) {
+    for (direction in c("above", "below")) {
+      for (value in list(direction, c(order = direction), list(direction),
+                        list(order = direction), matrix(direction),
+                        array(direction, c(1, 1, 1)))) {
+        check <- .na_rate_check()
+        check$type <- type
+        check$threshold <- 0.25
+        check$direction <- value
+        expect_identical(.na_rate_validation(check)$results[[1]]$passed,
+                         direction == "above")
+      }
+    }
+    for (explicit_null in c(FALSE, TRUE)) {
+      check <- .na_rate_check()
+      check$type <- type
+      check$threshold <- NULL
+      if (explicit_null) {
+        check["threshold"] <- check["max_rate"] <- check["direction"] <- list(NULL)
+      }
+      expect_identical(.na_rate_validation(check)$results[[1]]$passed,
+                       !(type %in% c("na_rate_above", "not_missing")))
+      check$threshold <- 0.25
+      expect_identical(.na_rate_validation(check)$results[[1]]$passed,
+                       type == "na_rate_above")
+    }
+  }
+})
+
+test_that("NA-rate payloads use exact fields and only the active threshold", {
+  check <- .na_rate_check()
+  check$threshold <- ".6"
+  check$max_rate <- list(list("garbage"))
+  expect_true(.na_rate_validation(check)$results[[1]]$passed)
+  check$threshold <- "garbage"
+  check$max_rate <- ".6"
+  .expect_na_rate_unevaluable(check, pattern = "threshold")
+  check["threshold"] <- list(NULL)
+  expect_true(.na_rate_validation(check)$results[[1]]$passed)
+  check$max_rate <- "garbage"
+  .expect_na_rate_unevaluable(check, pattern = "max_rate")
+  for (field in c("threshold", "max_rate", "direction")) {
+    check <- .na_rate_check()
+    check$threshold <- NULL
+    check[[paste0(field, "_note")]] <- if (field == "direction") "above" else -Inf
+    expect_true(.na_rate_validation(check)$results[[1]]$passed)
+    check[field] <- list(NULL)
+    expect_true(.na_rate_validation(check)$results[[1]]$passed)
+  }
+  check <- .na_rate_check()
+  check$threshold <- NULL
+  check$threshold_note <- -Inf
+  check$max_rate <- ".6"
+  expect_true(.na_rate_validation(check)$results[[1]]$passed)
+})
+
+test_that("malformed NA-rate thresholds cannot hide behind empty selections", {
+  invalid <- list("garbage", "", " \t", "0.5 units", "NaN", NA_real_, NaN,
+                  numeric(), c(0, 1), TRUE, as.raw(1), 0.5 + 1i, factor("0.5"),
+                  as.Date("1970-01-02"), structure(0.5, class = "threshold"),
+                  list(), list(NULL), list(list(0.5)), list(c(0, 1)), list(TRUE),
+                  list(factor("0.5")), list(as.Date("1970-01-02")),
+                  list(structure(0.5, class = "threshold")), list(as.raw(1)),
+                  list(0.5 + 1i), list(NA_real_), list("garbage"),
+                  list(matrix(0.5)), matrix(list(0.5)), matrix(TRUE),
+                  matrix(c(0, 1)), data.frame(x = 0.5))
+  for (shape in c("observed", "filtered", "empty")) {
+    df <- .na_rate_data()
+    if (shape == "empty") df <- df[FALSE, ]
+    for (field in c("threshold", "max_rate")) {
+      for (value in invalid) {
+        check <- .na_rate_check()
+        check$threshold <- NULL
+        if (shape == "filtered") check$condition <- "s006 < 0"
+        if (shape == "empty") check$waves <- "all"
+        check[field] <- list(value)
+        .expect_na_rate_unevaluable(check, df, field)
+      }
+    }
+  }
+})
+
+test_that("malformed NA-rate directions cannot hide behind empty or failed predicates", {
+  invalid <- list("unrecognized", "Above", "Below", " above", "below ", "", " \t",
+                  NA_character_, character(), c("above", "below"), 1L, 0.5,
+                  TRUE, as.raw(1), 1 + 1i, factor("above"),
+                  structure("above", class = "direction"), list(), list(NULL),
+                  list(list("above")), list(c("above", "below")), list(TRUE),
+                  list(factor("above")), list(structure("above", class = "direction")),
+                  list(NA_character_), list("unrecognized"), list(matrix("above")),
+                  matrix(list("above")), matrix(TRUE), data.frame(x = "above"))
+  for (shape in c("observed", "filtered", "empty")) {
+    df <- .na_rate_data()
+    if (shape == "empty") df <- df[FALSE, ]
+    for (value in invalid) {
+      check <- .na_rate_check()
+      check$threshold <- -Inf
+      if (shape == "filtered") check$condition <- "s006 < 0"
+      if (shape == "empty") check$waves <- "all"
+      check["direction"] <- list(value)
+      .expect_na_rate_unevaluable(check, df, "direction")
+    }
+  }
+})
+
+test_that("NA-rate payload validation follows scope preflight and preserves severity", {
+  for (field in c("threshold", "max_rate", "direction")) {
+    for (severity in c("error", "warning", "info")) {
+      check <- .na_rate_check(severity = severity)
+      check$threshold <- NULL
+      check[[field]] <- "garbage"
+      .expect_na_rate_unevaluable(check, pattern = field)
+      check$condition <- "absent_condition > 0"
+      .expect_na_rate_unevaluable(check, pattern = field)
+      check$variables <- "absent_column"
+      .expect_na_rate_unevaluable(check, pattern = "absent_column")
+      check$variables <- "005"
+      check$waves <- "absent_wave"
+      .expect_na_rate_unevaluable(check, pattern = "absent_wave")
+    }
+  }
+  check <- .na_rate_check(severity = "info")
+  check$threshold <- "garbage"
+  expect_warning(suppressMessages(
+    lissr:::run_validations(.na_rate_data(), list(check), list())), NA)
 })
 
 .na_rate_merge_fixture <- function(check, .local_envir = parent.frame()) {
@@ -331,8 +492,21 @@ test_that("strict and report modes retain NA-rate diagnostics and protect output
   invalid_condition$condition <- "absent_condition > 0"
   violated <- .na_rate_check()
   violated$waves <- "yy02b"
-  for (check in list(missing_target, missing_wave, malformed_scope,
-                    invalid_condition, violated)) {
+  bad_payloads <- list()
+  for (field in c("threshold", "max_rate", "direction")) {
+    for (empty in c(FALSE, TRUE)) {
+      check <- .na_rate_check()
+      check$waves <- "yy01a"
+      check$threshold <- NULL
+      check[[field]] <- "garbage"
+      if (empty) check$condition <- "s005 < 0"
+      bad_payloads[[length(bad_payloads) + 1L]] <- check
+    }
+  }
+  checks <- c(list(missing_target, missing_wave, malformed_scope,
+                   invalid_condition, violated), bad_payloads)
+  for (i in seq_along(checks)) {
+    check <- checks[[i]]
     fx <- .na_rate_merge_fixture(check)
     expect_error(suppressWarnings(suppressMessages(
       merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
@@ -350,6 +524,7 @@ test_that("strict and report modes retain NA-rate diagnostics and protect output
       merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir)))
     expect_false(result$valid_for_analysis)
     expect_false(isTRUE(result$validation[[1]]$passed))
+    if (i > 5L) expect_identical(result$validation[[1]]$passed, NA)
     report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
     expect_true(any(grepl("Valid for analysis: FALSE", report, fixed = TRUE)))
     expect_true(any(grepl("[error] NA_RATE:", report, fixed = TRUE)))
@@ -357,6 +532,9 @@ test_that("strict and report modes retain NA-rate diagnostics and protect output
     expect_type(detail, "character")
     if (is.character(detail)) expect_true(any(grepl(detail, report, fixed = TRUE)))
     expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
+    expect_equal(as.numeric(result$data$s005), c(1, NA, NA, NA))
+    written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+    expect_equal(as.numeric(written$s005), c(1, NA, NA, NA))
   }
 })
 
@@ -364,6 +542,8 @@ test_that("valid and empty NA-rate selections preserve strict output and values"
   for (empty in c(FALSE, TRUE)) {
     check <- .na_rate_check()
     check$waves <- "yy01a"
+    check$threshold <- ".6"
+    check$direction <- list("below")
     if (empty) check$condition <- "s005 < 0"
     fx <- .na_rate_merge_fixture(check)
     result <- suppressWarnings(suppressMessages(
@@ -376,5 +556,33 @@ test_that("valid and empty NA-rate selections preserve strict output and values"
     }
     expect_equal(as.numeric(result$data$s005), c(1, NA, NA, NA))
     expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
+    written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+    expect_equal(as.numeric(written$s005), c(1, NA, NA, NA))
+  }
+})
+
+test_that("non-error malformed NA-rate payloads retain strict output eligibility", {
+  for (severity in c("warning", "info")) {
+    for (field in c("threshold", "max_rate", "direction")) {
+      for (empty in c(FALSE, TRUE)) {
+        check <- .na_rate_check(severity = severity)
+        check$waves <- "yy01a"
+        check$threshold <- NULL
+        check[[field]] <- "garbage"
+        if (empty) check$condition <- "s005 < 0"
+        fx <- .na_rate_merge_fixture(check)
+        result <- suppressWarnings(suppressMessages(
+          merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
+        expect_true(result$valid_for_analysis)
+        expect_identical(result$validation[[1]]$passed, NA)
+        expect_identical(result$validation[[1]]$severity, severity)
+        report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
+        expect_true(any(grepl(paste0("[", severity, "] NA_RATE: SKIP"),
+                              report, fixed = TRUE)))
+        expect_equal(as.numeric(result$data$s005), c(1, NA, NA, NA))
+        written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+        expect_equal(as.numeric(written$s005), c(1, NA, NA, NA))
+      }
+    }
   }
 })

@@ -676,13 +676,14 @@ resolve before matching begins, even when another column already has a match.
   all-NA target cannot supply a nonmissing numeric value, but another selected
   column may supply it. This contract adds no general value-payload validation.
 
-#### `na_rate` target and wave scopes
+#### `na_rate` targets, wave scopes and rate payloads
 
 `na_rate` requires every requested target and wave to resolve before a condition
 is applied. Missing targets (including partial matches), absent requested waves,
-malformed scopes and unavailable required wave membership are unevaluable
-(`passed = NA`). A measured rate outside the threshold fails (`passed = FALSE`).
-Both outcomes preserve severity and the strict/report handling above.
+malformed scopes, malformed active rate payloads, and unavailable required wave
+membership are unevaluable (`passed = NA`). A measured rate outside the threshold
+fails (`passed = FALSE`). Both outcomes preserve severity and the strict/report
+handling above.
 
 - Target keys, in precedence order, are `suffixes`, `variables`, `scope`, and
   `items`; the first non-null key is used. Names use the existing exact/suffix
@@ -703,17 +704,43 @@ Both outcomes preserve severity and the strict/report handling above.
 - A valid condition selecting no rows, or empty all-row data with resolved
   targets, retains its pass result. The diagnostic explicitly says that no rows
   were eligible and no NA rate was calculated. All required targets and waves
-  must resolve first; an empty selection cannot excuse missing inputs.
+  must resolve first, and the active threshold and direction must be valid;
+  an empty selection cannot excuse missing inputs or malformed payloads.
 - Rates are calculated separately for each target over the pooled selected rows,
   not separately per wave. Every target must meet the threshold. An all-NA target
-  has rate 1; a nonmissing target has rate 0. `above` uses `>=`, otherwise the
-  existing `<=` comparison applies. Threshold precedence is `threshold`, then
-  `max_rate`, then the default: 0 for `not_missing`, 1 otherwise.
+  has rate 1; a nonmissing target has rate 0. `above` uses `>=` and `below` uses
+  `<=`, including equality at the threshold.
+- Threshold precedence is the first non-null exact field `threshold`, then
+  `max_rate`, then the default: 0 for `not_missing`, 1 otherwise. A malformed
+  active value is unevaluable without falling through; an overridden `max_rate`
+  is ignored. Unrelated fields such as `threshold_note` cannot supply a limit.
+- The active threshold is parsed numerically before condition filtering or rate
+  comparisons. Plain integer, double and numeric-character scalars are supported,
+  named or unnamed, including atomic one-cell arrays and flat one-element lists
+  containing an undimensioned primitive scalar. Numeric text uses R's numeric
+  parser, without integer truncation. Fractional, negative, outside-0..1 and
+  signed-infinite thresholds retain their numeric predicates; no probability
+  interval restriction is imposed. Violation details show the parsed threshold.
+- Classed thresholds (including factors, dates and custom classes), logical,
+  raw or complex values, empty/multiple/nested values, list arrays, dimensioned
+  list elements, NA/NaN and blank/nonnumeric text are unevaluable. The same
+  restrictions apply inside supported wrappers.
+- The exact `direction` field must contain `above` or `below`, case-sensitive
+  and without surrounding whitespace. Plain character scalars, named or
+  unnamed, atomic one-cell character arrays and flat one-element lists of
+  undimensioned character scalars are supported. Classed, noncharacter,
+  missing, blank, unknown, multiple, nested and unsupported dimensioned payloads
+  are unevaluable. Unknown directions no longer silently use `below`.
+- Both selected payloads are validated after target/wave resolution and before
+  condition filtering or any observed comparison. A failing rate, invalid
+  condition or empty selection cannot bypass payload validation. Unevaluable
+  declarations retain severity and the strict/report behavior above.
 
 Aliases are `na_rate_check`, `na_rate_above`, `na_rate_below`, and `not_missing`.
 `na_rate_above` defaults to direction `above`; the others default to `below`.
-An explicit direction overrides that default. This contract does not introduce
-general threshold/direction validation or change the condition evaluator.
+An explicit valid direction overrides that default; omitted/null direction
+retains it. The condition evaluator and other validation payload families are
+unchanged. Passing these checks does not establish analytical validity.
 
 #### `wave_count` required inputs and counting modes
 

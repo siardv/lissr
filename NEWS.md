@@ -1,5 +1,14 @@
 # lissr (development)
 
+* `na_rate` and its aliases now parse the active threshold numerically and
+  require direction `above` or `below` before condition filtering or comparison.
+  Malformed payloads are unevaluable with the declared severity, including on
+  empty selections; unknown directions no longer silently mean `below`.
+  Exact field lookup, numeric-text comparisons and parsed threshold diagnostics
+  prevent unintended comparisons. Supported scalar wrappers, alias/null defaults,
+  threshold precedence, signed-infinite/out-of-range thresholds, pooled rates,
+  scope resolution and valid empty-selection behavior are preserved.
+
 * `per_wave_mean` now parses both bounds before iterating over means. Numeric
   text compares numerically; malformed or reversed bounds are unevaluable with
   the declared severity, including on empty or all-nonfinite data. Exact field

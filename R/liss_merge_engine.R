@@ -2485,6 +2485,34 @@ safe_eval_condition <- function(cond, df) {
        present_waves = present_waves, wave_ids = wave_ids)
 }
 
+#' parse an active NA-rate threshold or direction before filtering rows (internal)
+#' @noRd
+.na_rate_payload <- function(value, field) {
+  is_direction <- identical(field, "direction")
+  invalid <- function() {
+    stop("na_rate ", field, if (is_direction)
+      " must contain one of 'above' or 'below'" else " must contain one numeric value",
+      call. = FALSE)
+  }
+  if (is.object(value) || length(value) != 1L) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- value[[1]]
+    if (!is.null(dim(value))) invalid()
+  }
+  allowed_types <- if (is_direction) "character" else c("integer", "double", "character")
+  if (is.object(value) || length(value) != 1L ||
+      !(typeof(value) %in% allowed_types)) invalid()
+  if (is_direction) {
+    value <- as.character(value)
+    if (!(value %in% c("above", "below"))) invalid()
+  } else {
+    value <- suppressWarnings(as.numeric(value))
+    if (is.na(value)) invalid()
+  }
+  unname(value)
+}
+
 #' parse the active wave-count bound without implicit comparison coercion (internal)
 #' @noRd
 .wave_count_bound <- function(value, field) {
@@ -2811,10 +2839,11 @@ run_validations <- function(df, checks, log_entries) {
           .require_check_scope(cols, row_scope)
           # not_missing alias: zero NA tolerated
           is_not_missing <- identical(type_raw, "not_missing")
-          threshold <- chk$threshold %||% chk$max_rate %||%
-                       (if (is_not_missing) 0 else 1.0)
-          direction <- chk$direction %||%
-                       (if (identical(type_raw, "na_rate_above")) "above" else "below")
+          threshold_field <- if (!is.null(chk[["threshold"]])) "threshold" else "max_rate"
+          threshold <- .na_rate_payload(chk[[threshold_field]] %||%
+            (if (is_not_missing) 0 else 1.0), threshold_field)
+          direction <- .na_rate_payload(chk[["direction"]] %||%
+            (if (identical(type_raw, "na_rate_above")) "above" else "below"), "direction")
           keep <- row_scope$rows
           cond <- chk$condition %||% NULL
           cond_ok <- TRUE
