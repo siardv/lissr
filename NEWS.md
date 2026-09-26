@@ -1,5 +1,14 @@
 # lissr (development)
 
+* `value_range` and its aliases now parse both exact `min`/`max` bounds before
+  comparing values. Numeric text compares numerically; malformed or reversed
+  bounds are unevaluable with the declared severity, even when the other bound
+  is violated or targets are empty, all-NA or nonnumeric. Scalar wrappers are
+  normalized, including one-cell arrays with multiple selected observations.
+  Defaults, inclusive fractional/infinite bounds, numeric-column-only evaluation,
+  scope resolution and valid empty/all-NA behavior are preserved. Unsupported
+  `valid_range` and sentinel-exception fields remain unimplemented.
+
 * `na_rate` and its aliases now parse the active threshold numerically and
   require direction `above` or `below` before condition filtering or comparison.
   Malformed payloads are unevaluable with the declared severity, including on

@@ -2485,6 +2485,25 @@ safe_eval_condition <- function(cond, df) {
        present_waves = present_waves, wave_ids = wave_ids)
 }
 
+#' parse one value-range endpoint before comparing target values (internal)
+#' @noRd
+.value_range_bound <- function(value, field) {
+  invalid <- function() {
+    stop("value_range ", field, " must contain one numeric value", call. = FALSE)
+  }
+  if (is.object(value) || length(value) != 1L) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- value[[1]]
+    if (!is.null(dim(value))) invalid()
+  }
+  if (is.object(value) || length(value) != 1L ||
+      !(typeof(value) %in% c("integer", "double", "character"))) invalid()
+  value <- suppressWarnings(as.numeric(value))
+  if (is.na(value)) invalid()
+  unname(value)
+}
+
 #' parse an active NA-rate threshold or direction before filtering rows (internal)
 #' @noRd
 .na_rate_payload <- function(value, field) {
@@ -2811,8 +2830,10 @@ run_validations <- function(df, checks, log_entries) {
             details = TRUE, expand_ranges = TRUE, numeric_selectors = FALSE)
           row_scope <- .check_rows(df, chk, details = TRUE)
           .require_check_scope(cols, row_scope)
-          lo <- chk$min %||% -Inf
-          hi <- chk$max %||% Inf
+          lo <- .value_range_bound(chk[["min"]] %||% -Inf, "min")
+          hi <- .value_range_bound(chk[["max"]] %||% Inf, "max")
+          if (lo > hi)
+            stop("value_range min must be less than or equal to max", call. = FALSE)
           passed <- TRUE
           detail <- NULL
           for (col in cols$resolved) {

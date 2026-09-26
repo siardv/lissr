@@ -556,15 +556,47 @@ strict/report-mode handling above.
 - A specific wave scope requires `wave_id` with known, nonblank row membership.
   Missing wave identification or any requested wave without rows is unevaluable.
   Values outside a valid requested scope are excluded from both checks.
-- Numeric all-NA range targets still pass. Set checks retain `allow_na` behavior
-  (default `TRUE`). Empty data with existing target columns can pass an all-row
-  check; explicitly requested absent waves remain unevaluable.
+- Numeric all-NA range targets still pass when their bounds are valid. Set checks
+  retain `allow_na` behavior (default `TRUE`). Empty data with existing target
+  columns can pass an all-row check; explicitly requested absent waves remain
+  unevaluable.
 
 This contract also applies to range aliases `range_check`, `value_in_range`,
 `assert_range` and set aliases `value_set`, `assert_values`. It does not change
 other validators or add support for additional range/set payloads. Range checks
 continue to use numeric columns and `min`/`max`; `valid_range` and sentinel
 exceptions are not implemented by this executor.
+
+#### `value_range` bounds and numeric targets
+
+After target and wave resolution, `value_range` and its aliases parse both bounds
+before iterating over target values. Malformed bounds and reversed intervals are
+unevaluable (`passed = NA`), including when the other bound is violated or no
+values will be compared. Severity and strict/report handling are preserved.
+
+- Exact `min` and `max` fields supply the bounds. Omitted/null values default
+  to `-Inf` and `Inf`, respectively. Unrelated fields such as `min_note` or
+  `max_note` cannot supply a bound.
+- Plain integer, double and numeric-character scalars are supported, named or
+  unnamed, including atomic one-cell arrays and flat one-element lists of
+  undimensioned primitive scalars. All are normalized with R's numeric parser
+  without integer truncation. Numeric text compares numerically; scalar arrays
+  work regardless of how many target values are selected. Violation diagnostics
+  show the parsed numeric endpoints.
+- Classed bounds (including factors, dates and custom classes), logical, raw,
+  complex, empty/multiple/nested values, list arrays, dimensioned list elements,
+  NA/NaN and blank/nonnumeric text are unevaluable. These restrictions apply
+  inside supported wrappers too.
+- The interval must satisfy `min <= max`. Ordered fractional, negative and
+  signed-infinite endpoints remain supported, including equal endpoints.
+  Values equal to either endpoint are in range; observed infinities use the
+  same comparisons. A reversed interval is invalid even on empty or all-NA data.
+- Only targets for which `is.numeric()` is true are compared; other resolved
+  targets are skipped, without data coercion. NA/NaN observations are excluded.
+  With valid bounds, empty all-row data, all-NA numeric targets and nonnumeric
+  targets retain their existing pass behavior. Such a pass does not establish
+  that any value was compared. This repair adds no data-type validation or
+  support for `valid_range`, sentinel exceptions or condition filtering.
 
 #### `value_absence` target and wave scopes
 

@@ -12,6 +12,18 @@
     lissr:::run_validations(df, list(check), list())))
 }
 
+.expect_range_unevaluable <- function(check, df = .value_data(), pattern = "min|max") {
+  result <- .value_validation(check, df)
+  expect_identical(result$results[[1]]$passed, NA)
+  expect_identical(result$results[[1]]$severity, check$severity)
+  expect_identical(result$error_skips,
+                   if (check$severity == "error") "VALUE" else character())
+  expect_identical(result$error_count, 0L)
+  detail <- result$results[[1]]$detail
+  expect_match(if (is.null(detail)) "" else detail, pattern)
+  invisible(result)
+}
+
 test_that("missing value-check targets and waves are unevaluable", {
   for (type in c("value_range", "value_in_set")) {
     checks <- list(.value_check(type, "absent_column"),
@@ -268,13 +280,160 @@ test_that("other validation consumers retain existing resolver behavior", {
   }
 })
 
-.value_merge_fixture <- function(check, .local_envir = parent.frame()) {
+test_that("range bounds parse text and scalar wrappers for multiple observations", {
+  df <- data.frame(s005 = c(2, 12, NA, NaN))
+  wrappers <- list(identity, function(value) c(limit = value),
+                   function(value) list(value), function(value) list(limit = value),
+                   matrix, function(value) array(value, c(1, 1, 1)))
+  for (type in c("value_range", "range_check", "value_in_range", "assert_range")) {
+    for (bounds in list(c("0", "2"), c("2", "10"), c(" 10 ", "2e1"),
+                        c("-1.5", ".5"), c("-Inf", "Inf"))) {
+      lo <- as.numeric(bounds[[1]])
+      hi <- as.numeric(bounds[[2]])
+      bad <- sum(c(2, 12) < lo | c(2, 12) > hi)
+      check <- .value_check(type)
+      check$min <- lo
+      check$max <- hi
+      expected <- .value_validation(check, df)$results[[1]]
+      expect_identical(expected$passed, bad == 0L)
+      for (wrap in wrappers) {
+        check$min <- wrap(bounds[[1]])
+        check$max <- wrap(bounds[[2]])
+        result <- .value_validation(check, df)$results[[1]]
+        expect_identical(result, expected)
+        if (bad) expect_identical(result$detail,
+          paste0(bad, " out-of-range value(s) in s005 [", lo, "..", hi,
+                 "]; wave scope: all"))
+      }
+    }
+  }
+  for (wrap in wrappers) {
+    check <- .value_check()
+    check$min <- wrap(-3L)
+    check$max <- wrap(3L)
+    expect_true(.value_validation(check, data.frame(s005 = c(-3L, 3L)))$results[[1]]$passed)
+  }
+})
+
+test_that("range bounds retain exact fields and omitted or null unbounded defaults", {
+  df <- data.frame(s005 = c(-Inf, -2.5, 0, 2.5, Inf, NA))
+  for (type in c("value_range", "range_check", "value_in_range", "assert_range")) {
+    for (field in c("min", "max")) {
+      check <- .value_check(type)
+      check$min <- check$max <- NULL
+      check[[paste0(field, "_note")]] <- if (field == "min") 10 else -10
+      expect_true(.value_validation(check, df)$results[[1]]$passed)
+      check[field] <- list(NULL)
+      expect_true(.value_validation(check, df)$results[[1]]$passed)
+    }
+  }
+  check <- .value_check()
+  check$min <- check$max <- NULL
+  check$valid_range <- list(min = 0, max = 2)
+  expect_true(.value_validation(check, df)$results[[1]]$passed)
+  check$min <- 0
+  check$max <- 2
+  check$allow_sentinel <- TRUE
+  check$sentinel_values <- c(-Inf, -2.5, 2.5, Inf)
+  check$condition <- "s005 == 0"
+  result <- .value_validation(check, df)$results[[1]]
+  expect_false(result$passed)
+  expect_match(result$detail, "4 out-of-range", fixed = TRUE)
+})
+
+test_that("range checks retain numeric-only evaluation and infinite observations", {
+  check <- .value_check()
+  check$min <- "-2.5"
+  check$max <- "2.5"
+  for (values in list(c("99", "junk"), c(TRUE, FALSE), factor(c("99", "100")),
+                      as.Date(c("1970-01-01", "1970-01-02")),
+                      c(NA_real_, NaN), numeric())) {
+    df <- data.frame(s005 = values)
+    before <- df
+    result <- .value_validation(check, df)$results[[1]]
+    expect_true(result$passed)
+    expect_null(result$detail)
+    expect_identical(df, before)
+  }
+  df <- data.frame(s005 = c(-Inf, -2.5, 0, 2.5, Inf, NA, NaN))
+  df$s006 <- haven::labelled(df$s005, labels = c(zero = 0))
+  before <- df
+  for (targets in list("005", "006", c("006", "005"))) {
+    check$variables <- targets
+    for (bounds in list(c(-2.5, 2.5), c(-Inf, Inf), c(-Inf, -Inf), c(Inf, Inf))) {
+      check$min <- as.character(bounds[[1]])
+      check$max <- as.character(bounds[[2]])
+      bad <- sum(df$s005 < bounds[[1]] | df$s005 > bounds[[2]], na.rm = TRUE)
+      result <- .value_validation(check, df)$results[[1]]
+      expect_identical(result$passed, bad == 0L)
+      if (bad) expect_identical(result$detail,
+        paste0(bad, " out-of-range value(s) in s", targets[[1]], " [",
+               bounds[[1]], "..", bounds[[2]], "]; wave scope: all"))
+    }
+  }
+  expect_identical(df, before)
+})
+
+test_that("malformed range bounds cannot hide behind skipped observations", {
+  invalid <- list("garbage", "", " \t", "2 units", "NaN", NA_real_, NaN,
+                  numeric(), c(0, 2), TRUE, as.raw(2), 2 + 1i, factor("2"),
+                  as.Date("1970-01-03"), structure(2, class = "bound"), list(),
+                  list(NULL), list(list(2)), list(c(0, 2)), list(TRUE),
+                  list(factor("2")), list(as.Date("1970-01-03")),
+                  list(structure(2, class = "bound")), list(as.raw(2)),
+                  list(2 + 1i), list(NA_real_), list("garbage"),
+                  list(matrix(2)), matrix(list(2)), matrix(TRUE), data.frame(x = 2))
+  for (values in list(c(1, 2), c(NA_real_, NaN), numeric(), c("1", "2"))) {
+    df <- data.frame(s005 = values)
+    for (field in c("min", "max")) {
+      for (value in invalid) {
+        check <- .value_check()
+        check[field] <- list(value)
+        .expect_range_unevaluable(check, df, field)
+      }
+    }
+  }
+  check <- .value_check()
+  check$min <- check$max <- numeric()
+  .expect_range_unevaluable(check)
+})
+
+test_that("range bounds reject reversed intervals and masked malformed endpoints", {
+  for (severity in c("error", "warning", "info")) {
+    for (bounds in list(list(3, 0), list(Inf, -Inf), list("10", "2"),
+                        list(matrix("10"), list("2")), list(NA_real_, 0),
+                        list(3, NA_real_))) {
+      check <- .value_check(severity = severity)
+      check$min <- bounds[[1]]
+      check$max <- bounds[[2]]
+      for (values in list(c(1, 2), c(NA_real_, NaN), numeric(), c("1", "2"))) {
+        .expect_range_unevaluable(check, data.frame(s005 = values))
+      }
+    }
+  }
+  for (field in c("min", "max")) {
+    check <- .value_check(severity = "info")
+    check[[field]] <- "garbage"
+    expect_warning(suppressMessages(
+      lissr:::run_validations(.value_data(), list(check), list())), NA)
+    check$variables <- "absent_column"
+    .expect_range_unevaluable(check, pattern = "absent_column")
+    check$variables <- "005"
+    check$waves <- "absent_wave"
+    .expect_range_unevaluable(check, pattern = "absent_wave")
+    check$waves <- "w1"
+    .expect_range_unevaluable(check, .value_data()["s005"], "wave_id")
+  }
+})
+
+.value_merge_fixture <- function(check, all_na = FALSE, .local_envir = parent.frame()) {
   root <- withr::local_tempdir("lissr_value_", .local_envir = .local_envir)
   data_dir <- file.path(root, "data")
   dir.create(data_dir)
   for (wave in c("yy01a", "yy02b")) {
     df <- data.frame(nomem_encr = 1:2)
     df[[paste0(wave, "005")]] <- if (wave == "yy01a") c(1, 2) else c(99, 99)
+    if (all_na) df[[paste0(wave, "005")]] <- NA_real_
     haven::write_sav(df, file.path(data_dir, paste0(wave, "_EN_1.0p.sav")))
   }
   recipe <- list(
@@ -336,5 +495,84 @@ test_that("valid scoped value checks preserve strict output and actual values", 
     expect_true(result$validation[[1]]$passed)
     expect_equal(as.numeric(result$data$s005), c(1, 2, 99, 99))
     expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
+  }
+})
+
+test_that("malformed range bounds protect strict output and remain visible in reports", {
+  for (bounds in list(list(NA_real_, 0), list(100, "garbage"), list(3, 0))) {
+    for (all_na in c(FALSE, TRUE)) {
+      check <- .value_check()
+      check$min <- bounds[[1]]
+      check$max <- bounds[[2]]
+      fx <- .value_merge_fixture(check, all_na = all_na)
+      expect_error(suppressWarnings(suppressMessages(
+        merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
+        "strict mode: no outputs were written")
+      expect_false(dir.exists(fx$output_dir))
+      dir.create(fx$output_dir, showWarnings = FALSE)
+      sentinel <- file.path(fx$output_dir, "existing.txt")
+      writeLines("keep this", sentinel)
+      expect_error(suppressWarnings(suppressMessages(
+        merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
+        "strict mode: no outputs were written")
+      expect_identical(list.files(fx$output_dir), "existing.txt")
+      expect_identical(readLines(sentinel), "keep this")
+      result <- suppressWarnings(suppressMessages(
+        merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir)))
+      expect_false(result$valid_for_analysis)
+      expect_identical(result$validation[[1]]$passed, NA)
+      expect_identical(result$validation[[1]]$severity, "error")
+      report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
+      expect_true(any(grepl("Valid for analysis: FALSE", report, fixed = TRUE)))
+      expect_true(any(grepl("[error] VALUE: SKIP", report, fixed = TRUE)))
+      detail <- result$validation[[1]]$detail
+      expect_type(detail, "character")
+      if (is.character(detail)) expect_true(any(grepl(detail, report, fixed = TRUE)))
+      expected <- if (all_na) rep(NA_real_, 4) else c(1, 2, 99, 99)
+      expect_equal(as.numeric(result$data$s005), expected)
+      written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+      expect_equal(as.numeric(written$s005), expected)
+    }
+  }
+})
+
+test_that("valid wrapped range bounds preserve strict output and actual values", {
+  for (all_na in c(FALSE, TRUE)) {
+    check <- .value_check()
+    check$min <- matrix("0")
+    check$max <- list("1e2")
+    fx <- .value_merge_fixture(check, all_na = all_na)
+    result <- suppressWarnings(suppressMessages(
+      merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
+    expect_true(result$valid_for_analysis)
+    expect_true(result$validation[[1]]$passed)
+    expected <- if (all_na) rep(NA_real_, 4) else c(1, 2, 99, 99)
+    expect_equal(as.numeric(result$data$s005), expected)
+    written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+    expect_equal(as.numeric(written$s005), expected)
+  }
+})
+
+test_that("non-error malformed range bounds retain strict output eligibility", {
+  for (severity in c("warning", "info")) {
+    for (field in c("min", "max")) {
+      for (all_na in c(FALSE, TRUE)) {
+        check <- .value_check(severity = severity)
+        check[[field]] <- "garbage"
+        fx <- .value_merge_fixture(check, all_na = all_na)
+        result <- suppressWarnings(suppressMessages(
+          merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
+        expect_true(result$valid_for_analysis)
+        expect_identical(result$validation[[1]]$passed, NA)
+        expect_identical(result$validation[[1]]$severity, severity)
+        report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
+        expect_true(any(grepl(paste0("[", severity, "] VALUE: SKIP"),
+                              report, fixed = TRUE)))
+        expected <- if (all_na) rep(NA_real_, 4) else c(1, 2, 99, 99)
+        expect_equal(as.numeric(result$data$s005), expected)
+        written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+        expect_equal(as.numeric(written$s005), expected)
+      }
+    }
   }
 })

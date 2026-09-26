@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: 53dc27c8a77a3bccc218562af0accf89 -->
+<!-- schema-source-md5: 7ed341c69387c930ef9238688031e594 -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1157,10 +1157,11 @@ unevaluable.</li>
 nonblank row membership. Missing wave identification or any requested
 wave without rows is unevaluable. Values outside a valid requested scope
 are excluded from both checks.</li>
-<li>Numeric all-NA range targets still pass. Set checks retain
-<code>allow_na</code> behavior (default <code>TRUE</code>). Empty data
-with existing target columns can pass an all-row check; explicitly
-requested absent waves remain unevaluable.</li>
+<li>Numeric all-NA range targets still pass when their bounds are valid.
+Set checks retain <code>allow_na</code> behavior (default
+<code>TRUE</code>). Empty data with existing target columns can pass an
+all-row check; explicitly requested absent waves remain
+unevaluable.</li>
 </ul>
 <p>This contract also applies to range aliases <code>range_check</code>,
 <code>value_in_range</code>, <code>assert_range</code> and set aliases
@@ -1169,6 +1170,46 @@ other validators or add support for additional range/set payloads. Range
 checks continue to use numeric columns and
 <code>min</code>/<code>max</code>; <code>valid_range</code> and sentinel
 exceptions are not implemented by this executor.</p>
+</div>
+<div id="value_range-bounds-and-numeric-targets" class="section level5">
+<h5><code>value_range</code> bounds and numeric targets</h5>
+<p>After target and wave resolution, <code>value_range</code> and its
+aliases parse both bounds before iterating over target values. Malformed
+bounds and reversed intervals are unevaluable
+(<code>passed = NA</code>), including when the other bound is violated
+or no values will be compared. Severity and strict/report handling are
+preserved.</p>
+<ul>
+<li>Exact <code>min</code> and <code>max</code> fields supply the
+bounds. Omitted/null values default to <code>-Inf</code> and
+<code>Inf</code>, respectively. Unrelated fields such as
+<code>min_note</code> or <code>max_note</code> cannot supply a
+bound.</li>
+<li>Plain integer, double and numeric-character scalars are supported,
+named or unnamed, including atomic one-cell arrays and flat one-element
+lists of undimensioned primitive scalars. All are normalized with R’s
+numeric parser without integer truncation. Numeric text compares
+numerically; scalar arrays work regardless of how many target values are
+selected. Violation diagnostics show the parsed numeric endpoints.</li>
+<li>Classed bounds (including factors, dates and custom classes),
+logical, raw, complex, empty/multiple/nested values, list arrays,
+dimensioned list elements, NA/NaN and blank/nonnumeric text are
+unevaluable. These restrictions apply inside supported wrappers
+too.</li>
+<li>The interval must satisfy <code>min &lt;= max</code>. Ordered
+fractional, negative and signed-infinite endpoints remain supported,
+including equal endpoints. Values equal to either endpoint are in range;
+observed infinities use the same comparisons. A reversed interval is
+invalid even on empty or all-NA data.</li>
+<li>Only targets for which <code>is.numeric()</code> is true are
+compared; other resolved targets are skipped, without data coercion.
+NA/NaN observations are excluded. With valid bounds, empty all-row data,
+all-NA numeric targets and nonnumeric targets retain their existing pass
+behavior. Such a pass does not establish that any value was compared.
+This repair adds no data-type validation or support for
+<code>valid_range</code>, sentinel exceptions or condition
+filtering.</li>
+</ul>
 </div>
 <div id="value_absence-target-and-wave-scopes" class="section level5">
 <h5><code>value_absence</code> target and wave scopes</h5>
