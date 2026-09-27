@@ -525,6 +525,17 @@ Aliases are `assert_unique`, `n_duplicates`, `unique_key`, `no_duplicate_ids`,
 `unique_per_wave`, and `assert_identifier`. All share this predicate;
 `assert_identifier` does not additionally enforce nonmissing identifiers.
 
+The bundled Income (`ci`) recipe keeps `V-05` for uniqueness within each wave
+and uses `V-05_nonmissing` (`not_missing`, threshold 0, direction `below`) to
+check `nomem_encr` across all rows. Both have warning severity. The missing-value
+check uses `is.na()`, including actual NA, NaN and tagged NA; blank/whitespace
+strings and literal `"NA"`/`"NaN"` strings are not missing values. Valid empty
+data with the required columns pass both checks. A warning failure is reported
+but does not independently block strict output or invalidate analysis eligibility.
+The existing loader still aborts for a missing identifier column or duplicate
+nonmissing identifiers within a source wave. Identifier values and the shared
+`assert_identifier` predicate are unchanged; no identifier-format check is added.
+
 #### `value_range` and `value_in_set` target and wave scopes
 
 These checks require every requested target to resolve. An absent target,

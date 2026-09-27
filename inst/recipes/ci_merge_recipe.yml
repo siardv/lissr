@@ -4160,10 +4160,21 @@ validation_checks:
     - 1
 - check_id: V-05
   anomaly_ref: null
-  description: nomem_encr is non-null in every row and unique within each wave.
+  description: nomem_encr is unique within each wave.
   type: assert_identifier
   severity: warning
   label: identifier integrity
+- check_id: V-05_nonmissing
+  anomaly_ref: null
+  description: nomem_encr has no missing values in any row.
+  type: not_missing
+  severity: warning
+  variables:
+  - nomem_encr
+  threshold: 0
+  direction: below
+  waves: all
+  label: identifier completeness
 - check_id: V-06
   anomaly_ref: null
   description: Kolmogorov-Smirnov comparison of key continuous variables across the 18k/19l redesign boundary to detect unexpected

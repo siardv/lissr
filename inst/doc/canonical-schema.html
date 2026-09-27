@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: 671bdd5cb8abc9be51706631339bd72d -->
+<!-- schema-source-md5: 892f9cde3b246b4a35b23be1857ce66f -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1112,6 +1112,20 @@ requirement.</li>
 <code>unique_per_wave</code>, and <code>assert_identifier</code>. All
 share this predicate; <code>assert_identifier</code> does not
 additionally enforce nonmissing identifiers.</p>
+<p>The bundled Income (<code>ci</code>) recipe keeps <code>V-05</code>
+for uniqueness within each wave and uses <code>V-05_nonmissing</code>
+(<code>not_missing</code>, threshold 0, direction <code>below</code>) to
+check <code>nomem_encr</code> across all rows. Both have warning
+severity. The missing-value check uses <code>is.na()</code>, including
+actual NA, NaN and tagged NA; blank/whitespace strings and literal
+<code>&quot;NA&quot;</code>/<code>&quot;NaN&quot;</code> strings are not missing values.
+Valid empty data with the required columns pass both checks. A warning
+failure is reported but does not independently block strict output or
+invalidate analysis eligibility. The existing loader still aborts for a
+missing identifier column or duplicate nonmissing identifiers within a
+source wave. Identifier values and the shared
+<code>assert_identifier</code> predicate are unchanged; no
+identifier-format check is added.</p>
 </div>
 <div id="value_range-and-value_in_set-target-and-wave-scopes" class="section level5">
 <h5><code>value_range</code> and <code>value_in_set</code> target and

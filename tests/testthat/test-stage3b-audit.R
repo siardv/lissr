@@ -62,9 +62,14 @@ test_that("audit_liss_recipes returns per-module structure and totals", {
   noncanon <- unlist(lapply(mods, function(m) audit[[m]]$noncanonical_patterns))
   expect_identical(unname(noncanon), "cd10c 'cd10c_EN_1.1p*'")
   # check classification totals match the stage-3 grammar
-  expect_equal(audit$totals$executable, 68L)
+  expect_equal(audit$totals$executable, 69L)
   expect_equal(audit$totals$documentary, 31L)
   expect_equal(audit$totals$skip, 0L)
+  ci <- yaml::yaml.load_file(system.file("recipes", "ci_merge_recipe.yml", package = "lissr"))
+  completeness <- Filter(function(check) check$check_id == "V-05_nonmissing",
+                          ci$validation_checks)
+  expect_length(completeness, 1L)
+  expect_identical(vapply(completeness, function(check) check$type, character(1)), "not_missing")
 })
 
 test_that("the nonconforming-rule snapshot is pinned to the known set", {

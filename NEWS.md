@@ -1,5 +1,13 @@
 # lissr (development)
 
+* The Income (`ci`) recipe now reports missing `nomem_encr` values through a
+  separate warning-level `V-05_nonmissing` check. `V-05` retains its existing
+  within-wave uniqueness check and now describes that predicate accurately.
+  Actual NA/NaN identifiers are detected without changing identifier values,
+  shared validation behavior or warning-level output eligibility. Existing
+  loader errors for missing identifier columns and duplicate nonmissing IDs
+  remain unchanged.
+
 * The Work and Schooling (`cw`) recipe now enforces its declared wage
   (0–1000000, error) and pension-date (1990–2030, warning) bounds using executable
   `min`/`max` fields. The previous `valid_range` declarations were ignored.

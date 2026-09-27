@@ -305,6 +305,160 @@ test_that("bundled uniqueness checks require both keys and detect duplicate rows
   expect_length(checked, 10L)
 })
 
+.ci_identifier_results <- function(data, recipe) {
+  ids <- c("V-05", "V-05_nonmissing")
+  checks <- Filter(function(check) check$check_id %in% ids, recipe$validation_checks)
+  results <- suppressWarnings(suppressMessages(
+    lissr:::run_validations(data, checks, list())))$results
+  stats::setNames(results, vapply(results, function(check) check$check_id, character(1)))
+}
+
+test_that("ci identifier checks separate per-wave uniqueness and actual missingness", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "ci_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- stats::setNames(recipe$validation_checks,
+    vapply(recipe$validation_checks, function(check) check$check_id, character(1)))
+  completeness <- checks[["V-05_nonmissing"]]
+  expect_identical(checks[["V-05"]]$type, "assert_identifier")
+  expect_identical(checks[["V-05"]]$severity, "warning")
+  expect_identical(completeness$type, "not_missing")
+  expect_identical(completeness$severity, "warning")
+  expect_identical(completeness$variables, "nomem_encr")
+  expect_equal(completeness$threshold, 0)
+  expect_identical(completeness$direction, "below")
+  expect_identical(completeness$waves, "all")
+  df <- data.frame(nomem_encr = c(1, 2, 1, 2),
+                   wave_id = rep(c("ci08a", "ci25r"), each = 2L))
+  for (missing in list(NA_real_, NA_integer_, NA_character_, NA, NaN,
+                       haven::tagged_na("a"))) {
+    data <- df
+    data$nomem_encr[[1]] <- missing
+    before <- data
+    results <- .ci_identifier_results(data, recipe)
+    expect_true(results[["V-05"]]$passed)
+    expect_identical(results[["V-05_nonmissing"]]$passed, FALSE)
+    expect_identical(results[["V-05_nonmissing"]]$severity, "warning")
+    expect_match(results[["V-05_nonmissing"]]$detail %||% "", "NA rate 0.25 in nomem_encr",
+                 fixed = TRUE)
+    expect_identical(data, before)
+  }
+  cases <- list(
+    list(data = df, unique = TRUE, complete = TRUE),
+    list(data = transform(df, nomem_encr = c(1, 1, 1, 2)), unique = FALSE, complete = TRUE),
+    list(data = transform(df, nomem_encr = c(NA, 2, NA, 2)), unique = TRUE, complete = FALSE),
+    list(data = transform(df, nomem_encr = rep(NA_real_, 4)), unique = FALSE, complete = FALSE),
+    list(data = data.frame(nomem_encr = c("", " ", "NA", "NaN"), wave_id = "ci08a"),
+         unique = TRUE, complete = TRUE))
+  for (case in cases) {
+    before <- case$data
+    results <- .ci_identifier_results(case$data, recipe)
+    expect_identical(results[["V-05"]]$passed, case$unique)
+    expect_identical(results[["V-05_nonmissing"]]$passed, case$complete)
+    expect_identical(case$data, before)
+  }
+  empty <- .ci_identifier_results(df[FALSE, , drop = FALSE], recipe)
+  expect_true(empty[["V-05"]]$passed)
+  expect_identical(empty[["V-05_nonmissing"]]$passed, TRUE)
+  expect_match(empty[["V-05_nonmissing"]]$detail %||% "", "NA rate not calculated", fixed = TRUE)
+  missing_column <- df
+  missing_column$nomem_encr <- NULL
+  results <- .ci_identifier_results(missing_column, recipe)
+  for (id in c("V-05", "V-05_nonmissing")) {
+    expect_identical(results[[id]]$passed, NA)
+    expect_identical(results[[id]]$severity, "warning")
+    expect_match(results[[id]]$detail %||% "", "nomem_encr", fixed = TRUE)
+  }
+  no_wave <- df
+  no_wave$wave_id <- NULL
+  results <- .ci_identifier_results(no_wave, recipe)
+  expect_identical(results[["V-05"]]$passed, NA)
+  expect_identical(results[["V-05_nonmissing"]]$passed, TRUE)
+  no_wave$nomem_encr[[1]] <- NA_real_
+  expect_identical(.ci_identifier_results(no_wave, recipe)[["V-05_nonmissing"]]$passed, FALSE)
+})
+
+test_that("ci missing identifier warnings preserve strict outputs, reports and values", {
+  skip_if_not_installed("haven")
+  recipe <- yaml::yaml.load_file(system.file("recipes", "ci_merge_recipe.yml",
+                                             package = "lissr"))
+  for (scenario in c("complete", "single_missing", "missing_wave")) {
+    fixture_dir <- withr::local_tempdir("lissr_ci_identifier_")
+    data_dir <- file.path(fixture_dir, "data")
+    output_dir <- file.path(fixture_dir, "output")
+    dir.create(data_dir)
+    .gen_module_fixture(recipe, data_dir)
+    expected_ids <- rep(as.numeric(1:3), length(recipe$wave_index))
+    if (scenario != "complete") {
+      source <- file.path(data_dir, "ci08a_EN_1.0p.sav")
+      raw <- haven::read_sav(source)
+      rows <- if (scenario == "single_missing") 1L else 1:3
+      raw$nomem_encr[rows] <- expected_ids[rows] <- NA_real_
+      haven::write_sav(raw, source)
+    }
+    source_hashes <- tools::md5sum(list.files(data_dir, full.names = TRUE))
+    for (strict in if (scenario == "single_missing") c(TRUE, FALSE) else TRUE) {
+      result <- suppressWarnings(suppressMessages(merge_liss_module(
+        recipe, data_dir, output_dir, strict = strict)))
+      checks <- stats::setNames(result$validation,
+        vapply(result$validation, function(check) check$check_id, character(1)))
+      expect_true(result$valid_for_analysis)
+      expect_identical(checks[["V-05"]]$passed, scenario != "missing_wave")
+      expect_identical(checks[["V-05_nonmissing"]]$passed, scenario == "complete")
+      expect_identical(checks[["V-05_nonmissing"]]$severity, "warning")
+      report <- readLines(file.path(output_dir, "ci_merge_report.txt"))
+      expect_true(any(grepl(paste0("[warning] V-05: ",
+        if (scenario == "missing_wave") "FAIL" else "PASS"), report, fixed = TRUE)))
+      expect_true(any(grepl(paste0("[warning] V-05_nonmissing: ",
+        if (scenario == "complete") "PASS" else "FAIL"), report, fixed = TRUE)))
+      expect_true(any(grepl("Valid for analysis: TRUE", report, fixed = TRUE)))
+      if (scenario != "complete") {
+        detail <- checks[["V-05_nonmissing"]]$detail %||% ""
+        rate <- if (scenario == "single_missing") "0.0185" else "0.0556"
+        expect_match(detail, paste0("NA rate ", rate, " in nomem_encr"), fixed = TRUE)
+        if (nzchar(detail)) expect_true(any(grepl(detail, report, fixed = TRUE)))
+      }
+      expect_equal(as.numeric(result$data$nomem_encr), expected_ids)
+      written <- haven::read_sav(file.path(output_dir, "ci_merged.sav"))
+      expect_equal(as.numeric(written$nomem_encr), expected_ids)
+      expect_identical(as.character(written$wave_id), as.character(result$data$wave_id))
+      expect_identical(tools::md5sum(list.files(data_dir, full.names = TRUE)), source_hashes)
+    }
+  }
+})
+
+test_that("ci absent identifier columns and duplicated source IDs still abort before outputs", {
+  skip_if_not_installed("haven")
+  recipe <- yaml::yaml.load_file(system.file("recipes", "ci_merge_recipe.yml",
+                                             package = "lissr"))
+  for (scenario in c("missing_column", "duplicate")) {
+    fixture_dir <- withr::local_tempdir("lissr_ci_identifier_guard_")
+    data_dir <- file.path(fixture_dir, "data")
+    dir.create(data_dir)
+    .gen_module_fixture(recipe, data_dir)
+    source <- file.path(data_dir, "ci08a_EN_1.0p.sav")
+    raw <- haven::read_sav(source)
+    if (scenario == "missing_column") raw$nomem_encr <- NULL else
+      raw$nomem_encr[[1]] <- raw$nomem_encr[[2]]
+    haven::write_sav(raw, source)
+    source_hashes <- tools::md5sum(list.files(data_dir, full.names = TRUE))
+    pattern <- if (scenario == "missing_column") "expected_presence.*nomem_encr.*ci08a" else
+      "ci08a.*duplicated.*nomem_encr"
+    for (strict in c(TRUE, FALSE)) {
+      output_dir <- file.path(fixture_dir, paste0("output_", strict))
+      expect_error(suppressWarnings(suppressMessages(merge_liss_module(
+        recipe, data_dir, output_dir, strict = strict))), pattern)
+      expect_false(dir.exists(output_dir))
+      dir.create(output_dir)
+      writeLines("keep this", file.path(output_dir, "existing.txt"))
+      expect_error(suppressWarnings(suppressMessages(merge_liss_module(
+        recipe, data_dir, output_dir, strict = strict))), pattern)
+      expect_identical(list.files(output_dir), "existing.txt")
+      expect_identical(readLines(file.path(output_dir, "existing.txt")), "keep this")
+      expect_identical(tools::md5sum(list.files(data_dir, full.names = TRUE)), source_hashes)
+    }
+  }
+})
+
 test_that("cv row-count check requires its wave and excludes other observations", {
   recipe <- yaml::yaml.load_file(system.file("recipes", "cv_merge_recipe.yml",
                                              package = "lissr"))
