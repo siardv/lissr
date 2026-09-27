@@ -1,5 +1,13 @@
 # lissr (development)
 
+* The Politics and Values (`cv`) recipe now combines its existing `VC01_no_raw_dk`
+  exclusions under one `exclude_variables` key. Previously the `cv17i_Total`
+  declaration masked all 27 suffix exclusions, producing false error-level
+  failures for values the recipe intended to exempt. Retained targets still
+  reject 99, 999 and -9. Transformations and merged values are unchanged; this
+  repairs validation outcomes without introducing new exemptions or changing
+  the engine's exclusion precedence.
+
 * The Income (`ci`) recipe now reports missing `nomem_encr` values through a
   separate warning-level `V-05_nonmissing` check. `V-05` retains its existing
   within-wave uniqueness check and now describes that predicate accurately.

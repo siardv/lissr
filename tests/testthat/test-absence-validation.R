@@ -562,6 +562,84 @@ test_that("bundled absence declarations retain integer, numeric-text and literal
   expect_false(.absence_validation(ch_check, data.frame(wave_id = "ch14"))$results[[1]]$passed)
 })
 
+# ---- cv VC01_no_raw_dk exclusions -----------------------------------------
+.cv_vc01_recipe_path <- function() {
+  system.file("recipes", "cv_merge_recipe.yml", package = "lissr", mustWork = TRUE)
+}
+.cv_vc01_check <- function() {
+  recipe <- yaml::yaml.load_file(.cv_vc01_recipe_path())
+  Filter(function(check) identical(check$check_id, "VC01_no_raw_dk"),
+         recipe$validation_checks)[[1]]
+}
+# the 27 declared suffix carve-outs plus the renamed cv17i Total column
+.cv_vc01_exclusions <- c("243", sprintf("%03d", 245:263), "304",
+                         sprintf("%03d", 321:324), "340", "341", "cv17i_Total")
+.cv_vc01_result <- function(data, check = .cv_vc01_check()) {
+  suppressWarnings(suppressMessages(
+    lissr:::run_validations(data, list(check), list())))$results[[1]]
+}
+
+test_that("cv VC01 declares one exclusion list that resolves every carve-out", {
+  check <- .cv_vc01_check()
+  declared <- intersect(c("exclude_variables", "exclude_suffixes"), names(check))
+  # the executor applies the first non-null key and never unions the two
+  expect_length(declared, 1L)
+  expect_setequal(as.character(unlist(check[declared])), .cv_vc01_exclusions)
+  expect_identical(check$severity, "error")
+  expect_identical(check$scope, "all_numeric")
+  expect_setequal(as.numeric(unlist(check$forbidden_values)), c(99, 999, -9))
+  columns <- ifelse(grepl("^[0-9]{3}$", .cv_vc01_exclusions),
+                    paste0("s", .cv_vc01_exclusions), .cv_vc01_exclusions)
+  df <- as.data.frame(stats::setNames(rep(list(1), length(columns)), columns))
+  df$s001 <- 1
+  blocks <- lissr:::.resolve_absence_blocks(df, check)
+  expect_length(blocks, 1L)
+  expect_identical(blocks[[1]]$columns, "s001")
+})
+
+test_that("no bundled absence check declares competing parent exclusion keys", {
+  types <- c("value_absence", "assert_absent_values", "none_equal", "sentinel_absence",
+             "no_residual_sentinels", "assert_no_values", "value_absence_check",
+             "value_restriction")
+  for (mod in c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")) {
+    recipe <- yaml::yaml.load_file(system.file("recipes", paste0(mod, "_merge_recipe.yml"),
+                                               package = "lissr", mustWork = TRUE))
+    for (check in Filter(function(check) check$type %in% types, recipe$validation_checks)) {
+      both <- all(c("exclude_variables", "exclude_suffixes") %in% names(check))
+      expect_false(both, label = paste(mod, check$check_id, "declares both exclusion keys"))
+    }
+  }
+})
+
+test_that("cv VC01 spares documented carve-outs and still fails retained targets", {
+  base <- data.frame(wave_id = c("cv19k", "cv20l", "cv20l"), nomem_encr = 1:3,
+                     s001 = c(1, 2, 3))
+  # legitimate 99 on a percent-chance item
+  df <- base; df$s245 <- c(0, 99, 100)
+  expect_true(.cv_vc01_result(df)$passed)
+  # structural 999 (cv17i-cv19k) and -9 (cv20l onward) on suffix 243
+  df <- base; df$s243 <- c(999, -9, 1)
+  expect_true(.cv_vc01_result(df)$passed)
+  # the renamed cv17i validation artefact, when it is still present
+  df <- base; df$cv17i_Total <- c(99, 999, -9)
+  expect_true(.cv_vc01_result(df)$passed)
+  # every declared suffix at once
+  df <- base
+  for (suffix in setdiff(.cv_vc01_exclusions, c("243", "cv17i_Total")))
+    df[[paste0("s", suffix)]] <- c(99, 0, 100)
+  expect_true(.cv_vc01_result(df)$passed)
+  # retained targets keep failing on each forbidden value
+  for (value in c(99, 999, -9)) {
+    df <- base; df$s245 <- c(0, 99, 100); df$s001[[2]] <- value
+    result <- .cv_vc01_result(df)
+    expect_false(result$passed)
+    expect_match(result$detail, "1 forbidden value(s) in s001", fixed = TRUE)
+  }
+  # exclusion names absent from the data are optional; typed empty data passes
+  expect_true(.cv_vc01_result(base)$passed)
+  expect_true(.cv_vc01_result(base[FALSE, , drop = FALSE])$passed)
+})
+
 .absence_merge_fixture <- function(check, all_na = FALSE, .local_envir = parent.frame()) {
   root <- withr::local_tempdir("lissr_absence_", .local_envir = .local_envir)
   data_dir <- file.path(root, "data")

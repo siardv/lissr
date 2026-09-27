@@ -161,7 +161,13 @@ test_that("cv HR01 fires, exclude carve-outs survive the residual sweep", {
   dd <- stage("t_cv", c("05_sentinel_regimes/cv08a_1.1p_EN.sav",
                         "05_sentinel_regimes/cv20l_EN_1.0p.sav"))
   od <- file.path(tempdir(), "t_cvo")
-  suppressWarnings(merge_liss_module(load_recipe(rec_path("cv")), dd, od))
+  result <- suppressWarnings(merge_liss_module(load_recipe(rec_path("cv")), dd, od))
+  vc01 <- Filter(function(check) identical(check$check_id, "VC01_no_raw_dk"),
+                 result$validation)
+  expect_length(vc01, 1L)
+  # excluded s243 no longer fails first; retained s301 still has forbidden values
+  expect_false(vc01[[1]]$passed)
+  expect_match(vc01[[1]]$detail, "5 forbidden value(s) in s301", fixed = TRUE)
   out <- haven::read_sav(file.path(od, "cv_merged.sav"), user_na = TRUE)
   w08 <- out[out$wave_id == "cv08a", ]
   n99 <- sum(vapply(paste0("s", c("008", "053", "102", "103", "104", "105")),

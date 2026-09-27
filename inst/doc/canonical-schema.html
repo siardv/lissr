@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: 892f9cde3b246b4a35b23be1857ce66f -->
+<!-- schema-source-md5: 626802125207f82a38b99efb30dd6e67 -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1349,6 +1349,17 @@ unaffected.</li>
 <code>no_residual_sentinels</code>, <code>assert_no_values</code>,
 <code>value_absence_check</code>, and
 <code>value_restriction</code>.</p>
+<p>The bundled <code>cv</code> check <code>VC01_no_raw_dk</code> uses
+one <code>exclude_variables</code> list for its 27 declared suffix
+exclusions and <code>cv17i_Total</code>. Bare suffixes and exact names
+resolve through the same exclusion mechanism; using both parent
+exclusion keys would mask the suffix list rather than combine it. This
+declaration preserves the recipe’s existing exemptions and still checks
+retained numeric targets for 99, 999 and -9 at error severity. It
+changes validation outcomes, not transformed or serialized values. A
+pass does not establish the substantive meaning of the exempt codes or
+overall analytical validity; other CV checks and non-exempt structural
+codes retain their existing behavior.</p>
 </div>
 <div id="value_absence-forbidden-value-payloads" class="section level5">
 <h5><code>value_absence</code> forbidden-value payloads</h5>

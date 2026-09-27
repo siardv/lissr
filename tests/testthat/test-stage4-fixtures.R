@@ -968,6 +968,81 @@ test_that("cw range outcomes preserve strict outputs, reports and harmonized val
   }
 })
 
+test_that("cv VC01 outcomes preserve strict outputs, reports and serialized carve-outs", {
+  skip_if_not_installed("haven")
+  recipe_path <- system.file("recipes", "cv_merge_recipe.yml", package = "lissr",
+                             mustWork = TRUE)
+  recipe <- yaml::yaml.load_file(recipe_path)
+  for (scenario in c("carveouts", "retained")) {
+    fixture_dir <- withr::local_tempdir("lissr_cv_vc01_")
+    data_dir <- file.path(fixture_dir, "data")
+    output_dir <- file.path(fixture_dir, "output")
+    dir.create(data_dir)
+    .gen_module_fixture(recipe, data_dir)
+    edit <- function(wave, fun) {
+      path <- file.path(data_dir, paste0(wave, "_EN_1.0p.sav"))
+      haven::write_sav(fun(haven::read_sav(path)), path)
+    }
+    edit("cv17i", function(raw) { raw$Total <- c(99, 1, 2); raw })
+    edit("cv19k", function(raw) { raw$cv19k243 <- c(999, 1, 2); raw })
+    edit("cv20l", function(raw) {
+      raw$cv20l243 <- c(-9, -9, 1); raw$cv20l245 <- c(0, 99, 100)
+      if (scenario == "retained") raw$cv20l001 <- c(1, 99, 3)
+      raw
+    })
+    source_hashes <- tools::md5sum(list.files(data_dir, full.names = TRUE))
+    dir.create(output_dir)
+    writeLines("keep this", file.path(output_dir, "existing.txt"))
+    # strict mode as an assertion, not an uncaught abort, so the report-mode
+    # comparisons below still execute when the declaration is defective
+    strict_run <- tryCatch(suppressWarnings(suppressMessages(merge_liss_module(
+      recipe_path, data_dir, output_dir, strict = TRUE))), error = function(e) e)
+    if (scenario == "carveouts") {
+      expect_false(inherits(strict_run, "error"),
+                   info = if (inherits(strict_run, "error")) conditionMessage(strict_run))
+      if (!inherits(strict_run, "error")) {
+        expect_true(strict_run$valid_for_analysis)
+        expect_true(file.exists(file.path(output_dir, "cv_merged.sav")))
+      }
+    } else {
+      expect_s3_class(strict_run, "error")
+      expect_match(conditionMessage(strict_run), "strict mode: no outputs were written")
+      expect_identical(list.files(output_dir), "existing.txt")
+    }
+    result <- suppressWarnings(suppressMessages(merge_liss_module(
+      recipe_path, data_dir, output_dir, strict = FALSE)))
+    expect_identical(result$valid_for_analysis, scenario == "carveouts")
+    checks <- stats::setNames(result$validation,
+      vapply(result$validation, function(check) check$check_id, character(1)))
+    expect_identical(checks$VC01_no_raw_dk$passed, scenario == "carveouts")
+    report <- readLines(file.path(output_dir, "cv_merge_report.txt"))
+    expect_true(any(grepl(paste0("[error] VC01_no_raw_dk: ",
+      if (scenario == "carveouts") "PASS" else "FAIL"), report, fixed = TRUE)))
+    expect_true(any(grepl(paste0("Valid for analysis: ", scenario == "carveouts"),
+                          report, fixed = TRUE)))
+    if (scenario == "retained") {
+      expect_match(checks$VC01_no_raw_dk$detail %||% "",
+                   "1 forbidden value(s) in s001", fixed = TRUE)
+      expect_true(any(grepl(checks$VC01_no_raw_dk$detail %||% "", report, fixed = TRUE)))
+    }
+    drops <- Filter(function(entry) identical(entry$rule_id, "DR02_drop_total"), result$log)
+    expect_length(drops, 1L)
+    expect_identical(drops[[1]]$variable, "cv17i_Total")
+    written <- haven::read_sav(file.path(output_dir, "cv_merged.sav"), user_na = TRUE)
+    for (data in list(result$data, written)) {
+      expect_false(any(c("Total", "cv17i_Total") %in% names(data)))
+      w20 <- data$wave_id == "cv20l"; w19 <- data$wave_id == "cv19k"
+      expect_equal(as.numeric(data$s245[w20]), c(0, 99, 100))
+      expect_equal(as.numeric(data$s243[w20]), c(-9, -9, 1))
+      expect_equal(as.numeric(data$s243[w19]), c(999, 1, 2))
+      if (scenario == "retained") expect_equal(as.numeric(data$s001[w20]), c(1, 99, 3))
+    }
+    expect_equal(as.data.frame(written[c("s243", "s245")]),
+                 as.data.frame(result$data[c("s243", "s245")]), ignore_attr = TRUE)
+    expect_identical(tools::md5sum(list.files(data_dir, full.names = TRUE)), source_hashes)
+  }
+})
+
 test_that("every bundled recipe merges a synthetic panel end to end", {
   skip_if_not_installed("haven")
   mods <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")

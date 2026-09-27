@@ -706,6 +706,16 @@ The same behavior applies to `assert_absent_values`, `none_equal`,
 `sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
 `value_absence_check`, and `value_restriction`.
 
+The bundled `cv` check `VC01_no_raw_dk` uses one `exclude_variables` list for its
+27 declared suffix exclusions and `cv17i_Total`. Bare suffixes and exact names
+resolve through the same exclusion mechanism; using both parent exclusion keys
+would mask the suffix list rather than combine it. This declaration preserves
+the recipe's existing exemptions and still checks retained numeric targets for
+99, 999 and -9 at error severity. It changes validation outcomes, not transformed
+or serialized values. A pass does not establish the substantive meaning of the
+exempt codes or overall analytical validity; other CV checks and non-exempt
+structural codes retain their existing behavior.
+
 #### `value_absence` forbidden-value payloads
 
 Every block's targets, wave scopes and exclusions resolve before forbidden-value

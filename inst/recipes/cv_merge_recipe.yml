@@ -1009,7 +1009,7 @@ validation_checks:
   # cv17i Total column (VR04). residual -9 on _m1-_m3, 160, 242 in cv23o+
   # (HR02 carve-outs) is NOT excluded here and will surface as informative
   # hits until the structural sentinel convention lands.
-  exclude_suffixes:
+  exclude_variables:
   - '243'
   - '245'
   - '246'
@@ -1037,7 +1037,6 @@ validation_checks:
   - '324'
   - '340'
   - '341'
-  exclude_variables:
   - cv17i_Total
   forbidden_values:
   - 99
