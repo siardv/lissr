@@ -674,16 +674,60 @@ report-mode output. Diagnostics identify the block and its scope.
   combined. Unknown exclusion names are optional nonmatches; empty exclusions
   do nothing and malformed names are unevaluable. Every explicit target must
   resolve before exclusions apply. Excluding every resolved column is allowed.
-- Forbidden-value aliases and numeric/character matching are unchanged. Block
+- Forbidden-value aliases retain their exact first-non-null precedence. Block
   `forbidden_values`, `forbidden_value`, `sentinel_values`, `codes`, or `value`
   take precedence over inherited parent `forbidden_values`, `sentinel_values`,
   or `value`. Missing/empty forbidden values provide no value constraint, but
-  target and wave resolution still runs. This is not general validation of
-  forbidden-value payloads or the remaining validation executors.
+  target and wave resolution still runs. Active payloads follow the contract
+  below; other validation executors are unaffected.
 
 The same behavior applies to `assert_absent_values`, `none_equal`,
 `sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
 `value_absence_check`, and `value_restriction`.
+
+#### `value_absence` forbidden-value payloads
+
+Every block's targets, wave scopes and exclusions resolve before forbidden-value
+parsing. All active payloads then validate before any observations are compared.
+Malformed payloads are unevaluable (`passed = NA`) with the declared severity,
+including when an earlier block would fail, selected rows are empty or every
+column is excluded. Existing strict/report handling applies.
+
+- Plain integer, double, logical and character vectors are supported, named or
+  unnamed, including atomic arrays of any size. Flat lists can contain
+  undimensioned primitive scalars and null entries; null entries contribute no
+  members. Classed, raw, complex and other nonprimitive payloads are invalid,
+  as are nested, nonscalar or empty list elements, list arrays and dimensioned
+  list elements.
+- Omitted/null payloads and empty primitive vectors/lists impose no value
+  constraint. Empty non-null declarations block lower-priority aliases and
+  parent fallback. Only selected payloads validate; overridden declarations and
+  unsupported fields remain ignored. An empty or null-only payload still
+  bypasses target value conversion after required scope resolution.
+- Numeric and character matching both apply. Numeric text can match its numeric
+  equivalent; arbitrary text, blank/whitespace strings and literal `"NA"` remain
+  valid character codes. Character matching is exact and case-sensitive. Negative,
+  fractional and signed-infinite numeric codes remain supported.
+- Existing common-type promotion is retained for character forms and logical
+  values. For example, `TRUE` forbids numeric `1` and literal `"TRUE"`;
+  `list(TRUE, 99)` promotes to numeric and uses character `"1"`, while
+  `list(TRUE, "refused")` promotes to text and does not forbid numeric `1`.
+  These forms do not introduce a separate logical-only matching rule.
+- Numeric members of mixed numeric/text lists retain their original precision
+  for numeric matching instead of being rounded through text. For example,
+  `list(1/3, "refused")` now forbids `"0.33333333333333331"`, as a bare numeric
+  `1/3` does. Existing character matches, including rounded representations of
+  numeric values, are preserved.
+- Actual NA/NaN observations remain excluded from both matching paths. Actual
+  NA payload members do not forbid missing observations or literal `"NA"`.
+  Numeric NaN retains the character form `"NaN"`, so it can forbid that literal
+  text but not a numeric NaN observation. A missing-only payload still enters
+  target conversion; it is not treated as an empty payload.
+- Target numeric/character conversion and the union of their match results,
+  violation counts and first failing block/column remain unchanged. With valid
+  payloads, empty scopes, all-excluded columns and all-missing targets retain
+  their existing pass behavior. Conditions and `allow_na` are not used by this
+  executor; this repair does not add target-type validation.
 
 #### `structural_missingness` target and wave scopes
 

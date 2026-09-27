@@ -19,6 +19,7 @@
   expect_identical(result$results[[1]]$severity, check$severity)
   expect_identical(result$error_skips,
                    if (check$severity == "error") "ABSENCE" else character())
+  expect_identical(result$error_count, 0L)
   if (!is.null(pattern)) {
     detail <- result$results[[1]]$detail
     expect_match(if (is.null(detail)) "" else detail, pattern)
@@ -340,13 +341,235 @@ test_that("absence failures and unevaluable outcomes preserve the declared sever
   }
 })
 
-.absence_merge_fixture <- function(check, .local_envir = parent.frame()) {
+test_that("absence payloads preserve primitive vectors, arrays and flat lists", {
+  cases <- list(list(payload = c(98L, 99L), values = c(98, 99, 1, NA)),
+                list(payload = c(-1.5, Inf), values = c(-1.5, Inf, 1, NA)),
+                list(payload = c("refused", ""), values = c("refused", "", "ok", NA)),
+                list(payload = c(FALSE, TRUE), values = c(FALSE, TRUE, NA)))
+  wrappers <- list(identity, function(value) stats::setNames(value, seq_along(value)),
+                   matrix, function(value) array(value, c(1, length(value), 1)), as.list)
+  for (case in cases) {
+    for (wrap in wrappers) {
+      check <- .absence_check()
+      check$forbidden_values <- wrap(case$payload)
+      result <- .absence_validation(check, data.frame(s005 = case$values))$results[[1]]
+      expect_false(result$passed)
+      expect_identical(result$detail,
+        "2 forbidden value(s) in s005; block 1; parent waves: all; block waves: all")
+    }
+  }
+  for (value in list("refused", "", " ", "NA", "NaN", "nan", -Inf)) {
+    check <- .absence_check()
+    check$forbidden_values <- value
+    expect_false(.absence_validation(check, data.frame(s005 = value))$results[[1]]$passed)
+  }
+  check <- .absence_check()
+  check$forbidden_values <- "099"
+  result <- .absence_validation(check, data.frame(s005 = c("099", "99", "ok", NA)))$results[[1]]
+  expect_match(result$detail, "2 forbidden value(s)", fixed = TRUE)
+})
+
+test_that("absence preserves logical promotion and both numeric precision matches", {
+  cases <- list(list(TRUE, 1, FALSE), list(TRUE, "TRUE", FALSE),
+                list(list(TRUE, 99), 1, FALSE), list(list(TRUE, 99), "TRUE", TRUE),
+                list(list(TRUE, "refused"), 1, TRUE),
+                list(list(TRUE, "refused"), "TRUE", FALSE),
+                list(list(FALSE, 99), 0, FALSE), list(list(FALSE, 99), "FALSE", TRUE),
+                list(list(FALSE, "refused"), 0, TRUE),
+                list(list(FALSE, "refused"), "FALSE", FALSE))
+  for (case in cases) {
+    check <- .absence_check()
+    check$forbidden_values <- case[[1]]
+    expect_identical(.absence_validation(check, data.frame(s005 = case[[2]]))$results[[1]]$passed,
+                     case[[3]])
+  }
+  for (payload in list(1 / 3, list(1 / 3, "refused"),
+                        list(NULL, 1 / 3, "refused", NULL),
+                        list(text = "refused", code = 1 / 3, empty = NULL))) {
+    check <- .absence_check()
+    check$forbidden_values <- payload
+    for (value in list(1 / 3, as.numeric(as.character(1 / 3)), as.character(1 / 3),
+                       sprintf("%.17g", 1 / 3))) {
+      result <- .absence_validation(check, data.frame(s005 = value))$results[[1]]
+      expect_false(result$passed)
+      expect_match(if (is.null(result$detail)) "" else result$detail,
+                   "1 forbidden value(s)", fixed = TRUE)
+    }
+  }
+})
+
+test_that("absence keeps actual missing observations separate from literal missing codes", {
+  for (payload in list(NA_real_, NA_integer_, NA_character_, NA, list(NA), NaN,
+                        "NA", "NaN", "nan", yaml::yaml.load("codes: [.na, .nan]")$codes)) {
+    check <- .absence_check()
+    check$forbidden_values <- payload
+    expect_true(.absence_validation(check, data.frame(s005 = c(NA_real_, NaN)))$results[[1]]$passed)
+  }
+  for (payload in list(NA_real_, NA_character_, NA, list(NA))) {
+    check <- .absence_check()
+    check$forbidden_values <- payload
+    expect_true(.absence_validation(check, data.frame(s005 = "NA"))$results[[1]]$passed)
+  }
+  check <- .absence_check()
+  check$forbidden_values <- NaN
+  expect_false(.absence_validation(check, data.frame(s005 = "NaN"))$results[[1]]$passed)
+  expect_true(.absence_validation(check, data.frame(s005 = "nan"))$results[[1]]$passed)
+  check$forbidden_values <- "nan"
+  expect_true(.absence_validation(check, data.frame(s005 = "NaN"))$results[[1]]$passed)
+})
+
+test_that("absence payload aliases preserve active-empty and inherited-parent precedence", {
+  keys <- c("forbidden_values", "forbidden_value", "sentinel_values", "codes", "value")
+  for (container in c("direct", "targets", "checks")) {
+    for (active in seq_along(keys)) {
+      payload <- stats::setNames(rep(list(NULL), length(keys)), keys)
+      payload[[keys[[active]]]] <- 99
+      if (active < length(keys)) payload[[keys[[active + 1L]]]] <- list(list(99))
+      check <- .absence_check()
+      if (container == "direct") check[keys] <- payload
+      else check[[container]] <- list(c(list(variables = "005"), payload))
+      expect_false(.absence_validation(check)$results[[1]]$passed)
+      payload[[keys[[active]]]] <- list(NULL)
+      if (container == "direct") check[keys] <- payload
+      else check[[container]] <- list(c(list(variables = "005"), payload))
+      expect_true(.absence_validation(check)$results[[1]]$passed)
+      payload[[keys[[active]]]] <- list(list(99))
+      if (active < length(keys)) payload[[keys[[active + 1L]]]] <- 99
+      if (container == "direct") check[keys] <- payload
+      else check[[container]] <- list(c(list(variables = "005"), payload))
+      .expect_absence_unevaluable(check, pattern = "forbidden")
+    }
+  }
+  for (key in keys) {
+    check <- .absence_check()
+    check$forbidden_values <- NULL
+    check[[key]] <- 99
+    check$targets <- list(list(variables = "005", value = NULL))
+    expect_identical(.absence_validation(check)$results[[1]]$passed,
+                     key %in% c("forbidden_value", "codes"))
+    check[[key]] <- list(list(99))
+    check$targets[[1]]$value <- 98
+    expect_true(.absence_validation(check)$results[[1]]$passed)
+    check <- .absence_check()
+    check$forbidden_values <- NULL
+    check[[paste0(key, "_note")]] <- 99
+    expect_true(.absence_validation(check)$results[[1]]$passed)
+  }
+})
+
+test_that("absence empties bypass target conversion while missing-only payloads do not", {
+  df <- data.frame(wave_id = c("w1", "w2"))
+  df$s005 <- I(list(c(1, 2), c(3, 4)))
+  for (payload in list(NULL, numeric(), character(), logical(), list(), list(NULL),
+                       array(numeric(), c(0, 1)), yaml::yaml.load("codes: [null]")$codes)) {
+    check <- .absence_check()
+    check["forbidden_values"] <- list(payload)
+    expect_true(.absence_validation(check, df)$results[[1]]$passed)
+  }
+  check <- .absence_check()
+  check$forbidden_values <- NA_real_
+  .expect_absence_unevaluable(check, df, "list")
+  check$forbidden_values <- list(1, NULL, 2)
+  expect_false(.absence_validation(check, data.frame(s005 = 1))$results[[1]]$passed)
+})
+
+test_that("absence malformed payload shapes are rejected before flattening", {
+  invalid <- list(list(list(99)), list(c(98, 99)), list(numeric()), list(character()),
+                  list(logical()), list(list()), matrix(list(99)), list(matrix(99)),
+                  data.frame(x = 99), factor("99"), as.Date("1970-04-10"),
+                  structure(99, class = "code"), as.raw(99), 99 + 1i,
+                  list(factor("99")), list(structure(99, class = "code")),
+                  list(as.raw(99)), list(99 + 1i), quote(code), function() 99)
+  for (payload in invalid) {
+    check <- .absence_check()
+    check$forbidden_values <- payload
+    .expect_absence_unevaluable(check, pattern = "forbidden")
+    .expect_absence_unevaluable(check, .absence_data()[FALSE, ], "forbidden")
+  }
+})
+
+test_that("absence payload validation survives every legitimate empty selection", {
+  for (shape in c("zero_rows", "all_missing", "intersection", "complement", "excluded")) {
+    check <- .absence_check()
+    df <- .absence_data()
+    if (shape == "zero_rows") df <- df[FALSE, ]
+    if (shape == "all_missing") df$s005 <- NA_real_
+    if (shape == "intersection") {
+      check$waves <- "w1"
+      check$targets <- list(list(waves = "w2"))
+    }
+    if (shape == "complement") check$waves_allowed <- "all"
+    if (shape == "excluded") check$exclude_variables <- "005"
+    expect_true(.absence_validation(check, df)$results[[1]]$passed)
+    check$forbidden_values <- list(list(99))
+    .expect_absence_unevaluable(check, df, "forbidden")
+  }
+})
+
+test_that("all absence scopes precede all payloads and all payloads precede comparisons", {
+  for (severity in c("error", "warning", "info")) {
+    check <- .absence_check(severity = severity)
+    check$targets <- list(list(variables = "005", value = 99),
+                          list(variables = "006", value = list(list(98))))
+    .expect_absence_unevaluable(check, pattern = "block 2.*forbidden")
+    check$targets[[1]]$value <- list(list(99))
+    check$targets[[2]]$variables <- "absent_column"
+    .expect_absence_unevaluable(check, pattern = "block 2.*absent_column")
+    check$targets[[2]]$variables <- "006"
+    check$targets[[2]]$waves <- "absent_wave"
+    .expect_absence_unevaluable(check, pattern = "block 2.*absent_wave")
+    check$targets[[2]]$waves <- NULL
+    check$targets[[2]]$exclude_variables <- list(list("006"))
+    .expect_absence_unevaluable(check, pattern = "block 2.*exclu")
+  }
+})
+
+test_that("absence retains target conversion, ignored fields and unmodified values", {
+  inputs <- list(factor(c("refused", "safe")), as.Date(c("1970-01-02", "1970-01-03")),
+                 c(TRUE, FALSE), haven::labelled(c(1, 2, NA), labels = c(one = 1)))
+  for (values in inputs) {
+    df <- data.frame(s005 = values)
+    before <- df
+    check <- .absence_check()
+    check$forbidden_values <- 1
+    check$condition <- "stop('ignored condition')"
+    check$allow_na <- "ignored malformed flag"
+    result <- .absence_validation(check, df)$results[[1]]
+    expect_false(result$passed)
+    expect_match(result$detail, "1 forbidden value(s)", fixed = TRUE)
+    expect_identical(df, before)
+  }
+})
+
+test_that("bundled absence declarations retain integer, numeric-text and literal-text codes", {
+  cd <- suppressWarnings(suppressMessages(liss_recipe("cd")))
+  cd_check <- Filter(function(check) identical(check$check_id, "CHK03_rent_period_val5"),
+                     cd$validation_checks)[[1]]
+  df <- data.frame(wave_id = cd_check$in_waves, h_rent_period = 1)
+  expect_true(.absence_validation(cd_check, df)$results[[1]]$passed)
+  df$h_rent_period[[1]] <- 5
+  expect_false(.absence_validation(cd_check, df)$results[[1]]$passed)
+  ci <- suppressWarnings(suppressMessages(liss_recipe("ci")))
+  ci_check <- Filter(function(check) identical(check$check_id, "V-01"), ci$validation_checks)[[1]]
+  ci_check$targets <- ci_check$targets[1]
+  df <- data.frame(wave_id = ci_check$targets[[1]]$waves, s001 = 1)
+  expect_true(.absence_validation(ci_check, df)$results[[1]]$passed)
+  df$s001[[1]] <- 9999999998
+  expect_false(.absence_validation(ci_check, df)$results[[1]]$passed)
+  ch <- suppressWarnings(suppressMessages(liss_recipe("ch")))
+  ch_check <- Filter(function(check) identical(check$check_id, "CHK10"), ch$validation_checks)[[1]]
+  expect_true(.absence_validation(ch_check, data.frame(wave_id = "ch13f"))$results[[1]]$passed)
+  expect_false(.absence_validation(ch_check, data.frame(wave_id = "ch14"))$results[[1]]$passed)
+})
+
+.absence_merge_fixture <- function(check, all_na = FALSE, .local_envir = parent.frame()) {
   root <- withr::local_tempdir("lissr_absence_", .local_envir = .local_envir)
   data_dir <- file.path(root, "data")
   dir.create(data_dir)
   for (wave in c("yy01a", "yy02b")) {
     df <- data.frame(nomem_encr = 1:2)
     df[[paste0(wave, "005")]] <- if (wave == "yy01a") c(1, NA) else c(99, 99)
+    if (all_na) df[[paste0(wave, "005")]] <- NA_real_
     haven::write_sav(df, file.path(data_dir, paste0(wave, "_EN_1.0p.sav")))
   }
   recipe <- list(
@@ -411,5 +634,63 @@ test_that("valid absence scopes preserve strict output and merged values", {
     expect_true(result$validation[[1]]$passed)
     expect_equal(as.numeric(result$data$s005), c(1, NA, 99, 99))
     expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
+  }
+})
+
+test_that("absence payload errors preserve strict protection, reports and data values", {
+  for (blocks in c(FALSE, TRUE)) {
+    for (severity in c("error", "warning", "info")) {
+      for (all_na in c(FALSE, TRUE)) {
+        check <- .absence_check(severity = severity)
+        if (blocks) {
+          check$targets <- list(list(value = 99), list(value = list(list(99))))
+        } else check$forbidden_values <- list(list(99))
+        fx <- .absence_merge_fixture(check, all_na = all_na)
+        if (severity == "error") {
+          expect_error(suppressWarnings(suppressMessages(
+            merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
+            "strict mode: no outputs were written")
+          expect_false(dir.exists(fx$output_dir))
+          dir.create(fx$output_dir, showWarnings = FALSE)
+          sentinel <- file.path(fx$output_dir, "existing.txt")
+          writeLines("keep this", sentinel)
+          expect_error(suppressWarnings(suppressMessages(
+            merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
+            "strict mode: no outputs were written")
+          expect_identical(list.files(fx$output_dir), "existing.txt")
+          expect_identical(readLines(sentinel), "keep this")
+        }
+        result <- suppressWarnings(suppressMessages(merge_liss_module(
+          fx$recipe, fx$data_dir, fx$output_dir, strict = severity != "error")))
+        expect_identical(result$valid_for_analysis, severity != "error")
+        expect_identical(result$validation[[1]]$passed, NA)
+        expect_identical(result$validation[[1]]$severity, severity)
+        report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
+        expect_true(any(grepl(paste0("[", severity, "] ABSENCE: SKIP"), report, fixed = TRUE)))
+        detail <- result$validation[[1]]$detail
+        expect_match(if (is.null(detail)) "" else detail, "forbidden")
+        if (is.character(detail)) expect_true(any(grepl(detail, report, fixed = TRUE)))
+        expected <- if (all_na) rep(NA_real_, 4) else c(1, NA, 99, 99)
+        expect_equal(as.numeric(result$data$s005), expected)
+        written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+        expect_equal(as.numeric(written$s005), expected)
+      }
+    }
+  }
+})
+
+test_that("valid mixed absence payloads preserve strict outputs and actual values", {
+  for (all_na in c(FALSE, TRUE)) {
+    check <- .absence_check()
+    check$forbidden_values <- list(TRUE, "refused", NULL)
+    fx <- .absence_merge_fixture(check, all_na = all_na)
+    result <- suppressWarnings(suppressMessages(
+      merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
+    expect_true(result$valid_for_analysis)
+    expect_true(result$validation[[1]]$passed)
+    expected <- if (all_na) rep(NA_real_, 4) else c(1, NA, 99, 99)
+    expect_equal(as.numeric(result$data$s005), expected)
+    written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+    expect_equal(as.numeric(written$s005), expected)
   }
 })

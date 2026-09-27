@@ -1,5 +1,14 @@
 # lissr (development)
 
+* `value_absence` and its aliases now validate every active forbidden-value
+  payload after resolving all block scopes and before comparing observations.
+  Malformed payloads are unevaluable with the declared severity, even on empty
+  scopes, all-excluded columns or after an earlier block violation. Numeric
+  members of mixed numeric/text lists retain their precision for numeric
+  matching. Existing text/logical matching and type promotion, NA/NaN exclusion,
+  alias/parent fallback, empty-payload behavior, scopes and exclusions are
+  preserved; target value conversion remains unchanged.
+
 * `value_present` and `value_present_per_wave` now validate the entire active
   `value`/`values` payload before matching observations. Malformed text and list
   elements can no longer create accidental NA matches, and exact field lookup

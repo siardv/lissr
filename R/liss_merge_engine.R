@@ -2363,6 +2363,35 @@ safe_eval_condition <- function(cond, df) {
   unique(resolved)
 }
 
+#' validate forbidden payloads and prepare both matching forms (internal)
+#' @noRd
+.value_absence_values <- function(value, block) {
+  invalid <- function() {
+    stop("block ", block, ": forbidden values must be numeric, logical or character ",
+         "vectors or flat scalar lists", call. = FALSE)
+  }
+  valid_values <- function(x) {
+    !is.object(x) && typeof(x) %in% c("integer", "double", "logical", "character")
+  }
+  numeric_positions <- logical()
+  numeric_members <- numeric()
+  if (is.object(value)) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    members <- value[!vapply(value, is.null, logical(1))]
+    if (!all(vapply(members, function(x) {
+      valid_values(x) && length(x) == 1L && is.null(dim(x))
+    }, logical(1)))) invalid()
+    numeric_positions <- vapply(members, is.numeric, logical(1))
+    numeric_members <- vapply(members[numeric_positions], as.numeric, numeric(1))
+    value <- unlist(members, use.names = FALSE)
+  } else if (!is.null(value) && !valid_values(value)) invalid()
+  parsed <- suppressWarnings(as.numeric(value))
+  # keep numeric list members exact without changing character/logical promotion
+  if (any(numeric_positions)) parsed[numeric_positions] <- numeric_members
+  list(numeric = parsed[!is.na(parsed)], character = as.character(value))
+}
+
 #' resolve all absence blocks before evaluating any forbidden values (internal)
 #' @noRd
 .resolve_absence_blocks <- function(df, chk) {
@@ -2419,10 +2448,10 @@ safe_eval_condition <- function(cond, df) {
         excluded <- .resolve_check_columns(df, excl)$resolved
         columns <- setdiff(columns, excluded[!is.na(excluded)])
       }
-      forbidden <- unlist(bl[["forbidden_values"]] %||% bl[["forbidden_value"]] %||%
+      forbidden <- bl[["forbidden_values"]] %||% bl[["forbidden_value"]] %||%
         bl[["sentinel_values"]] %||% bl[["codes"]] %||% bl[["value"]] %||%
         chk[["forbidden_values"]] %||% chk[["sentinel_values"]] %||%
-        chk[["value"]] %||% list())
+        chk[["value"]] %||% list()
       list(columns = columns, rows = rows, forbidden = forbidden,
            detail = paste0("block ", i, "; ", scope_detail))
     }, error = function(e) {
@@ -2717,14 +2746,17 @@ run_validations <- function(df, checks, log_entries) {
           # block form: `targets` is a list of scoped sub-checks (ci V-01 /
           # cs V06 shape); each block resolves its own columns, waves, values
           blocks <- .resolve_absence_blocks(df, chk)
+          # resolve every scope first, then parse every payload before comparison
+          for (i in seq_along(blocks)) {
+            blocks[[i]]$forbidden <- .value_absence_values(blocks[[i]]$forbidden, i)
+          }
           passed <- TRUE
           detail <- NULL
           for (bl in blocks) {
             forbidden <- bl$forbidden
-            if (length(forbidden) == 0) next
-            forbidden_chr <- as.character(forbidden)
-            forbidden <- suppressWarnings(as.numeric(forbidden))
-            forbidden <- forbidden[!is.na(forbidden)]
+            if (!length(forbidden$numeric) && !length(forbidden$character)) next
+            forbidden_chr <- forbidden$character
+            forbidden <- forbidden$numeric
             for (col in bl$columns) {
               raw <- df[[col]][bl$rows]
               vals <- suppressWarnings(as.numeric(raw))
