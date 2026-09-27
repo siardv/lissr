@@ -496,9 +496,11 @@ A failed check has `passed = FALSE`; an unknown or unevaluable check
 reports `SKIP` with `passed = NA`. Error-level failures increment
 `error_count`; error-level skips enter `error_skips`. Documentary
 diagnostics have `passed = NA` and `documentary = TRUE` and are counted
-separately (`n_doc`), rather than entering `error_skips`. The execution
-console labels them `DOC`; the text report currently labels them `SKIP`.
-The other counts are `n_pass`, `n_fail`, and `n_skip`.
+separately (`n_doc`), rather than entering `error_skips`. Both the
+execution console and text report label them `DOC`, including at error
+severity. Documentary diagnostics do not assert a pass or affect
+strict-mode output eligibility or `valid_for_analysis`. The other counts
+are `n_pass`, `n_fail`, and `n_skip`.
 
 With `merge_liss_module(..., strict = TRUE)`, reported error-level
 failures or unevaluable checks abort before phase 7, so no output
@@ -560,6 +562,20 @@ Aliases are `assert_unique`, `n_duplicates`, `unique_key`,
 share this predicate; `assert_identifier` does not additionally enforce
 nonmissing identifiers.
 
+The bundled Income (`ci`) recipe keeps `V-05` for uniqueness within each
+wave and uses `V-05_nonmissing` (`not_missing`, threshold 0, direction
+`below`) to check `nomem_encr` across all rows. Both have warning
+severity. The missing-value check uses
+[`is.na()`](https://rdrr.io/r/base/NA.html), including actual NA, NaN
+and tagged NA; blank/whitespace strings and literal `"NA"`/`"NaN"`
+strings are not missing values. Valid empty data with the required
+columns pass both checks. A warning failure is reported but does not
+independently block strict output or invalidate analysis eligibility.
+The existing loader still aborts for a missing identifier column or
+duplicate nonmissing identifiers within a source wave. Identifier values
+and the shared `assert_identifier` predicate are unchanged; no
+identifier-format check is added.
+
 ##### `value_range` and `value_in_set` target and wave scopes
 
 These checks require every requested target to resolve. An absent
@@ -597,10 +613,10 @@ above.
   membership. Missing wave identification or any requested wave without
   rows is unevaluable. Values outside a valid requested scope are
   excluded from both checks.
-- Numeric all-NA range targets still pass. Set checks retain `allow_na`
-  behavior (default `TRUE`). Empty data with existing target columns can
-  pass an all-row check; explicitly requested absent waves remain
-  unevaluable.
+- Numeric all-NA range targets still pass when their bounds are valid.
+  Set checks retain `allow_na` behavior (default `TRUE`). Empty data
+  with existing target columns can pass an all-row check; explicitly
+  requested absent waves remain unevaluable.
 
 This contract also applies to range aliases `range_check`,
 `value_in_range`, `assert_range` and set aliases `value_set`,
@@ -608,6 +624,104 @@ This contract also applies to range aliases `range_check`,
 additional range/set payloads. Range checks continue to use numeric
 columns and `min`/`max`; `valid_range` and sentinel exceptions are not
 implemented by this executor.
+
+##### `value_range` bounds and numeric targets
+
+After target and wave resolution, `value_range` and its aliases parse
+both bounds before iterating over target values. Malformed bounds and
+reversed intervals are unevaluable (`passed = NA`), including when the
+other bound is violated or no values will be compared. Severity and
+strict/report handling are preserved.
+
+- Exact `min` and `max` fields supply the bounds. Omitted/null values
+  default to `-Inf` and `Inf`, respectively. Unrelated fields such as
+  `min_note` or `max_note` cannot supply a bound.
+- Plain integer, double and numeric-character scalars are supported,
+  named or unnamed, including atomic one-cell arrays and flat
+  one-element lists of undimensioned primitive scalars. All are
+  normalized with R’s numeric parser without integer truncation. Numeric
+  text compares numerically; scalar arrays work regardless of how many
+  target values are selected. Violation diagnostics show the parsed
+  numeric endpoints.
+- Classed bounds (including factors, dates and custom classes), logical,
+  raw, complex, empty/multiple/nested values, list arrays, dimensioned
+  list elements, NA/NaN and blank/nonnumeric text are unevaluable. These
+  restrictions apply inside supported wrappers too.
+- The interval must satisfy `min <= max`. Ordered fractional, negative
+  and signed-infinite endpoints remain supported, including equal
+  endpoints. Values equal to either endpoint are in range; observed
+  infinities use the same comparisons. A reversed interval is invalid
+  even on empty or all-NA data.
+- Only targets for which
+  [`is.numeric()`](https://rdrr.io/r/base/numeric.html) is true are
+  compared; other resolved targets are skipped, without data coercion.
+  NA/NaN observations are excluded. With valid bounds, empty all-row
+  data, all-NA numeric targets and nonnumeric targets retain their
+  existing pass behavior. Such a pass does not establish that any value
+  was compared. This repair adds no data-type validation or support for
+  `valid_range`, sentinel exceptions or condition filtering.
+
+The bundled Work and Schooling (`cw`) recipe uses `min`/`max` for
+`V02_wage_numeric` (0–1000000, error severity) and
+`V07_pension_dates_numeric` (1990–2030, warning severity). Both
+intervals are inclusive and apply after harmonization.
+`HR01_sentinel_recode` converts numeric `-9`/`-8` codes to NA before
+validation; the range checks exclude missing values, and
+`V08_no_sentinels` separately rejects residual numeric sentinels. The
+pension check covers all ten declared targets across all waves;
+`HR03_pension_dates` recodes `1`/`2` to `2023`/`2024` only in `cw25r`.
+These are numeric interval checks, not integer-year or target-type
+assertions; harmonization rules are unchanged.
+
+##### `value_in_set` allowed values and missing-value handling
+
+After target and wave resolution, `value_in_set` and its aliases parse
+the global `allow_na` flag and every active allowed set before comparing
+any target. Invalid payloads are unevaluable (`passed = NA`) with the
+declared severity, even on empty or all-missing data or when an earlier
+target violates its set.
+
+- Shared sets use the first non-null exact field among `allowed_values`,
+  `allowed`, and `values`. Per-variable entries use `allowed`, then
+  `allowed_values`. Empty non-null sets remain active; omitted/null
+  fields ultimately default to an empty set. Per-variable mode ignores
+  shared sets, and entries do not support `values` or their own
+  `allow_na` overrides.
+- Allowed values can be plain integer, double or numeric-character
+  vectors, named or unnamed, including atomic arrays of any size. Flat
+  lists of undimensioned primitive scalars are supported; null entries
+  contribute no members. Numeric text uses R’s numeric parser.
+  Fractional, negative and signed-infinite values retain their
+  membership semantics. List members are parsed separately, preserving
+  numeric precision when numbers and text are mixed instead of first
+  converting the numbers to text.
+- Actual NA values (including character NA and logical NA from YAML
+  `.na`), numeric NaN and text parsed as NaN are supported. Logical
+  vectors containing only missing values are accepted as explicit NA
+  declarations. Nonmissing logical values, raw/complex/classed payloads,
+  nested or nonscalar list elements, list arrays and dimensioned list
+  elements are unevaluable. Nonmissing text that parses as ordinary NA,
+  including blank strings, `"NA"` and other nonnumeric text, is invalid
+  and cannot accidentally admit missing observations.
+- Exact global `allow_na` defaults to `TRUE` when omitted/null. It
+  accepts a plain nonmissing scalar logical, named or unnamed, an atomic
+  one-cell logical array, or a flat one-element list of an undimensioned
+  logical scalar. In particular, `list(FALSE)` now applies `FALSE`.
+  Classed, numeric, character, missing, empty, multiple and nested flag
+  values are unevaluable.
+- Target values retain their existing numeric coercion before membership
+  testing; this check does not implement string-set matching.
+  `allow_na = TRUE` exempts all converted NA/NaN values. With `FALSE`,
+  missing values must match an explicitly allowed NA or NaN; these are
+  distinct members. Thus `FALSE` removes the exemption rather than
+  asserting that every observation is nonmissing. Nonnumeric target text
+  can still become NA under the existing data coercion.
+- With valid payloads, empty all-row data pass. An empty set rejects
+  every compared nonmissing numeric value; the default missing-value
+  exemption still applies. Empty numeric/character/logical vectors and
+  lists are supported. Conditions are not evaluated by this executor. A
+  pass on empty or exempted values does not establish that any
+  nonmissing value was compared.
 
 ##### `value_absence` target and wave scopes
 
@@ -647,17 +761,79 @@ the block and its scope.
   are optional nonmatches; empty exclusions do nothing and malformed
   names are unevaluable. Every explicit target must resolve before
   exclusions apply. Excluding every resolved column is allowed.
-- Forbidden-value aliases and numeric/character matching are unchanged.
+- Forbidden-value aliases retain their exact first-non-null precedence.
   Block `forbidden_values`, `forbidden_value`, `sentinel_values`,
   `codes`, or `value` take precedence over inherited parent
   `forbidden_values`, `sentinel_values`, or `value`. Missing/empty
   forbidden values provide no value constraint, but target and wave
-  resolution still runs. This is not general validation of
-  forbidden-value payloads or the remaining validation executors.
+  resolution still runs. Active payloads follow the contract below;
+  other validation executors are unaffected.
 
 The same behavior applies to `assert_absent_values`, `none_equal`,
 `sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
 `value_absence_check`, and `value_restriction`.
+
+The bundled `cv` check `VC01_no_raw_dk` uses one `exclude_variables`
+list for its 27 declared suffix exclusions and `cv17i_Total`. Bare
+suffixes and exact names resolve through the same exclusion mechanism;
+using both parent exclusion keys would mask the suffix list rather than
+combine it. This declaration preserves the recipe’s existing exemptions
+and still checks retained numeric targets for 99, 999 and -9 at error
+severity. It changes validation outcomes, not transformed or serialized
+values. A pass does not establish the substantive meaning of the exempt
+codes or overall analytical validity; other CV checks and non-exempt
+structural codes retain their existing behavior.
+
+##### `value_absence` forbidden-value payloads
+
+Every block’s targets, wave scopes and exclusions resolve before
+forbidden-value parsing. All active payloads then validate before any
+observations are compared. Malformed payloads are unevaluable
+(`passed = NA`) with the declared severity, including when an earlier
+block would fail, selected rows are empty or every column is excluded.
+Existing strict/report handling applies.
+
+- Plain integer, double, logical and character vectors are supported,
+  named or unnamed, including atomic arrays of any size. Flat lists can
+  contain undimensioned primitive scalars and null entries; null entries
+  contribute no members. Classed, raw, complex and other nonprimitive
+  payloads are invalid, as are nested, nonscalar or empty list elements,
+  list arrays and dimensioned list elements.
+- Omitted/null payloads and empty primitive vectors/lists impose no
+  value constraint. Empty non-null declarations block lower-priority
+  aliases and parent fallback. Only selected payloads validate;
+  overridden declarations and unsupported fields remain ignored. An
+  empty or null-only payload still bypasses target value conversion
+  after required scope resolution.
+- Numeric and character matching both apply. Numeric text can match its
+  numeric equivalent; arbitrary text, blank/whitespace strings and
+  literal `"NA"` remain valid character codes. Character matching is
+  exact and case-sensitive. Negative, fractional and signed-infinite
+  numeric codes remain supported.
+- Existing common-type promotion is retained for character forms and
+  logical values. For example, `TRUE` forbids numeric `1` and literal
+  `"TRUE"`; `list(TRUE, 99)` promotes to numeric and uses character
+  `"1"`, while `list(TRUE, "refused")` promotes to text and does not
+  forbid numeric `1`. These forms do not introduce a separate
+  logical-only matching rule.
+- Numeric members of mixed numeric/text lists retain their original
+  precision for numeric matching instead of being rounded through text.
+  For example, `list(1/3, "refused")` now forbids
+  `"0.33333333333333331"`, as a bare numeric `1/3` does. Existing
+  character matches, including rounded representations of numeric
+  values, are preserved.
+- Actual NA/NaN observations remain excluded from both matching paths.
+  Actual NA payload members do not forbid missing observations or
+  literal `"NA"`. Numeric NaN retains the character form `"NaN"`, so it
+  can forbid that literal text but not a numeric NaN observation. A
+  missing-only payload still enters target conversion; it is not treated
+  as an empty payload.
+- Target numeric/character conversion and the union of their match
+  results, violation counts and first failing block/column remain
+  unchanged. With valid payloads, empty scopes, all-excluded columns and
+  all-missing targets retain their existing pass behavior. Conditions
+  and `allow_na` are not used by this executor; this repair does not add
+  target-type validation.
 
 ##### `structural_missingness` target and wave scopes
 
@@ -734,19 +910,65 @@ column already has a match.
   severity and use the strict/report handling above. Diagnostics
   identify unresolved names or the wave and resolved columns lacking the
   value.
-- Existing `value`/`values` numeric coercion and matching are unchanged.
-  An all-NA target cannot supply a nonmissing numeric value, but another
-  selected column may supply it. This contract adds no general
-  value-payload validation.
+- An all-NA target cannot supply a nonmissing numeric value, but another
+  selected column may supply it. Requested values follow the payload
+  contract below; target numeric coercion and the per-wave matching
+  predicate remain unchanged.
 
-##### `na_rate` target and wave scopes
+##### `value_present` requested-value payloads
+
+After required targets, waves and observed-wave membership resolve,
+`value_present` and `value_present_per_wave` parse the entire active
+requested value payload before matching observations. Malformed payloads
+are unevaluable (`passed = NA`) with the declared severity, even when an
+earlier requested value would match. The existing strict/report handling
+applies.
+
+- Exact `value`, then `values`, supply the first non-null payload. A
+  valid primary payload ignores the secondary field; an invalid active
+  primary does not fall back. Fields such as `value_note` and
+  `values_note` cannot supply requested values. Both supported fields
+  can contain multiple values: a match to any requested value in any
+  selected target suffices within each wave.
+- Plain integer, double and numeric-character vectors are supported,
+  named or unnamed, including atomic arrays of any size and flat lists
+  of undimensioned primitive scalars. Numeric text uses R’s numeric
+  parser. Fractional, negative and signed-infinite requests retain their
+  numeric membership semantics. Numeric members of mixed numeric/text
+  lists retain their full precision.
+- Actual NA (including character NA and logical NA from YAML `.na`),
+  numeric NaN and text parsed specifically as NaN remain supported.
+  Logical vectors containing only missing values are accepted as
+  explicit NA requests. NA and NaN match distinctly. Nonmissing text
+  that parses as ordinary NA, including blank strings, `"NA"` and other
+  nonnumeric text, is invalid and cannot accidentally match missing
+  observations.
+- Nonmissing logical, raw, complex and classed payloads,
+  nested/nonscalar/empty list elements, list arrays and dimensioned list
+  elements are unevaluable. Null list members also remain invalid,
+  including YAML `[null]`; they are not dropped as in the `value_in_set`
+  allowed-set parser.
+- Omitted/all-null payload fields and empty numeric/character/logical
+  vectors or lists retain empty-request semantics. An empty non-null
+  primary remains active. No observation can match an empty request, so
+  an otherwise evaluable check fails on the first observed wave.
+  Zero-row data remain unevaluable because this executor requires an
+  observed wave, regardless of the payload.
+- Target values still undergo numeric coercion before matching. An
+  explicit NA request can match nonnumeric target text converted to NA.
+  This executor does not provide string matching, evaluate conditions or
+  use `allow_na`. This repair validates requested values without adding
+  target-type validation.
+
+##### `na_rate` targets, wave scopes and rate payloads
 
 `na_rate` requires every requested target and wave to resolve before a
 condition is applied. Missing targets (including partial matches),
-absent requested waves, malformed scopes and unavailable required wave
-membership are unevaluable (`passed = NA`). A measured rate outside the
-threshold fails (`passed = FALSE`). Both outcomes preserve severity and
-the strict/report handling above.
+absent requested waves, malformed scopes, malformed active rate
+payloads, and unavailable required wave membership are unevaluable
+(`passed = NA`). A measured rate outside the threshold fails
+(`passed = FALSE`). Both outcomes preserve severity and the
+strict/report handling above.
 
 - Target keys, in precedence order, are `suffixes`, `variables`,
   `scope`, and `items`; the first non-null key is used. Names use the
@@ -769,36 +991,71 @@ the strict/report handling above.
 - A valid condition selecting no rows, or empty all-row data with
   resolved targets, retains its pass result. The diagnostic explicitly
   says that no rows were eligible and no NA rate was calculated. All
-  required targets and waves must resolve first; an empty selection
-  cannot excuse missing inputs.
+  required targets and waves must resolve first, and the active
+  threshold and direction must be valid; an empty selection cannot
+  excuse missing inputs or malformed payloads.
 - Rates are calculated separately for each target over the pooled
   selected rows, not separately per wave. Every target must meet the
   threshold. An all-NA target has rate 1; a nonmissing target has
-  rate 0. `above` uses `>=`, otherwise the existing `<=` comparison
-  applies. Threshold precedence is `threshold`, then `max_rate`, then
-  the default: 0 for `not_missing`, 1 otherwise.
+  rate 0. `above` uses `>=` and `below` uses `<=`, including equality at
+  the threshold.
+- Threshold precedence is the first non-null exact field `threshold`,
+  then `max_rate`, then the default: 0 for `not_missing`, 1 otherwise. A
+  malformed active value is unevaluable without falling through; an
+  overridden `max_rate` is ignored. Unrelated fields such as
+  `threshold_note` cannot supply a limit.
+- The active threshold is parsed numerically before condition filtering
+  or rate comparisons. Plain integer, double and numeric-character
+  scalars are supported, named or unnamed, including atomic one-cell
+  arrays and flat one-element lists containing an undimensioned
+  primitive scalar. Numeric text uses R’s numeric parser, without
+  integer truncation. Fractional, negative, outside-0..1 and
+  signed-infinite thresholds retain their numeric predicates; no
+  probability interval restriction is imposed. Violation details show
+  the parsed threshold.
+- Classed thresholds (including factors, dates and custom classes),
+  logical, raw or complex values, empty/multiple/nested values, list
+  arrays, dimensioned list elements, NA/NaN and blank/nonnumeric text
+  are unevaluable. The same restrictions apply inside supported
+  wrappers.
+- The exact `direction` field must contain `above` or `below`,
+  case-sensitive and without surrounding whitespace. Plain character
+  scalars, named or unnamed, atomic one-cell character arrays and flat
+  one-element lists of undimensioned character scalars are supported.
+  Classed, noncharacter, missing, blank, unknown, multiple, nested and
+  unsupported dimensioned payloads are unevaluable. Unknown directions
+  no longer silently use `below`.
+- Both selected payloads are validated after target/wave resolution and
+  before condition filtering or any observed comparison. A failing rate,
+  invalid condition or empty selection cannot bypass payload validation.
+  Unevaluable declarations retain severity and the strict/report
+  behavior above.
 
 Aliases are `na_rate_check`, `na_rate_above`, `na_rate_below`, and
 `not_missing`. `na_rate_above` defaults to direction `above`; the others
-default to `below`. An explicit direction overrides that default. This
-contract does not introduce general threshold/direction validation or
-change the condition evaluator.
+default to `below`. An explicit valid direction overrides that default;
+omitted/null direction retains it. The condition evaluator and other
+validation payload families are unchanged. Passing these checks does not
+establish analytical validity.
 
 ##### `wave_count` required inputs and counting modes
 
 `wave_count` and its alias `n_distinct_wave` require the columns used by
 the selected mode to exist, including on empty data. Missing inputs,
-malformed active person-key requests and unsupported column shapes are
-unevaluable (`passed = NA`). Observed count violations fail
+malformed active bounds or person-key requests and unsupported column
+shapes are unevaluable (`passed = NA`). Observed count violations fail
 (`passed = FALSE`). Both retain the declared severity and strict/report
 handling above.
 
 - A non-null `expected` selects the global distinct-wave mode. Only
   `wave_id` is required; person-key fields and `max_waves` are ignored,
   even when malformed. The count uses `dplyr::n_distinct(wave_id)` and
-  compares with `as.integer(expected)`. Existing scalar coercion,
-  including truncation of fractional expected counts, is preserved. A
-  valid empty dataset has count 0.
+  compares with the parsed bound converted by
+  [`as.integer()`](https://rdrr.io/r/base/integer.html). Fractional
+  expected counts still truncate toward zero; negative counts are not
+  separately prohibited. The conversion must yield a nonmissing integer,
+  so infinite and out-of-range expected counts are unevaluable. A valid
+  empty dataset has count 0.
 - Otherwise, the check limits distinct waves per person. Person-key
   precedence is `column`, then `key`, then `nomem_encr`, using the first
   non-null value. The key must be one nonblank character column name.
@@ -817,29 +1074,41 @@ handling above.
   observations of the same person-wave combination do not increase the
   distinct-wave count.
 - Per-person mode compares the largest count with `max_waves` using
-  `<=`; its default is `Inf`. With no observed persons, the existing
-  empty-set comparison uses `-Inf` without calculating a maximum or
-  emitting a warning. The detail states
+  `<=`; its omitted/null default is `Inf`. Fractional and negative
+  limits and both signed infinities remain supported. With no observed
+  persons, the empty-set comparison uses `-Inf` without calculating a
+  maximum or emitting a warning. The detail states
   `no observed persons; no per-person wave counts calculated`. This is
-  not a measured zero count, and required inputs must still resolve.
+  not a measured zero count; required inputs must still resolve and the
+  active bound must be valid.
+- Both bounds accept a plain integer, double or numeric-character
+  scalar, optionally in a one-element flat list. Names on a scalar do
+  not affect its value. Character values use R’s numeric parser before
+  comparison, so `"10"` means ten rather than a text-ordering limit.
+  `expected` additionally accepts an atomic one-cell array (including a
+  matrix); `max_waves` does not accept arrays. A list’s element must be
+  an undimensioned scalar, not another container. Empty/multiple values,
+  classed objects (including factors and dates), logical, raw and
+  complex values, NA/NaN, blank strings and nonnumeric text are
+  unevaluable. These restrictions also apply inside accepted wrappers.
 - Payload fields use exact names. Fields such as `expected_wave` or
   `column_note` cannot supply `expected` or `column`. No wave filters
   are applied; `waves`, `wave_filter` and `scope_wave` do not restrict
   counts.
-- A comparison that produces an empty, nonscalar, dimensioned or NA
-  result is unevaluable, with a diagnostic naming the selected bound.
-  Existing scalar coercion and comparison remain in use; this does not
-  add general count/bound payload validation or nonmissing-value
-  enforcement.
+- Only the active bound is validated, with a diagnostic naming
+  `expected` or `max_waves` on malformed input. Malformed `expected`
+  never falls back to per-person mode. This bound contract does not
+  change other check types or impose nonmissing-value requirements on
+  the counted identifiers.
 
 ##### `row_count` required wave scope
 
 `row_count` and its alias `assert_row_count_range` compare the number of
 rows with inclusive `min_rows` and `max_rows` bounds (defaults 0 and
 `Inf`). An observed count outside the bounds fails (`passed = FALSE`).
-Missing required wave inputs or malformed scopes are unevaluable
-(`passed = NA`). Both retain the declared severity and strict/report
-handling above.
+Missing required wave inputs, malformed scopes or invalid bounds are
+unevaluable (`passed = NA`). Both retain the declared severity and
+strict/report handling above.
 
 - An omitted or null `wave` counts all rows with `nrow(df)`. No columns
   are required, including `wave_id`; unrelated missing or malformed wave
@@ -865,9 +1134,31 @@ handling above.
   counts.
 - `wave`, `min_rows` and `max_rows` use exact field names; fields such
   as `wave_note` and `min_rows_note` cannot supply those values. Null
-  bounds use their defaults. Existing scalar bound comparisons and
-  coercion remain in use; this contract does not add general
-  bounds-payload validation.
+  bounds use their defaults. After wave resolution, both bounds are
+  parsed before comparing the count, so a failed comparison cannot
+  conceal a malformed other bound.
+- Bounds accept a plain integer, double or numeric-character scalar,
+  named or unnamed, including an atomic one-cell array (such as a
+  matrix). A one-element flat list containing an undimensioned scalar is
+  supported for either bound. Classed objects (including factors/dates),
+  logical, raw or complex values, empty/multiple values, nested or
+  dimensioned lists, list-wrapped arrays, NA/NaN and blank/nonnumeric
+  strings are unevaluable. The restrictions also apply inside wrappers.
+  Character values use R’s numeric parser, so `"10"` means ten rather
+  than a text-ordering limit.
+- Fractional and negative bounds and both signed infinities retain
+  numeric comparison without integer truncation. `min_rows > max_rows`
+  is an invalid declaration, reporting unevaluable instead of an
+  observed count failure. Otherwise an interval is valid even if no
+  integer count can satisfy it; for example, `1.2..1.8`, `Inf..Inf` and
+  `-Inf..-Inf` fail for finite counts. Bounds are validated on empty
+  global data too. Malformed-input diagnostics name the affected field;
+  reversed-bound diagnostics name both fields.
+- Count diagnostics display the parsed numeric endpoints, including the
+  sign of infinity. Scalar lists are normalized for both endpoints;
+  unlike earlier versions, a maximum list does not fail during report
+  formatting. This contract applies only to this executor, without
+  changing wave selection or other checks.
 
 The distinct documentary types `row_count_match` and `row_count_sum`
 remain documentary diagnostics and do not dispatch to this executor.
@@ -876,10 +1167,10 @@ remain documentary diagnostics and do not dispatch to this executor.
 
 `per_wave_mean` requires every selected target to resolve before
 comparing means. Missing targets, including partial matches, malformed
-requests and unavailable wave membership are unevaluable
-(`passed = NA`). An observed finite mean outside the bounds fails
-(`passed = FALSE`). Both outcomes retain the declared severity and the
-strict/report handling above.
+requests and unavailable wave membership or invalid bounds are
+unevaluable (`passed = NA`). An observed finite mean outside the bounds
+fails (`passed = FALSE`). Both outcomes retain the declared severity and
+the strict/report handling above.
 
 - Target keys, in precedence order, are `suffixes`, `variables`,
   `scope`, `applies_to`, `items`, `stems`, `variable`, and `column`; the
@@ -898,23 +1189,42 @@ strict/report handling above.
   `wave_filter` and other wave-scope fields do not restrict its
   comparisons.
 - Resolved targets and a valid zero-row `wave_id` column retain a pass
-  result on empty data, with the diagnostic
+  result on empty data when the bounds are valid, with the diagnostic
   `no observed waves; no means calculated`. Empty data cannot excuse
-  missing targets or a missing `wave_id` column.
+  missing targets, a missing `wave_id` column or invalid bounds.
 - Means use the existing numeric coercion and `na.rm = TRUE`, separately
   for every target in every observed wave. Every finite mean must be
   within the inclusive bounds, `min_mean` (default `-Inf`) and
   `max_mean` (default `Inf`). Values are not pooled across waves or
   targets.
+- Bounds use exact field names; fields such as `min_mean_note` and
+  `max_mean_note` do not supply limits. Omitted/null bounds use their
+  defaults. After targets and wave membership resolve, both bounds are
+  parsed before iterating over means, even when no finite means are
+  available for comparison.
+- Each bound accepts a plain integer, double or numeric-character
+  scalar, named or unnamed, including an atomic one-cell array or a flat
+  one-element list of an undimensioned scalar. Classed objects
+  (including factors/dates), logical, raw or complex values,
+  empty/multiple values, nested or dimensioned lists, list-wrapped
+  arrays, NA/NaN and blank/nonnumeric strings are unevaluable.
+  Restrictions also apply inside wrappers. Strings use R’s numeric
+  parser before comparison. Negative/fractional bounds and both signed
+  infinities are supported; no integer truncation is applied.
+- `min_mean > max_mean` is an invalid declaration, rather than an
+  observed mean violation. Malformed-input diagnostics name the affected
+  field; reversed-bound diagnostics name both. Violation details show
+  the parsed numeric endpoints. A violation at one endpoint cannot
+  conceal a malformed other endpoint.
 - Non-finite means, including all-NA, NaN and infinite means, retain
-  their existing exclusion from bound comparisons. If the check passes,
-  its detail reports the number of these means and the first affected
-  column and wave. A finite bound violation still fails even when other
-  means are non-finite.
+  their existing exclusion from valid bound comparisons. If the check
+  passes, its detail reports the number of these means and the first
+  affected column and wave. A finite bound violation still fails even
+  when other means are non-finite.
 
-This check has no registered type aliases. The contract does not add
-general numeric-value or bounds-payload validation; coercion and
-non-finite handling remain unchanged.
+This check has no registered type aliases. Numeric coercion of the data
+and non-finite-mean handling remain unchanged; these bound requirements
+apply only to this executor.
 
 ##### `expected_presence` validation checks
 
