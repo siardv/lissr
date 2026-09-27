@@ -454,7 +454,7 @@ harmonization_rules:
     "2": 2024
   waves:
   - cw25r
-  notes: "cw25r offers the pension-date items as two categorical options (1 = 2023, 2 = 2024); earlier waves carry calendar years directly, so the recode is scoped to cw25r only. plausible year range 1990-2030 (was an unread valid_range key; re-expressed as a note pending check support)"
+  notes: "cw25r offers the pension-date items as two categorical options (1 = 2023, 2 = 2024); earlier waves carry calendar years directly, so the recode is scoped to cw25r only. V07_pension_dates_numeric checks the inclusive 1990-2030 range after harmonization."
   if_absent: warn_and_create_na
   log: true
 - rule_id: HR04_label_case
@@ -921,18 +921,14 @@ validation_checks:
   - cw23p
 - check_id: V02_wage_numeric
   anomaly_ref: A-02
-  description: q323 contains only numeric >= 0 or sentinel/NA
+  description: numeric q323 values are within 0-1000000 after harmonization
   type: range_check
   severity: error
   variable: q323
-  valid_range:
-  - 0
-  - 1000000
+  min: 0
+  max: 1000000
   allow_na: true
-  allow_sentinel: true
-  sentinel_values:
-  - -9
-  - -8
+  notes: "HR01_sentinel_recode converts -9/-8 to NA before validation; missing values are excluded from the range check, and V08_no_sentinels rejects residual numeric sentinels."
 - check_id: V03_q112_structure
   anomaly_ref: A-03
   description: q112 is character in 11d-20m and all-NA in 21n-25r
@@ -1037,9 +1033,8 @@ validation_checks:
   - q177
   - q181
   - q185
-  valid_range:
-  - 1990
-  - 2030
+  min: 1990
+  max: 2030
   allow_na: true
 - check_id: V08_no_sentinels
   anomaly_ref: null

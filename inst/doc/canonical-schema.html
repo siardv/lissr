@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: 3e902d5b0f0be5d8d8db2d8ff84773dd -->
+<!-- schema-source-md5: 671bdd5cb8abc9be51706631339bd72d -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1210,6 +1210,19 @@ This repair adds no data-type validation or support for
 <code>valid_range</code>, sentinel exceptions or condition
 filtering.</li>
 </ul>
+<p>The bundled Work and Schooling (<code>cw</code>) recipe uses
+<code>min</code>/<code>max</code> for <code>V02_wage_numeric</code>
+(0–1000000, error severity) and <code>V07_pension_dates_numeric</code>
+(1990–2030, warning severity). Both intervals are inclusive and apply
+after harmonization. <code>HR01_sentinel_recode</code> converts numeric
+<code>-9</code>/<code>-8</code> codes to NA before validation; the range
+checks exclude missing values, and <code>V08_no_sentinels</code>
+separately rejects residual numeric sentinels. The pension check covers
+all ten declared targets across all waves;
+<code>HR03_pension_dates</code> recodes <code>1</code>/<code>2</code> to
+<code>2023</code>/<code>2024</code> only in <code>cw25r</code>. These
+are numeric interval checks, not integer-year or target-type assertions;
+harmonization rules are unchanged.</p>
 </div>
 <div id="value_in_set-allowed-values-and-missing-value-handling" class="section level5">
 <h5><code>value_in_set</code> allowed values and missing-value

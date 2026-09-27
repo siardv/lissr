@@ -633,6 +633,187 @@ test_that("cs value presence checks its zero-padded target in every wave", {
   expect_false(evaluate(df)$passed)
 })
 
+.cw_range_checks <- function(recipe) {
+  checks <- stats::setNames(recipe$validation_checks,
+    vapply(recipe$validation_checks, function(check) check$check_id, character(1)))
+  checks[c("V02_wage_numeric", "V07_pension_dates_numeric")]
+}
+
+test_that("cw range declarations enforce their inclusive bounds on every target", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cw_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- .cw_range_checks(recipe)
+  targets <- list("q323", sprintf("q%03d", seq(149, 185, 4)))
+  bounds <- list(c(0, 1000000), c(1990, 2030))
+  evaluate <- function(data, check) suppressWarnings(suppressMessages(
+    lissr:::run_validations(data, list(check), list())))$results[[1]]
+  for (i in seq_along(checks)) {
+    check <- checks[[i]]
+    lo <- bounds[[i]][[1]]; hi <- bounds[[i]][[2]]
+    expect_equal(check[["min"]], lo)
+    expect_equal(check[["max"]], hi)
+    expect_null(check[["valid_range"]])
+    expect_identical(check$severity, c("error", "warning")[[i]])
+    expect_identical(check$variables %||% check$variable, targets[[i]])
+    expect_true(check$allow_na)
+    columns <- sub("^q", "s", targets[[i]])
+    df <- data.frame(wave_id = rep(c("cw11d", "cw25r"), each = 2L))
+    for (column in columns) df[[column]] <- c(lo, hi, NA_real_, NaN)
+    expect_true(evaluate(df, check)$passed)
+    expect_true(evaluate(df[FALSE, , drop = FALSE], check)$passed)
+    missing <- df
+    for (column in columns) missing[[column]] <- NA_real_
+    expect_true(evaluate(missing, check)$passed)
+    before <- df
+    for (column in columns) {
+      for (value in c(lo - 1, hi + 1, -Inf, Inf)) {
+        bad <- df
+        bad[[column]][[1]] <- value
+        result <- evaluate(bad, check)
+        expect_false(result$passed)
+        expect_identical(result$severity, check$severity)
+        expect_match(result$detail %||% "", paste0("1 out-of-range value(s) in ", column),
+                     fixed = TRUE)
+      }
+    }
+    expect_identical(df, before)
+  }
+  expect_null(checks[[1]][["allow_sentinel"]])
+  expect_null(checks[[1]][["sentinel_values"]])
+  absence <- Filter(function(check) check$check_id == "V08_no_sentinels",
+                     recipe$validation_checks)[[1]]
+  for (value in c(-9, -8)) {
+    df <- data.frame(s323 = value)
+    expect_false(evaluate(df, checks[[1]])$passed)
+    expect_false(evaluate(df, absence)$passed)
+  }
+})
+
+test_that("cw range validation follows existing wage and pension recodes", {
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cw_merge_recipe.yml",
+                                             package = "lissr"))
+  checks <- .cw_range_checks(recipe)
+  rules <- stats::setNames(c(recipe$variable_rules, recipe$harmonization_rules),
+    vapply(c(recipe$variable_rules, recipe$harmonization_rules),
+           function(rule) rule$rule_id, character(1)))
+  columns <- sprintf("s%03d", seq(149, 185, 4))
+  wage <- c(-9, -8, 0, 1000000, 1000001)
+  for (values in list(wage, as.character(wage),
+                      haven::labelled(wage, c(dk = -9, refusal = -8)))) {
+    for (wave in c("cw24q", "cw25r")) {
+      pension <- if (wave == "cw25r") c(1, 2, -9, -8, 5) else
+        c(1990, 2030, -9, -8, 1989)
+      df <- data.frame(s323 = values, s359 = values, s362 = values)
+      for (column in columns) df[[column]] <- pension
+      before <- df
+      output <- suppressWarnings(suppressMessages(lissr:::exec_variable_rule(
+        df, rules$VR03_q323_force_numeric, wave, list(), recipe$meta$covered_waves, list())))
+      expect_equal(output$df$s323, wage)
+      expect_type(output$df$s323, "double")
+      output <- suppressWarnings(suppressMessages(lissr:::exec_harmonization_rule(
+        output$df, rules$HR01_sentinel_recode, wave, list(),
+        recipe$meta$covered_waves, output$log)))
+      output <- suppressWarnings(suppressMessages(lissr:::exec_harmonization_rule(
+        output$df, rules$HR03_pension_dates, wave, list(),
+        recipe$meta$covered_waves, output$log)))
+      expect_equal(output$df$s323, c(NA, NA, 0, 1000000, 1000001))
+      expected <- if (wave == "cw25r") c(2023, 2024, NA, NA, 5) else
+        c(1990, 2030, NA, NA, 1989)
+      for (column in columns) expect_equal(output$df[[column]], expected)
+      sentinel_log <- Filter(function(entry) entry$rule_id == "HR01_sentinel_recode",
+                              output$log)
+      expect_equal(sentinel_log[[1]]$values_changed, 26)
+      pension_log <- Filter(function(entry) entry$rule_id == "HR03_pension_dates",
+                             output$log)
+      expect_length(pension_log, if (wave == "cw25r") 10L else 0L)
+      if (length(pension_log))
+        expect_true(all(vapply(pension_log, function(entry) entry$values_changed == 2,
+                               logical(1))))
+      output$df$wave_id <- wave
+      for (check in checks) {
+        result <- suppressWarnings(suppressMessages(lissr:::run_validations(
+          output$df, list(check), list())))$results[[1]]
+        expect_false(result$passed)
+        result <- suppressWarnings(suppressMessages(lissr:::run_validations(
+          output$df[1:4, , drop = FALSE], list(check), list())))$results[[1]]
+        expect_true(result$passed)
+      }
+      expect_identical(df, before)
+    }
+  }
+})
+
+test_that("cw range outcomes preserve strict outputs, reports and harmonized values", {
+  skip_if_not_installed("haven")
+  recipe <- yaml::yaml.load_file(system.file("recipes", "cw_merge_recipe.yml",
+                                             package = "lissr"))
+  pension_columns <- sprintf("s%03d", seq(149, 185, 4))
+  for (scenario in c("valid", "wage", "pension")) {
+    fixture_dir <- withr::local_tempdir("lissr_cw_range_")
+    data_dir <- file.path(fixture_dir, "data")
+    output_dir <- file.path(fixture_dir, "output")
+    dir.create(data_dir)
+    .gen_module_fixture(recipe, data_dir)
+    source <- file.path(data_dir, "cw25r_EN_1.0p.sav")
+    raw <- haven::read_sav(source)
+    raw$cw25r323 <- c(-9, -8, if (scenario == "wage") 1000001 else 1000000)
+    for (column in pension_columns)
+      raw[[sub("^s", "cw25r", column)]] <- c(1, 2, 1990)
+    if (scenario == "pension") raw$cw25r185[[3]] <- 2031
+    haven::write_sav(raw, source)
+    source_hashes <- tools::md5sum(list.files(data_dir, full.names = TRUE))
+    if (scenario == "wage") {
+      dir.create(output_dir)
+      writeLines("keep this", file.path(output_dir, "existing.txt"))
+      expect_error(suppressWarnings(suppressMessages(merge_liss_module(
+        recipe, data_dir, output_dir, strict = TRUE))), "strict mode: no outputs were written")
+      expect_identical(list.files(output_dir), "existing.txt")
+      expect_identical(readLines(file.path(output_dir, "existing.txt")), "keep this")
+    }
+    for (strict in if (scenario == "pension") c(TRUE, FALSE) else scenario == "valid") {
+      result <- suppressWarnings(suppressMessages(merge_liss_module(
+        recipe, data_dir, output_dir, strict = strict)))
+      expect_identical(result$valid_for_analysis, scenario != "wage")
+      checks <- stats::setNames(result$validation,
+        vapply(result$validation, function(check) check$check_id, character(1)))
+      expect_identical(checks$V02_wage_numeric$passed, scenario != "wage")
+      expect_identical(checks$V07_pension_dates_numeric$passed, scenario != "pension")
+      expect_true(checks$V08_no_sentinels$passed)
+      report <- readLines(file.path(output_dir, "cw_merge_report.txt"))
+      expect_true(any(grepl(paste0("[error] V02_wage_numeric: ",
+        if (scenario == "wage") "FAIL" else "PASS"), report, fixed = TRUE)))
+      expect_true(any(grepl(paste0("[warning] V07_pension_dates_numeric: ",
+        if (scenario == "pension") "FAIL" else "PASS"), report, fixed = TRUE)))
+      if (scenario != "valid") {
+        check <- checks[[if (scenario == "wage") "V02_wage_numeric" else
+          "V07_pension_dates_numeric"]]
+        expect_match(check$detail %||% "", if (scenario == "wage") "s323" else "s185")
+        if (!is.null(check$detail))
+          expect_true(any(grepl(check$detail, report, fixed = TRUE)))
+      }
+      written <- haven::read_sav(file.path(output_dir, "cw_merged.sav"))
+      for (data in list(result$data, written)) {
+        latest <- data$wave_id == "cw25r"
+        expect_equal(as.numeric(data$s323[latest]),
+                     c(NA, NA, if (scenario == "wage") 1000001 else 1000000))
+        for (column in pension_columns) {
+          expected <- c(2023, 2024, if (scenario == "pension" && column == "s185") 2031 else 1990)
+          expect_equal(as.numeric(data[[column]][latest]), expected)
+          if (scenario == "valid")
+            expect_true(all(is.na(data[[column]]) |
+              (data[[column]] >= 1990 & data[[column]] <= 2030)))
+        }
+        if (scenario == "valid")
+          expect_true(all(is.na(data$s323) | (data$s323 >= 0 & data$s323 <= 1000000)))
+      }
+      expect_equal(as.data.frame(written[c("s323", pension_columns)]),
+                   as.data.frame(result$data[c("s323", pension_columns)]),
+                   ignore_attr = TRUE)
+      expect_identical(tools::md5sum(list.files(data_dir, full.names = TRUE)), source_hashes)
+    }
+  }
+})
+
 test_that("every bundled recipe merges a synthetic panel end to end", {
   skip_if_not_installed("haven")
   mods <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")

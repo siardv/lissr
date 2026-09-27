@@ -1,5 +1,13 @@
 # lissr (development)
 
+* The Work and Schooling (`cw`) recipe now enforces its declared wage
+  (0–1000000, error) and pension-date (1990–2030, warning) bounds using executable
+  `min`/`max` fields. The previous `valid_range` declarations were ignored.
+  Wage sentinel exceptions are removed from the check because existing
+  harmonization converts `-9`/`-8` to NA before validation, and the separate
+  sentinel check rejects residual codes. Transformations and merged values are
+  unchanged; out-of-range observations now receive the declared validation result.
+
 * `value_absence` and its aliases now validate every active forbidden-value
   payload after resolving all block scopes and before comparing observations.
   Malformed payloads are unevaluable with the declared severity, even on empty

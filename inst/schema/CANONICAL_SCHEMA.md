@@ -598,6 +598,16 @@ values will be compared. Severity and strict/report handling are preserved.
   that any value was compared. This repair adds no data-type validation or
   support for `valid_range`, sentinel exceptions or condition filtering.
 
+The bundled Work and Schooling (`cw`) recipe uses `min`/`max` for
+`V02_wage_numeric` (0–1000000, error severity) and
+`V07_pension_dates_numeric` (1990–2030, warning severity). Both intervals are
+inclusive and apply after harmonization. `HR01_sentinel_recode` converts numeric
+`-9`/`-8` codes to NA before validation; the range checks exclude missing values,
+and `V08_no_sentinels` separately rejects residual numeric sentinels. The pension
+check covers all ten declared targets across all waves; `HR03_pension_dates`
+recodes `1`/`2` to `2023`/`2024` only in `cw25r`. These are numeric interval checks,
+not integer-year or target-type assertions; harmonization rules are unchanged.
+
 #### `value_in_set` allowed values and missing-value handling
 
 After target and wave resolution, `value_in_set` and its aliases parse the global
