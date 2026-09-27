@@ -2485,6 +2485,52 @@ safe_eval_condition <- function(cond, df) {
        present_waves = present_waves, wave_ids = wave_ids)
 }
 
+#' parse an allowed set without introducing missing values by coercion (internal)
+#' @noRd
+.value_set_allowed <- function(value, field = "allowed values") {
+  invalid <- function() {
+    stop("value_in_set ", field, " must contain numeric values or explicit NA/NaN",
+         call. = FALSE)
+  }
+  parse_values <- function(x) {
+    if (is.null(x)) return(numeric())
+    if (is.object(x) ||
+        !(typeof(x) %in% c("integer", "double", "character", "logical"))) invalid()
+    if (is.logical(x) && any(!is.na(x))) invalid()
+    parsed <- suppressWarnings(as.numeric(x))
+    if (is.character(x) && any(!is.na(x) & is.na(parsed) & !is.nan(parsed))) invalid()
+    parsed
+  }
+  if (is.object(value)) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- lapply(value, function(x) {
+      if (!is.null(x) && (length(x) != 1L || !is.null(dim(x)))) invalid()
+      parse_values(x)
+    })
+    return(as.numeric(unlist(value, use.names = FALSE)))
+  }
+  parse_values(value)
+}
+
+#' parse the global missing-value exemption for set checks (internal)
+#' @noRd
+.value_set_allow_na <- function(value) {
+  invalid <- function() {
+    stop("value_in_set allow_na must contain one nonmissing logical value",
+         call. = FALSE)
+  }
+  if (is.object(value) || length(value) != 1L) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- value[[1]]
+    if (!is.null(dim(value))) invalid()
+  }
+  if (is.object(value) || !is.logical(value) || length(value) != 1L ||
+      is.na(value)) invalid()
+  unname(as.logical(value))
+}
+
 #' parse one value-range endpoint before comparing target values (internal)
 #' @noRd
 .value_range_bound <- function(value, field) {
@@ -2694,22 +2740,32 @@ run_validations <- function(df, checks, log_entries) {
           }
           row_scope <- .check_rows(df, chk, details = TRUE)
           .require_check_scope(cols, row_scope)
-          allow_na <- !isFALSE(chk[["allow_na"]])
+          allow_na <- .value_set_allow_na(chk[["allow_na"]] %||% TRUE)
+          # parse every active set before an earlier violation can stop iteration
+          if (per_var) {
+            allowed_sets <- lapply(seq_along(variables), function(i) {
+              v <- variables[[i]]
+              .value_set_allowed(v[["allowed"]] %||% v[["allowed_values"]],
+                                 paste0("allowed values for ", targets[[i]]))
+            })
+          } else {
+            allowed <- .value_set_allowed(
+              chk[["allowed_values"]] %||% chk[["allowed"]] %||% chk[["values"]])
+          }
           row_keep <- row_scope$rows
           passed <- TRUE
           detail <- NULL
           test_col <- function(col, allowed) {
             vals <- df[[col]][row_keep]
             vals <- suppressWarnings(as.numeric(vals))
-            bad <- !(vals %in% suppressWarnings(as.numeric(unlist(allowed))))
+            bad <- !(vals %in% allowed)
             if (allow_na) bad <- bad & !is.na(vals)
             sum(bad, na.rm = TRUE)
           }
           if (per_var) {
             for (i in seq_along(variables)) {
-              v <- variables[[i]]
               col <- cols$resolved[[i]]
-              n_bad <- test_col(col, v[["allowed"]] %||% v[["allowed_values"]])
+              n_bad <- test_col(col, allowed_sets[[i]])
               if (n_bad > 0) {
                 passed <- FALSE
                 detail <- paste0(n_bad, " out-of-set value(s) in ", col)
@@ -2717,7 +2773,6 @@ run_validations <- function(df, checks, log_entries) {
               }
             }
           } else {
-            allowed <- chk[["allowed_values"]] %||% chk[["allowed"]] %||% chk[["values"]]
             for (col in cols$resolved) {
               n_bad <- test_col(col, allowed)
               if (n_bad > 0) {

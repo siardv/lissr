@@ -598,6 +598,49 @@ values will be compared. Severity and strict/report handling are preserved.
   that any value was compared. This repair adds no data-type validation or
   support for `valid_range`, sentinel exceptions or condition filtering.
 
+#### `value_in_set` allowed values and missing-value handling
+
+After target and wave resolution, `value_in_set` and its aliases parse the global
+`allow_na` flag and every active allowed set before comparing any target. Invalid
+payloads are unevaluable (`passed = NA`) with the declared severity, even on empty
+or all-missing data or when an earlier target violates its set.
+
+- Shared sets use the first non-null exact field among `allowed_values`,
+  `allowed`, and `values`. Per-variable entries use `allowed`, then
+  `allowed_values`. Empty non-null sets remain active; omitted/null fields
+  ultimately default to an empty set. Per-variable mode ignores shared sets,
+  and entries do not support `values` or their own `allow_na` overrides.
+- Allowed values can be plain integer, double or numeric-character vectors,
+  named or unnamed, including atomic arrays of any size. Flat lists of
+  undimensioned primitive scalars are supported; null entries contribute no
+  members. Numeric text uses R's numeric parser. Fractional, negative and
+  signed-infinite values retain their membership semantics. List members are
+  parsed separately, preserving numeric precision when numbers and text are
+  mixed instead of first converting the numbers to text.
+- Actual NA values (including character NA and logical NA from YAML `.na`),
+  numeric NaN and text parsed as NaN are supported. Logical vectors containing
+  only missing values are accepted as explicit NA declarations. Nonmissing
+  logical values, raw/complex/classed payloads, nested or nonscalar list elements,
+  list arrays and dimensioned list elements are unevaluable. Nonmissing text
+  that parses as ordinary NA, including blank strings, `"NA"` and other
+  nonnumeric text, is invalid and cannot accidentally admit missing observations.
+- Exact global `allow_na` defaults to `TRUE` when omitted/null. It accepts a
+  plain nonmissing scalar logical, named or unnamed, an atomic one-cell logical
+  array, or a flat one-element list of an undimensioned logical scalar.
+  In particular, `list(FALSE)` now applies `FALSE`. Classed, numeric, character,
+  missing, empty, multiple and nested flag values are unevaluable.
+- Target values retain their existing numeric coercion before membership
+  testing; this check does not implement string-set matching. `allow_na = TRUE`
+  exempts all converted NA/NaN values. With `FALSE`, missing values must match an
+  explicitly allowed NA or NaN; these are distinct members. Thus `FALSE` removes
+  the exemption rather than asserting that every observation is nonmissing.
+  Nonnumeric target text can still become NA under the existing data coercion.
+- With valid payloads, empty all-row data pass. An empty set rejects every
+  compared nonmissing numeric value; the default missing-value exemption still
+  applies. Empty numeric/character/logical vectors and lists are supported.
+  Conditions are not evaluated by this executor. A pass on empty or exempted
+  values does not establish that any nonmissing value was compared.
+
 #### `value_absence` target and wave scopes
 
 `value_absence` uses the required-target contract above: missing columns or

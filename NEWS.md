@@ -1,5 +1,15 @@
 # lissr (development)
 
+* `value_in_set` and its aliases now validate allowed sets and the global
+  `allow_na` flag before comparing values, including every per-variable set.
+  Malformed payloads are unevaluable with the declared severity, even on empty
+  data or after an earlier value violation. Nonnumeric allowed text can no
+  longer accidentally admit NA values, and `list(FALSE)` now disables the
+  missing-value exemption. Mixed numeric/text lists retain numeric precision.
+  Numeric vectors and supported wrappers, explicit
+  NA/NaN membership, null/empty sets, alias precedence, scope resolution and
+  target numeric coercion retain their documented behavior.
+
 * `value_range` and its aliases now parse both exact `min`/`max` bounds before
   comparing values. Numeric text compares numerically; malformed or reversed
   bounds are unevaluable with the declared severity, even when the other bound

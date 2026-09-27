@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: 7ed341c69387c930ef9238688031e594 -->
+<!-- schema-source-md5: 10d1eec7691798ef8bb6c30fb258aa79 -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1209,6 +1209,63 @@ behavior. Such a pass does not establish that any value was compared.
 This repair adds no data-type validation or support for
 <code>valid_range</code>, sentinel exceptions or condition
 filtering.</li>
+</ul>
+</div>
+<div id="value_in_set-allowed-values-and-missing-value-handling" class="section level5">
+<h5><code>value_in_set</code> allowed values and missing-value
+handling</h5>
+<p>After target and wave resolution, <code>value_in_set</code> and its
+aliases parse the global <code>allow_na</code> flag and every active
+allowed set before comparing any target. Invalid payloads are
+unevaluable (<code>passed = NA</code>) with the declared severity, even
+on empty or all-missing data or when an earlier target violates its
+set.</p>
+<ul>
+<li>Shared sets use the first non-null exact field among
+<code>allowed_values</code>, <code>allowed</code>, and
+<code>values</code>. Per-variable entries use <code>allowed</code>, then
+<code>allowed_values</code>. Empty non-null sets remain active;
+omitted/null fields ultimately default to an empty set. Per-variable
+mode ignores shared sets, and entries do not support <code>values</code>
+or their own <code>allow_na</code> overrides.</li>
+<li>Allowed values can be plain integer, double or numeric-character
+vectors, named or unnamed, including atomic arrays of any size. Flat
+lists of undimensioned primitive scalars are supported; null entries
+contribute no members. Numeric text uses R’s numeric parser. Fractional,
+negative and signed-infinite values retain their membership semantics.
+List members are parsed separately, preserving numeric precision when
+numbers and text are mixed instead of first converting the numbers to
+text.</li>
+<li>Actual NA values (including character NA and logical NA from YAML
+<code>.na</code>), numeric NaN and text parsed as NaN are supported.
+Logical vectors containing only missing values are accepted as explicit
+NA declarations. Nonmissing logical values, raw/complex/classed
+payloads, nested or nonscalar list elements, list arrays and dimensioned
+list elements are unevaluable. Nonmissing text that parses as ordinary
+NA, including blank strings, <code>&quot;NA&quot;</code> and other nonnumeric
+text, is invalid and cannot accidentally admit missing
+observations.</li>
+<li>Exact global <code>allow_na</code> defaults to <code>TRUE</code>
+when omitted/null. It accepts a plain nonmissing scalar logical, named
+or unnamed, an atomic one-cell logical array, or a flat one-element list
+of an undimensioned logical scalar. In particular,
+<code>list(FALSE)</code> now applies <code>FALSE</code>. Classed,
+numeric, character, missing, empty, multiple and nested flag values are
+unevaluable.</li>
+<li>Target values retain their existing numeric coercion before
+membership testing; this check does not implement string-set matching.
+<code>allow_na = TRUE</code> exempts all converted NA/NaN values. With
+<code>FALSE</code>, missing values must match an explicitly allowed NA
+or NaN; these are distinct members. Thus <code>FALSE</code> removes the
+exemption rather than asserting that every observation is nonmissing.
+Nonnumeric target text can still become NA under the existing data
+coercion.</li>
+<li>With valid payloads, empty all-row data pass. An empty set rejects
+every compared nonmissing numeric value; the default missing-value
+exemption still applies. Empty numeric/character/logical vectors and
+lists are supported. Conditions are not evaluated by this executor. A
+pass on empty or exempted values does not establish that any nonmissing
+value was compared.</li>
 </ul>
 </div>
 <div id="value_absence-target-and-wave-scopes" class="section level5">
