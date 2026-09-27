@@ -747,9 +747,48 @@ resolve before matching begins, even when another column already has a match.
   without a matching value reports `passed = FALSE`. Both retain severity and
   use the strict/report handling above. Diagnostics identify unresolved names
   or the wave and resolved columns lacking the value.
-- Existing `value`/`values` numeric coercion and matching are unchanged. An
-  all-NA target cannot supply a nonmissing numeric value, but another selected
-  column may supply it. This contract adds no general value-payload validation.
+- An all-NA target cannot supply a nonmissing numeric value, but another
+  selected column may supply it. Requested values follow the payload contract
+  below; target numeric coercion and the per-wave matching predicate remain
+  unchanged.
+
+#### `value_present` requested-value payloads
+
+After required targets, waves and observed-wave membership resolve,
+`value_present` and `value_present_per_wave` parse the entire active requested
+value payload before matching observations. Malformed payloads are unevaluable
+(`passed = NA`) with the declared severity, even when an earlier requested value
+would match. The existing strict/report handling applies.
+
+- Exact `value`, then `values`, supply the first non-null payload. A valid
+  primary payload ignores the secondary field; an invalid active primary does
+  not fall back. Fields such as `value_note` and `values_note` cannot supply
+  requested values. Both supported fields can contain multiple values: a match
+  to any requested value in any selected target suffices within each wave.
+- Plain integer, double and numeric-character vectors are supported, named or
+  unnamed, including atomic arrays of any size and flat lists of undimensioned
+  primitive scalars. Numeric text uses R's numeric parser. Fractional, negative
+  and signed-infinite requests retain their numeric membership semantics.
+  Numeric members of mixed numeric/text lists retain their full precision.
+- Actual NA (including character NA and logical NA from YAML `.na`), numeric
+  NaN and text parsed specifically as NaN remain supported. Logical vectors
+  containing only missing values are accepted as explicit NA requests. NA and
+  NaN match distinctly. Nonmissing text that parses as ordinary NA, including
+  blank strings, `"NA"` and other nonnumeric text, is invalid and cannot
+  accidentally match missing observations.
+- Nonmissing logical, raw, complex and classed payloads, nested/nonscalar/empty
+  list elements, list arrays and dimensioned list elements are unevaluable.
+  Null list members also remain invalid, including YAML `[null]`; they are
+  not dropped as in the `value_in_set` allowed-set parser.
+- Omitted/all-null payload fields and empty numeric/character/logical vectors
+  or lists retain empty-request semantics. An empty non-null primary remains
+  active. No observation can match an empty request, so an otherwise evaluable
+  check fails on the first observed wave. Zero-row data remain unevaluable
+  because this executor requires an observed wave, regardless of the payload.
+- Target values still undergo numeric coercion before matching. An explicit NA
+  request can match nonnumeric target text converted to NA. This executor does
+  not provide string matching, evaluate conditions or use `allow_na`. This
+  repair validates requested values without adding target-type validation.
 
 #### `na_rate` targets, wave scopes and rate payloads
 

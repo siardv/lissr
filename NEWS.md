@@ -1,5 +1,14 @@
 # lissr (development)
 
+* `value_present` and `value_present_per_wave` now validate the entire active
+  `value`/`values` payload before matching observations. Malformed text and list
+  elements can no longer create accidental NA matches, and exact field lookup
+  prevents unrelated fields from supplying requested values. Invalid payloads
+  are unevaluable with the declared severity. Numeric vectors and supported
+  wrappers, explicit NA/NaN matching, empty requests, alias/null precedence,
+  required scope resolution and any-target-per-wave matching are preserved.
+  Target numeric coercion remains unchanged.
+
 * `value_in_set` and its aliases now validate allowed sets and the global
   `allow_na` flag before comparing values, including every per-variable set.
   Malformed payloads are unevaluable with the declared severity, even on empty

@@ -249,7 +249,7 @@ test_that("value presence preserves numeric coercion and multiple-value matching
   check$value <- NA_real_
   expect_true(.value_present_validation(check)$results[[1]]$passed)
   check$value <- "not numeric"
-  expect_true(.value_present_validation(check)$results[[1]]$passed)
+  .expect_value_present_unevaluable(check, pattern = "value")
   check <- .value_present_check()
   df <- .value_present_data()
   df$s005 <- as.character(df$s005)
@@ -270,13 +270,187 @@ test_that("value-presence failures and unavailable inputs retain severity", {
   }
 })
 
-.value_present_merge_fixture <- function(check, .local_envir = parent.frame()) {
+test_that("presence requests preserve numeric vectors, arrays and scalar lists", {
+  values <- c(-Inf, -1.5, 0, 2, Inf, NA, NaN)
+  text <- c("-Inf", " -1.5 ", "0", "2e0", "Inf", NA_character_, "NaN")
+  forms <- list(values, stats::setNames(values, letters[seq_along(values)]), text,
+                array(values, c(1, 7, 1)), matrix(text), as.list(values),
+                list(-Inf, "-1.5", 0L, "2e0", Inf, NA, "NaN"))
+  for (type in c("value_present", "value_present_per_wave")) {
+    for (field in c("value", "values")) {
+      for (requested in forms) {
+        check <- .value_present_check()
+        check$type <- type
+        check$value <- NULL
+        check[[field]] <- requested
+        check$waves <- "all"
+        df <- data.frame(wave_id = paste0("w", seq_along(values)), s005 = values)
+        expect_true(.value_present_validation(check, df)$results[[1]]$passed)
+        df$s005[[1]] <- 99
+        result <- .value_present_validation(check, df)$results[[1]]
+        expect_false(result$passed)
+        expect_identical(result$detail, paste0("value ", paste(values, collapse = "/"),
+                                               " absent in wave w1; columns: s005"))
+      }
+    }
+  }
+  for (requested in list(c(-1L, 2L), list(-1L, 2L), matrix(c(-1L, 2L)))) {
+    check <- .value_present_check()
+    check$value <- requested
+    check$waves <- "all"
+    expect_true(.value_present_validation(check,
+      data.frame(wave_id = c("w1", "w2"), s005 = c(-1L, 2L)))$results[[1]]$passed)
+  }
+  check <- .value_present_check()
+  check$value <- list(1 / 3, "0.5")
+  df <- data.frame(wave_id = "w1", s005 = 1 / 3)
+  expect_true(.value_present_validation(check, df)$results[[1]]$passed)
+  df$s005 <- as.numeric(as.character(1 / 3))
+  expect_false(.value_present_validation(check, df)$results[[1]]$passed)
+})
+
+test_that("presence requests retain exact aliases, null fallback and empty predicates", {
+  for (type in c("value_present", "value_present_per_wave")) {
+    check <- .value_present_check()
+    check$type <- type
+    check$values <- "garbage"
+    expect_true(.value_present_validation(check)$results[[1]]$passed)
+    check$value <- "garbage"
+    check$values <- 1
+    .expect_value_present_unevaluable(check, pattern = "value")
+    check["value"] <- list(NULL)
+    expect_true(.value_present_validation(check)$results[[1]]$passed)
+    for (field in c("value", "values")) {
+      check <- .value_present_check()
+      check$type <- type
+      check$value <- NULL
+      check[[paste0(field, "_note")]] <- 1
+      expect_false(.value_present_validation(check)$results[[1]]$passed)
+      check[field] <- list(NULL)
+      expect_false(.value_present_validation(check)$results[[1]]$passed)
+    }
+    for (requested in list(NULL, numeric(), character(), logical(), list(),
+                           array(numeric(), c(0, 1)))) {
+      check <- .value_present_check()
+      check$type <- type
+      check["value"] <- list(requested)
+      result <- .value_present_validation(check)
+      expect_false(result$results[[1]]$passed)
+      expect_identical(result$error_count, 1L)
+      expect_identical(result$error_skips, character())
+      check$values <- 1
+      expect_identical(.value_present_validation(check)$results[[1]]$passed,
+                       is.null(requested))
+    }
+  }
+})
+
+test_that("presence requests distinguish explicit NA, NaN and YAML missing values", {
+  forms <- list(NA_real_, NA_integer_, NA_character_, NA, c(NA, NA), list(NA),
+                matrix(NA), NaN, "NaN", list(NaN), c(NA_real_, NaN),
+                yaml::yaml.load("value: [.na]")$value,
+                yaml::yaml.load("value: [.nan]")$value,
+                yaml::yaml.load("value: [.na, .nan]")$value)
+  for (field in c("value", "values")) {
+    for (requested in forms) {
+      check <- .value_present_check()
+      check$value <- NULL
+      check[[field]] <- requested
+      for (value in c(NA_real_, NaN)) {
+        df <- data.frame(wave_id = "w1", s005 = value)
+        expect_identical(.value_present_validation(check, df)$results[[1]]$passed,
+                         value %in% as.numeric(requested))
+      }
+    }
+  }
+})
+
+test_that("entire presence requests validate before any matching observation", {
+  invalid <- list("garbage", "", " \t", "NA", c(1, "junk"), list(1, "junk"),
+                  TRUE, c(NA, FALSE), as.raw(1), 1 + 1i, factor("1"),
+                  as.Date("1970-01-02"), structure(1, class = "request"),
+                  list(NULL), list(1, NULL, 2), list(numeric()), list(character()),
+                  list(list()), list(list(1)), list(c(1, 2)), list(TRUE),
+                  list(as.raw(1)), list(1 + 1i), list(factor("1")),
+                  list(structure(1, class = "request")), list(matrix(1)),
+                  matrix(list(1)), matrix(TRUE), data.frame(x = 1),
+                  yaml::yaml.load("value: [null]")$value,
+                  yaml::yaml.load("value: [NA]")$value)
+  for (field in c("value", "values")) {
+    for (requested in invalid) {
+      check <- .value_present_check()
+      check$value <- NULL
+      check[[field]] <- requested
+      for (values in list(c(1, NA), c(NA_real_, NaN))) {
+        .expect_value_present_unevaluable(check,
+          data.frame(wave_id = "w1", s005 = values), "value")
+      }
+    }
+  }
+})
+
+test_that("presence payloads preserve severity and follow complete scope preflight", {
+  for (severity in c("error", "warning", "info")) {
+    check <- .value_present_check(severity = severity)
+    check$value <- "garbage"
+    .expect_value_present_unevaluable(check, pattern = "value")
+    check$variables <- c("005", "absent_column")
+    .expect_value_present_unevaluable(check, pattern = "absent_column")
+    check$variables <- "005"
+    check$waves <- "absent_wave"
+    .expect_value_present_unevaluable(check, pattern = "absent_wave")
+    for (scope in list(NULL, "all", "w1")) {
+      check$waves <- scope
+      .expect_value_present_unevaluable(check, .value_present_data()[FALSE, ], "wave")
+      .expect_value_present_unevaluable(check, .value_present_data()["s005"], "wave_id")
+    }
+  }
+})
+
+test_that("presence keeps any-value target matching and unchanged data coercion", {
+  check <- .value_present_check(c("005", "006"))
+  check$value <- c(1, 2, 999)
+  check$waves <- "all"
+  df <- data.frame(wave_id = c("w1", "w2"), s005 = c(1, 0), s006 = c(0, 2))
+  expect_true(.value_present_validation(check, df)$results[[1]]$passed)
+  check$variables <- "005"
+  expect_false(.value_present_validation(check, df)$results[[1]]$passed)
+  inputs <- list(c("1", "junk", NA, "NaN"), factor(c("100", "200")),
+                 as.Date(c("1970-01-01", "1970-01-02")), c(FALSE, TRUE),
+                 haven::labelled(c(1, 2, NA), labels = c(one = 1)))
+  for (values in inputs) {
+    df <- data.frame(wave_id = paste0("w", seq_along(values)), s005 = values)
+    before <- df
+    check$value <- c(0, 1, 2, NA, NaN)
+    check$condition <- "stop('ignored condition')"
+    check$allow_na <- "ignored malformed flag"
+    expect_true(.value_present_validation(check, df)$results[[1]]$passed)
+    expect_identical(df, before)
+  }
+})
+
+test_that("the bundled social-integration presence declaration retains its predicate", {
+  recipe <- suppressWarnings(suppressMessages(liss_recipe("cs")))
+  checks <- Filter(function(check) check$type %in% c("value_present", "value_present_per_wave"),
+                   recipe$validation_checks)
+  expect_length(checks, 1L)
+  expect_identical(checks[[1]]$check_id, "V02_dk_code_present_all_waves")
+  df <- data.frame(wave_id = c("cs08a", "cs09b"), s001 = c(-9, -9))
+  expect_true(.value_present_validation(checks[[1]], df)$results[[1]]$passed)
+  df$s001[[2]] <- NA_real_
+  result <- .value_present_validation(checks[[1]], df)$results[[1]]
+  expect_false(result$passed)
+  expect_match(result$detail, "value -9 absent in wave cs09b", fixed = TRUE)
+})
+
+.value_present_merge_fixture <- function(check, all_na = FALSE, .local_envir = parent.frame()) {
   root <- withr::local_tempdir("lissr_value_present_", .local_envir = .local_envir)
   data_dir <- file.path(root, "data")
   dir.create(data_dir)
   for (wave in c("yy01a", "yy02b")) {
     df <- data.frame(nomem_encr = 1:2)
     df[[paste0(wave, "005")]] <- if (wave == "yy01a") c(1, NA) else c(2, NA)
+    if (all_na) df[[paste0(wave, "005")]] <- NA_real_
     haven::write_sav(df, file.path(data_dir, paste0(wave, "_EN_1.0p.sav")))
   }
   recipe <- list(
@@ -341,5 +515,68 @@ test_that("valid value-presence scopes preserve strict output and actual values"
     expect_true(result$validation[[1]]$passed)
     expect_equal(as.numeric(result$data$s005), c(1, NA, 2, NA))
     expect_true(file.exists(file.path(fx$output_dir, "yy_merged.sav")))
+  }
+})
+
+test_that("presence payload errors preserve strict protection, reports and data values", {
+  for (field in c("value", "values")) {
+    for (severity in c("error", "warning", "info")) {
+      for (all_na in c(FALSE, TRUE)) {
+        check <- .value_present_check(severity = severity)
+        check$value <- NULL
+        check[[field]] <- "garbage"
+        check$waves <- "all"
+        fx <- .value_present_merge_fixture(check, all_na = all_na)
+        if (severity == "error") {
+          expect_error(suppressWarnings(suppressMessages(
+            merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
+            "strict mode: no outputs were written")
+          expect_false(dir.exists(fx$output_dir))
+          dir.create(fx$output_dir, showWarnings = FALSE)
+          sentinel <- file.path(fx$output_dir, "existing.txt")
+          writeLines("keep this", sentinel)
+          expect_error(suppressWarnings(suppressMessages(
+            merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE))),
+            "strict mode: no outputs were written")
+          expect_identical(list.files(fx$output_dir), "existing.txt")
+          expect_identical(readLines(sentinel), "keep this")
+        }
+        result <- suppressWarnings(suppressMessages(merge_liss_module(
+          fx$recipe, fx$data_dir, fx$output_dir, strict = severity != "error")))
+        expect_identical(result$valid_for_analysis, severity != "error")
+        expect_identical(result$validation[[1]]$passed, NA)
+        expect_identical(result$validation[[1]]$severity, severity)
+        report <- readLines(file.path(fx$output_dir, "yy_merge_report.txt"))
+        expect_true(any(grepl(paste0("[", severity, "] VALUE_PRESENT: SKIP"),
+                              report, fixed = TRUE)))
+        detail <- result$validation[[1]]$detail
+        expect_match(if (is.null(detail)) "" else detail, "value")
+        if (is.character(detail)) expect_true(any(grepl(detail, report, fixed = TRUE)))
+        expected <- if (all_na) rep(NA_real_, 4) else c(1, NA, 2, NA)
+        expect_equal(as.numeric(result$data$s005), expected)
+        written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+        expect_equal(as.numeric(written$s005), expected)
+      }
+    }
+  }
+})
+
+test_that("valid presence payloads preserve strict outputs including explicit missing requests", {
+  for (type in c("value_present", "value_present_per_wave")) {
+    for (all_na in c(FALSE, TRUE)) {
+      check <- .value_present_check()
+      check$type <- type
+      check$value <- list("1", 2L, NA)
+      check$waves <- "all"
+      fx <- .value_present_merge_fixture(check, all_na = all_na)
+      result <- suppressWarnings(suppressMessages(
+        merge_liss_module(fx$recipe, fx$data_dir, fx$output_dir, strict = TRUE)))
+      expect_true(result$valid_for_analysis)
+      expect_true(result$validation[[1]]$passed)
+      expected <- if (all_na) rep(NA_real_, 4) else c(1, NA, 2, NA)
+      expect_equal(as.numeric(result$data$s005), expected)
+      written <- haven::read_sav(file.path(fx$output_dir, "yy_merged.sav"))
+      expect_equal(as.numeric(written$s005), expected)
+    }
   }
 })

@@ -2485,6 +2485,34 @@ safe_eval_condition <- function(cond, df) {
        present_waves = present_waves, wave_ids = wave_ids)
 }
 
+#' parse requested presence values before looking for a match (internal)
+#' @noRd
+.value_present_values <- function(value) {
+  invalid <- function() {
+    stop("value_present value/values must contain numeric values or explicit NA/NaN",
+         call. = FALSE)
+  }
+  parse_values <- function(x) {
+    if (is.object(x) ||
+        !(typeof(x) %in% c("integer", "double", "character", "logical"))) invalid()
+    if (is.logical(x) && any(!is.na(x))) invalid()
+    parsed <- suppressWarnings(as.numeric(x))
+    if (is.character(x) && any(!is.na(x) & is.na(parsed) & !is.nan(parsed))) invalid()
+    parsed
+  }
+  if (is.null(value)) return(numeric())
+  if (is.object(value)) invalid()
+  if (is.list(value)) {
+    if (!is.null(dim(value))) invalid()
+    value <- lapply(value, function(x) {
+      if (length(x) != 1L || !is.null(dim(x))) invalid()
+      parse_values(x)
+    })
+    return(as.numeric(unlist(value, use.names = FALSE)))
+  }
+  parse_values(value)
+}
+
 #' parse an allowed set without introducing missing values by coercion (internal)
 #' @noRd
 .value_set_allowed <- function(value, field = "allowed values") {
@@ -2804,7 +2832,7 @@ run_validations <- function(df, checks, log_entries) {
           waves <- unique(wave_ids[row_scope$rows])
           if (!length(waves))
             stop("value_present has no observed waves in scope", call. = FALSE)
-          target_val <- suppressWarnings(as.numeric(chk$value %||% chk$values))
+          target_val <- .value_present_values(chk[["value"]] %||% chk[["values"]])
           passed <- TRUE
           detail <- NULL
           for (w in waves) {
