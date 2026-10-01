@@ -564,8 +564,9 @@ harmonization_rules:
   #   this part' under the multi-part design
   # replacement sentinel values for these structural codes are TODO pending
   # the module-global sentinel convention (proposes -7 for structural NA).
-  # until then the raw -9 stays in place on
-  # the excluded cells and will surface in VC01 as informative hits.
+  # until then the raw -9 stays in place on the excluded cells. VC01 block 2
+  # exempts exactly that code on _m1/_m2/_m3/242 (99/999 there still fail);
+  # 243 keeps its whole-column exemption; 160 reaches VC01 as -7 (HR00).
   # exclude semantics: each block skips cells where suffix AND wave both
   # match; grammar mirrors type_coerce suffixes/variables lists. engine
   # support implemented (recode_to_na honors rule$exclude blocks).
@@ -1001,47 +1002,95 @@ validation_checks:
   type: assert_absent_values
   severity: error
   scope: all_numeric
+  # each block resolves its own values and exclusions. omit parent exclusion
+  # keys because they take precedence over every block's own list and would
+  # mask the value-specific structural-code exemption in block 2.
+  targets:
+  # block 1: 99/999 on every retained numeric column, all waves.
   # percent-chance batteries excluded; they are 0-100 scales where 99
   # is a legitimate substantive value, so a blanket forbid false-fails there.
   # suffix union compiled from cv_variables.csv across cv17i-cv25q (not every
   # suffix exists in every wave). 243 also retains structural 999/-9
   # eligibility codes post HR01c/HR02 carve-outs. cv17i_Total is the renamed
-  # cv17i Total column (VR04). residual -9 on _m1-_m3, 160, 242 in cv23o+
-  # (HR02 carve-outs) is NOT excluded here and will surface as informative
-  # hits until the structural sentinel convention lands.
-  exclude_variables:
-  - '243'
-  - '245'
-  - '246'
-  - '247'
-  - '248'
-  - '249'
-  - '250'
-  - '251'
-  - '252'
-  - '253'
-  - '254'
-  - '255'
-  - '256'
-  - '257'
-  - '258'
-  - '259'
-  - '260'
-  - '261'
-  - '262'
-  - '263'
-  - '304'
-  - '321'
-  - '322'
-  - '323'
-  - '324'
-  - '340'
-  - '341'
-  - cv17i_Total
-  forbidden_values:
-  - 99
-  - 999
-  - -9
+  # cv17i Total column (VR04).
+  - scope: all_numeric
+    forbidden_values:
+    - 99
+    - 999
+    exclude_variables:
+    - '243'
+    - '245'
+    - '246'
+    - '247'
+    - '248'
+    - '249'
+    - '250'
+    - '251'
+    - '252'
+    - '253'
+    - '254'
+    - '255'
+    - '256'
+    - '257'
+    - '258'
+    - '259'
+    - '260'
+    - '261'
+    - '262'
+    - '263'
+    - '304'
+    - '321'
+    - '322'
+    - '323'
+    - '324'
+    - '340'
+    - '341'
+    - cv17i_Total
+  # block 2: -9 on retained numeric columns, with four additional paradata
+  # exclusions for recorded nonparticipation or an unset part-2 version.
+  # 99/999 on these columns still fail in block 1. apply the -9 allowance in
+  # all waves: explicit wave scopes require every named wave and would make
+  # subset runs unevaluable. cv18j-cv19k retain declared -9 on _m2/_m3/242;
+  # cv20l-cv22n recode it to NA in HR02; cv23o onward retain it via carve-outs.
+  # the four targets are absent in inspected cv08a-cv16h releases (cv16h also
+  # lacks _m); cv17i has one _m and a 242 without declared missing values.
+  # 160 remains checked: HR00 moves its -9 to -7 before validation.
+  - scope: all_numeric
+    forbidden_values:
+    - -9
+    exclude_variables:
+    - '243'
+    - '245'
+    - '246'
+    - '247'
+    - '248'
+    - '249'
+    - '250'
+    - '251'
+    - '252'
+    - '253'
+    - '254'
+    - '255'
+    - '256'
+    - '257'
+    - '258'
+    - '259'
+    - '260'
+    - '261'
+    - '262'
+    - '263'
+    - '304'
+    - '321'
+    - '322'
+    - '323'
+    - '324'
+    - '340'
+    - '341'
+    - cv17i_Total
+    - _m1
+    - _m2
+    - _m3
+    - '242'
 - check_id: VC02_no_raw_ref
   anomaly_ref: §3.1
   description: no 998 or −8 remains in valid substantive range

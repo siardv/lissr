@@ -706,15 +706,39 @@ The same behavior applies to `assert_absent_values`, `none_equal`,
 `sentinel_absence`, `no_residual_sentinels`, `assert_no_values`,
 `value_absence_check`, and `value_restriction`.
 
-The bundled `cv` check `VC01_no_raw_dk` uses one `exclude_variables` list for its
-27 declared suffix exclusions and `cv17i_Total`. Bare suffixes and exact names
-resolve through the same exclusion mechanism; using both parent exclusion keys
-would mask the suffix list rather than combine it. This declaration preserves
-the recipe's existing exemptions and still checks retained numeric targets for
-99, 999 and -9 at error severity. It changes validation outcomes, not transformed
-or serialized values. A pass does not establish the substantive meaning of the
-exempt codes or overall analytical validity; other CV checks and non-exempt
-structural codes retain their existing behavior.
+The bundled `cv` check `VC01_no_raw_dk` uses two ordered `value_absence` target
+blocks at error severity, both selecting all numeric columns:
+
+- Block 1 rejects 99 and 999, preserving the existing 27 suffix exclusions and
+  `cv17i_Total` in one 28-name `exclude_variables` list.
+- Block 2 rejects -9, with the same 28 exclusions plus `_m1`, `_m2`, `_m3` and
+  `242`. This additional exemption is specific to the structural -9 on the
+  part-fieldwork columns and the part-2 voting-version variable; 99 and 999 on
+  those four columns still fail block 1. `160` is not exempt: HR00 recodes its
+  -9 to -7 before validation, so a residual -9 remains a failure.
+
+The parent declares neither exclusion key nor `forbidden_values`; each block
+provides its own values and exclusions. This preserves the first-non-null
+precedence above without a parent list masking block 2. Bare suffixes and exact
+names use the existing resolution mechanism. Both blocks deliberately apply to
+all waves: optional exclusion names can be absent from a wave subset, whereas
+an explicit wave scope requires every named wave to be present. The additional
+exemption therefore does not make subset runs unevaluable merely because other
+waves or excluded columns are absent.
+
+The first violation follows block order, then column order within the block.
+Its reported count covers that block's forbidden values in the first offending
+column, not the union of values across both blocks. Thus a retained 99/999
+violation is reported before a -9 violation in an earlier column. Other CV
+checks, severity and output-eligibility rules are unchanged; retained 99/999
+on `s301`-`s303` and the separate VC02 failures still invalidate observed data.
+
+This is a recipe-specific validation change, not a change to the engine's
+exclusion semantics, transformations or serialization rules. The report-mode
+comparison over cv17i-cv26r found identical returned data and SAV read-back
+values and attributes under both declarations; this does not establish output
+equivalence across different wave selections. A VC01 pass alone does not
+establish overall analytical validity or strict-mode success.
 
 #### `value_absence` forbidden-value payloads
 

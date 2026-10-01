@@ -578,23 +578,79 @@ test_that("bundled absence declarations retain integer, numeric-text and literal
   suppressWarnings(suppressMessages(
     lissr:::run_validations(data, list(check), list())))$results[[1]]
 }
+.cv_vc01_structural_minus9 <- c("_m1", "_m2", "_m3", "242")
+.expect_exact_names <- function(actual, expected, label) {
+  actual <- as.character(unlist(actual))
+  expect_identical(sort(actual), sort(expected), label = label)
+  expect_identical(anyDuplicated(actual), 0L, label = paste(label, "duplicates"))
+}
 
-test_that("cv VC01 declares one exclusion list that resolves every carve-out", {
+test_that("cv VC01 declares value-specific blocks that resolve every carve-out", {
   check <- .cv_vc01_check()
-  declared <- intersect(c("exclude_variables", "exclude_suffixes"), names(check))
-  # the executor applies the first non-null key and never unions the two
-  expect_length(declared, 1L)
-  expect_setequal(as.character(unlist(check[declared])), .cv_vc01_exclusions)
   expect_identical(check$severity, "error")
   expect_identical(check$scope, "all_numeric")
-  expect_setequal(as.numeric(unlist(check$forbidden_values)), c(99, 999, -9))
+  # parent keys would take precedence over the block declarations
+  expect_length(intersect(c("exclude_variables", "exclude_suffixes"), names(check)), 0L)
+  expect_null(check$forbidden_values)
+  expect_length(check$targets, 2L)
+  b1 <- check$targets[[1]]; b2 <- check$targets[[2]]
+  expect_identical(b1$scope, "all_numeric"); expect_identical(b2$scope, "all_numeric")
+  expect_identical(sort(as.numeric(unlist(b1$forbidden_values))), c(99, 999))
+  expect_identical(as.numeric(unlist(b2$forbidden_values)), -9)
+  .expect_exact_names(b1$exclude_variables, .cv_vc01_exclusions, "block 1 exclusions")
+  .expect_exact_names(b2$exclude_variables,
+                      c(.cv_vc01_exclusions, .cv_vc01_structural_minus9),
+                      "block 2 exclusions")
+  expect_null(b1$waves); expect_null(b2$waves)
   columns <- ifelse(grepl("^[0-9]{3}$", .cv_vc01_exclusions),
                     paste0("s", .cv_vc01_exclusions), .cv_vc01_exclusions)
   df <- as.data.frame(stats::setNames(rep(list(1), length(columns)), columns))
-  df$s001 <- 1
+  df$s001 <- 1; df$s_m1 <- 1; df$s_m2 <- 1; df$s_m3 <- 1; df$s242 <- 1
   blocks <- lissr:::.resolve_absence_blocks(df, check)
-  expect_length(blocks, 1L)
-  expect_identical(blocks[[1]]$columns, "s001")
+  expect_length(blocks, 2L)
+  expect_setequal(blocks[[1]]$columns, c("s001", "s_m1", "s_m2", "s_m3", "s242"))
+  expect_identical(blocks[[2]]$columns, "s001")
+})
+
+test_that("cv VC01 exempts only the structural -9 on the part-participation paradata", {
+  clean <- data.frame(wave_id = c("cv23o", "cv24p", "cv24p"), nomem_encr = 1:3,
+                      s001 = c(1, 2, 3), s_m1 = c(202212, 202312, 202401),
+                      s_m2 = c(202301, 202401, 202401), s_m3 = c(202302, 202402, 202402),
+                      s242 = c(1, 2, 1))
+  expect_true(.cv_vc01_result(clean)$passed)
+  # a -9 on each exempt column individually, and on all four at once
+  for (col in c("s_m1", "s_m2", "s_m3", "s242")) {
+    df <- clean; df[[col]][[2]] <- -9
+    expect_true(.cv_vc01_result(df)$passed, label = col)
+  }
+  df <- clean; df$s_m1[[2]] <- -9; df$s_m2[[3]] <- -9; df$s_m3[[1]] <- -9; df$s242[[3]] <- -9
+  expect_true(.cv_vc01_result(df)$passed)
+  # 99 and 999 on the same columns still fail in block 1
+  for (col in c("s_m1", "s_m2", "s_m3", "s242")) for (value in c(99, 999)) {
+    df <- clean; df[[col]][[1]] <- value
+    result <- .cv_vc01_result(df)
+    expect_false(result$passed)
+    expect_match(result$detail, paste0("1 forbidden value(s) in ", col, "; block 1"),
+                 fixed = TRUE)
+  }
+  # retained targets still fail on -9 in block 2
+  df <- clean; df$s001[[2]] <- -9
+  result <- .cv_vc01_result(df)
+  expect_false(result$passed)
+  expect_match(result$detail, "1 forbidden value(s) in s001; block 2", fixed = TRUE)
+  # mixed-code diagnostics follow block order, then column order within each block
+  df <- clean; df$s001[[1]] <- -9; df$s002 <- c(99, 1, 1)
+  expect_match(.cv_vc01_result(df)$detail, "1 forbidden value(s) in s002; block 1", fixed = TRUE)
+  df <- clean; df$s001 <- c(-9, 99, 3)
+  expect_match(.cv_vc01_result(df)$detail, "1 forbidden value(s) in s001; block 1", fixed = TRUE)
+  # the check-level exemption applies across waves; harmonization runs before validation
+  df <- clean; df$wave_id <- rep("cv22n", 3); df$s_m1[[1]] <- -9
+  expect_true(.cv_vc01_result(df)$passed)
+  df <- clean; df$wave_id <- rep("cv18j", 3)
+  df$s_m2[[2]] <- -9; df$s242[[2]] <- -9; df$s_m3[[3]] <- -9
+  expect_true(.cv_vc01_result(df)$passed)
+  df$s001[[1]] <- 999
+  expect_match(.cv_vc01_result(df)$detail, "1 forbidden value(s) in s001; block 1", fixed = TRUE)
 })
 
 test_that("no bundled absence check declares competing parent exclusion keys", {

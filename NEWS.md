@@ -1,5 +1,16 @@
 # lissr (development)
 
+* The Politics and Values (`cv`) check `VC01_no_raw_dk` now exempts structural
+  -9 on `_m1`, `_m2`, `_m3` and `242` through a separate validation block,
+  while continuing to reject 99 and 999 on those columns. Both blocks preserve
+  the existing 28 exclusions and support wave subsets; `160` remains checked.
+  Diagnostics report the first violating block and column, with 99/999 checked
+  before -9. This changes validation outcomes without changing transformation
+  or serialization rules; a report-mode comparison over cv17i-cv26r confirmed
+  identical returned data and SAV read-back values and attributes. Other
+  error-severity validation failures still prevent output from being valid for
+  analysis.
+
 * The Politics and Values (`cv`) recipe now combines its existing `VC01_no_raw_dk`
   exclusions under one `exclude_variables` key. Previously the `cv17i_Total`
   declaration masked all 27 suffix exclusions, producing false error-level
