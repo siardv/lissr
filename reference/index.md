@@ -70,4 +70,4 @@
 
 - [`lissr`](https://siardv.github.io/lissr/reference/lissr-package.md)
   [`lissr-package`](https://siardv.github.io/lissr/reference/lissr-package.md)
-  : lissr: View, Download, and Merge LISS Panel Data
+  : lissr: Access, Download, Harmonize, and Merge LISS Panel Data
