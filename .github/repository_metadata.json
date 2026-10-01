@@ -1,0 +1,26 @@
+{
+  "repository": "siardv/lissr",
+  "description": "R tools to access, download, harmonize, and merge longitudinal data from the LISS Data Archive.",
+  "homepage": "https://siardv.github.io/lissr/",
+  "topics": [
+    "centerdata",
+    "computational-social-science",
+    "data-access",
+    "data-harmonization",
+    "data-integration",
+    "data-merging",
+    "data-provenance",
+    "data-validation",
+    "liss",
+    "liss-data",
+    "liss-panel",
+    "longitudinal-data",
+    "panel-data",
+    "r",
+    "r-package",
+    "reproducible-research",
+    "rstats",
+    "social-sciences",
+    "survey-data"
+  ]
+}

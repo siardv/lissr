@@ -1,5 +1,13 @@
 url: https://siardv.github.io/lissr/
 
+home:
+  title: "LISS Panel Data in R: Access, Harmonization, and Merging"
+  description: >-
+    lissr is an R package for programmatic access to the LISS Data Archive. It
+    authenticates, browses, and downloads survey files, then harmonizes,
+    validates, and merges longitudinal LISS waves with reproducible,
+    recipe-driven YAML workflows that record provenance.
+
 template:
   bootstrap: 5
 

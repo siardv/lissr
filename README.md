@@ -4,10 +4,12 @@
 [![R-CMD-check](https://github.com/siardv/lissr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/siardv/lissr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-Programmatic access to the [LISS Data Archive](https://www.lissdata.nl/).
-Authenticate, browse available modules and waves, interactively select and
-download data files, and merge longitudinal waves using recipe-driven YAML
-specifications.
+`lissr` is an R package for programmatic access to the
+[LISS Data Archive](https://www.lissdata.nl/). It authenticates, browses, and
+downloads survey files, then harmonizes, validates, and merges longitudinal
+LISS panel waves with reproducible, recipe-driven YAML workflows that record
+provenance. A rule-driven household-income cleaning framework records
+decisions in audit ledgers and reports.
 
 > **Repository history note:** The `v1.4.0` history was amended during release
 > finalization while the GitHub workflow was being refined. For reproducibility,

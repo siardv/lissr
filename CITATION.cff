@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
-title: "lissr: View, Download, and Merge LISS Panel Data"
+title: "lissr: Access, Download, Harmonize, and Merge LISS Panel Data"
 authors:
   - family-names: "Bosch"
     name-particle: "van den"
@@ -12,3 +12,28 @@ version: "1.4.1"
 date-released: "2026-09-18"
 repository-code: "https://github.com/siardv/lissr"
 url: "https://siardv.github.io/lissr/"
+abstract: >-
+  lissr is an R package for programmatic access to the LISS Data Archive. It
+  authenticates, browses, and downloads survey files, then harmonizes,
+  validates, and merges longitudinal LISS waves with reproducible,
+  recipe-driven YAML workflows that record provenance.
+keywords:
+  - centerdata
+  - computational-social-science
+  - data-access
+  - data-harmonization
+  - data-integration
+  - data-merging
+  - data-provenance
+  - data-validation
+  - liss
+  - liss-data
+  - liss-panel
+  - longitudinal-data
+  - panel-data
+  - r
+  - r-package
+  - reproducible-research
+  - rstats
+  - social-sciences
+  - survey-data
