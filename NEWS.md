@@ -1,5 +1,10 @@
 # lissr (development)
 
+* The installed-package test runner now checks every recorded failure and error
+  before returning success. This prevents a test error followed by a cleanup
+  warning or skip from being hidden by testthat's result summary. The standard
+  reporter and successful warning-only or skipped runs are preserved.
+
 * The Politics and Values (`cv`) check `VC01_no_raw_dk` now exempts structural
   -9 on `_m1`, `_m2`, `_m3` and `242` through a separate validation block,
   while continuing to reject 99 and 999 on those columns. Both blocks preserve
