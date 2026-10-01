@@ -395,8 +395,13 @@ discover_wave_files <- function(recipe, data_dir) {
   find_data_files <- function(pattern) {
     candidates <- list.files(data_dir, pattern = pattern, full.names = TRUE,
                              ignore.case = TRUE)
+    file_info <- suppressWarnings(file.info(candidates, extra_cols = FALSE))
+    is_file <- !is.na(file_info$isdir) & !file_info$isdir
+    # windows can classify a dangling link as a file without target metadata
+    if (.Platform$OS.type == "windows")
+      is_file <- is_file & !is.na(file_info$mtime)
     candidates[tolower(tools::file_ext(candidates)) %in%
-                 c("sav", "zsav", "dta", "csv") & utils::file_test("-f", candidates)]
+                 c("sav", "zsav", "dta", "csv") & is_file]
   }
   wave_idx <- recipe$wave_index
   files <- purrr::map(wave_idx, function(w) {

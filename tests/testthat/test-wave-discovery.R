@@ -10,6 +10,16 @@
   list(data_dir = data_dir, recipe = list(wave_index = list(wave)))
 }
 
+.discovery_with_file_info <- function(file_info, os_type) {
+  discover <- lissr:::discover_wave_files
+  platform <- .Platform
+  platform$OS.type <- os_type
+  # override only this copy's lexical bindings, leaving package and base unchanged
+  environment(discover) <- list2env(
+    list(file.info = file_info, .Platform = platform), parent = environment(discover))
+  discover
+}
+
 test_that("primary discovery admits each data format but not sidecars or directories", {
   for (extension in c("SAV", "ZSAV", "DTA", "CSV")) {
     data_file <- paste0("YY01A_EN_1.0p.", extension)
@@ -33,13 +43,89 @@ test_that("sidecar-only primary matches allow a supported fallback", {
 })
 
 test_that("data symlinks work while dangling and directory symlinks are excluded", {
-  fx <- .discovery_fixture("source.sav", directories = "nested")
+  fx <- .discovery_fixture(c("source.sav", "missing.sav"), directories = "nested")
   targets <- file.path(fx$data_dir, c("source.sav", "missing.sav", "nested"))
   links <- file.path(fx$data_dir, c("yy01a_current.sav", "yy01a_missing.sav",
                                    "yy01a_directory.sav"))
-  if (!all(suppressWarnings(file.symlink(targets, links))))
+  link_created <- rep(FALSE, length(links))
+  remove_links <- function() {
+    if (any(link_created[1:2])) {
+      stopifnot(all(file.remove(links[1:2][link_created[1:2]])))
+      link_created[1:2] <<- FALSE
+    }
+    if (link_created[[3L]]) {
+      if (.Platform$OS.type == "windows") {
+        # rmdir removes the directory link itself without visiting its target
+        directory_link <- chartr("/", "\\", links[[3L]])
+        output <- system2(Sys.getenv("COMSPEC", "cmd.exe"), c(
+          "/d", "/c", "rmdir", shQuote(directory_link, type = "cmd")
+        ), stdout = TRUE, stderr = TRUE)
+        status <- attr(output, "status")
+        if (!is.null(status) && status != 0L)
+          stop("directory symlink cleanup failed: ", paste(output, collapse = "\n"))
+      } else {
+        stopifnot(unlink(links[[3L]]) == 0L)
+      }
+      link_created[[3L]] <<- FALSE
+    }
+  }
+  withr::defer(remove_links())
+  link_created <- suppressWarnings(file.symlink(targets, links))
+  if (!all(link_created))
     skip("file symlinks unavailable")
+  stopifnot(file.remove(targets[[2L]]))
   hits <- lissr:::discover_wave_files(fx$recipe, fx$data_dir)
+  expect_identical(basename(hits[[1L]]$paths), "yy01a_current.sav")
+  expect_null(hits[[1L]]$release_decision)
+  remove_links()
+  expect_true(file.exists(targets[[1L]]))
+  expect_true(dir.exists(targets[[3L]]))
+})
+
+test_that("Windows target metadata filters primary, fallback and auxiliary matches", {
+  original_file_info <- base::file.info
+  for (case in c("primary", "fallback", "auxiliary")) {
+    primary_file <- "yy01a_EN_1.0p.sav"
+    missing_file <- if (case == "auxiliary") "supplement.csv" else "yy01a_EN_9.0p.sav"
+    fx <- .discovery_fixture(
+      c(primary_file, missing_file, "supplement.sav", "yy01a_codebook.pdf"),
+      pattern = if (case == "fallback") "yy01a_codebook*" else "yy01a_EN_*",
+      aux = if (case == "auxiliary") "supplement.csv" else NULL)
+    missing_path <- file.path(fx$data_dir, missing_file)
+    target_file_info <- function(..., extra_cols = TRUE) {
+      info <- original_file_info(..., extra_cols = extra_cols)
+      missing <- rownames(info) == missing_path
+      if (any(missing)) {
+        # model Windows retaining a file classification after target-open failure
+        info$isdir[missing] <- FALSE
+        info$mtime[missing] <- NA
+        warning("cannot open file: missing target")
+      }
+      info
+    }
+    discover <- .discovery_with_file_info(target_file_info, "windows")
+    if (case == "fallback") {
+      expect_message(hits <- discover(fx$recipe, fx$data_dir), "matched via fallback")
+    } else {
+      hits <- discover(fx$recipe, fx$data_dir)
+    }
+    expect_identical(basename(hits[[1L]]$paths), primary_file, info = case)
+    expect_null(hits[[1L]]$release_decision, info = case)
+    expected_aux <- if (case == "auxiliary") "supplement.sav" else character()
+    expect_identical(basename(hits[[1L]]$aux_paths), expected_aux, info = case)
+  }
+})
+
+test_that("POSIX discovery retains its nondirectory predicate without timestamps", {
+  fx <- .discovery_fixture("yy01a_current.sav", directories = "yy01a_directory.sav")
+  original_file_info <- base::file.info
+  no_timestamp_info <- function(..., extra_cols = TRUE) {
+    info <- original_file_info(..., extra_cols = extra_cols)
+    info$mtime[] <- NA
+    info
+  }
+  discover <- .discovery_with_file_info(no_timestamp_info, "unix")
+  hits <- discover(fx$recipe, fx$data_dir)
   expect_identical(basename(hits[[1L]]$paths), "yy01a_current.sav")
   expect_null(hits[[1L]]$release_decision)
 })
