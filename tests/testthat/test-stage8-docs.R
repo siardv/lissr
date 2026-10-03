@@ -47,28 +47,25 @@ test_that("no vignette claims eight core modules", {
   }
 })
 
-test_that("batch-merge module lists cover all ten modules", {
-  for (f in c("merge-workflow.Rmd", "multi-module-linkage.Rmd")) {
+test_that("core merge docs use automatic batch discovery without a full module vector", {
+  expect_null(formals(lissr::merge_liss_modules)$recipe_paths)
+  for (f in c("getting-started.Rmd", "merge-workflow.Rmd",
+              "multi-module-linkage.Rmd")) {
     lines <- .doc_src(f)
     skip_if(length(lines) == 0, "vignette sources not installed")
     txt <- paste(lines, collapse = "\n")
-    # find every  <name> <- c("xx", ...)  module vector
+    expect_match(txt, "merge_liss_modules\\(\\s*data_dir\\s*=",
+                 label = paste0(f, ": automatic batch call"))
+    # merging must not require a manually maintained full-module vector
     m <- regmatches(txt,
                     gregexpr("(all_)?modules <- c\\([^)]*\\)", txt))[[1]]
     m <- m[grepl('"ch"', m)]
-    expect_gt(length(m), 0)
-    checked <- 0L
     for (vec in m) {
       codes <- regmatches(vec, gregexpr('"[a-z]{2}"', vec))[[1]]
       codes <- gsub('"', "", codes)
-      # deliberate small selections are fine; anything presented as a
-      # full-module batch (8 or more codes) must be exactly the ten
-      if (length(codes) >= 8) {
-        expect_setequal(codes, TEN_MODULES)
-        checked <- checked + 1L
-      }
+      expect_lt(length(codes), 8L,
+                label = paste0(f, ": manual full-module vector"))
     }
-    expect_gt(checked, 0)
   }
 })
 

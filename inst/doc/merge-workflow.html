@@ -344,7 +344,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <div id="overview" class="section level2">
 <h2>Overview</h2>
 <p>lissr includes a recipe-driven merge engine that processes YAML
-specifications conforming to the Canonical Schema v1.0.0. Each recipe
+specifications conforming to the Canonical Schema v1.1.0 (a strictly
+additive extension of v1.0.0; recipes may declare either). Each recipe
 encodes all merge-relevant decisions for a module: file patterns,
 variable harmonization, boundary handling, comparability contracts, and
 validation checks.</p>
@@ -352,17 +353,33 @@ validation checks.</p>
 preserve variable labels, value labels, and user-defined missing
 values.</p>
 </div>
-<div id="single-module-merge" class="section level2">
-<h2>Single module merge</h2>
+<div id="merge-downloaded-modules" class="section level2">
+<h2>Merge downloaded modules</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(lissr)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">merge_liss_module</span>(</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  recipe,</span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="at">data_dir   =</span> <span class="st">&quot;liss/ch&quot;</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="at">output_dir =</span> <span class="st">&quot;./output&quot;</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>)</span></code></pre></div>
-<p>This produces four files:</p>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">merge_liss_modules</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">data_dir   =</span> <span class="st">&quot;liss&quot;</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">output_dir =</span> <span class="st">&quot;./output&quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>)</span></code></pre></div>
+<p>No module list or recipe paths are required. The batch detects
+supported core-module wave files (<code>.sav</code>, <code>.zsav</code>,
+<code>.dta</code>, <code>.csv</code>), then loads only the corresponding
+built-in recipes in alphabetical module-code order. For each module, it
+checks its module-code subdirectory (for example <code>liss/ch/</code>)
+if that directory exists, otherwise <code>data_dir</code> itself. An
+existing empty module subdirectory therefore takes precedence over files
+for that module in the parent folder. Filenames must retain their
+module-wave prefix, such as <code>ch07a_</code>; existing recipe wave
+coverage still determines which waves can be processed. Modules without
+local files are omitted from the automatic batch. Recipe, comparability,
+and data warnings from processed modules remain visible. Finding a file
+does not establish that its format or contents are analytically valid;
+review each module’s report.</p>
+<p>Discovery uses everything available in that folder, including older
+downloads. It does not restrict the merge to the most recent
+<code>selection</code> or infer which variables your analysis needs. Use
+a dedicated data folder to keep a particular download separate.</p>
+<p>Each module writes its own outputs. For example, Health produces:</p>
 <ul>
 <li><code>ch_merged.sav</code> — merged data (SPSS format, preserving
 all labels)</li>
@@ -371,51 +388,64 @@ all labels)</li>
 recipe)</li>
 <li><code>ch_merge_report.txt</code> — human-readable report</li>
 </ul>
+<p>The returned list is named by module code, so <code>results$ch</code>
+contains the Health result when local Health files are available. Each
+module result additionally carries <code>provenance</code> (package,
+recipe, and schema versions, per-input md5 hashes, release-selection
+decisions) and a <code>valid_for_analysis</code> verdict, both
+reproduced in the report.</p>
 </div>
-<div id="batch-merge" class="section level2">
-<h2>Batch merge</h2>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>modules <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ch&quot;</span>, <span class="st">&quot;cv&quot;</span>, <span class="st">&quot;cd&quot;</span>, <span class="st">&quot;cf&quot;</span>, <span class="st">&quot;cw&quot;</span>, <span class="st">&quot;cp&quot;</span>, <span class="st">&quot;cs&quot;</span>, <span class="st">&quot;ci&quot;</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>recipe_paths <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_chr</span>(modules, <span class="sc">~</span> {</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="fu">system.file</span>(<span class="st">&quot;recipes&quot;</span>, <span class="fu">paste0</span>(.x, <span class="st">&quot;_merge_recipe.yml&quot;</span>), <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>})</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">merge_liss_modules</span>(</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  recipe_paths,</span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">data_dir   =</span> <span class="st">&quot;liss&quot;</span>,</span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">output_dir =</span> <span class="st">&quot;./output&quot;</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span></code></pre></div>
+<div id="optional-recipe-controls" class="section level2">
+<h2>Optional recipe controls</h2>
+<p>To merge only one module, or supply an already loaded custom recipe,
+use the single-module helper. This is an alternative to the automatic
+batch, not a preliminary step:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">merge_liss_module</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  recipe,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">data_dir   =</span> <span class="st">&quot;liss/ch&quot;</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">output_dir =</span> <span class="st">&quot;./output&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>)</span></code></pre></div>
+<p>The batch also accepts explicit recipe paths to restrict which
+recipes run or to use custom recipes:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>custom_results <span class="ot">&lt;-</span> <span class="fu">merge_liss_modules</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">recipe_paths =</span> <span class="st">&quot;my_ch_recipe.yml&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">data_dir   =</span> <span class="st">&quot;liss&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">output_dir =</span> <span class="st">&quot;./output&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 <div id="cross-module-panel-merge" class="section level2">
 <h2>Cross-module panel merge</h2>
 <p>After merging individual modules, combine them into one wide dataset.
 Columns are prefixed with the module code to avoid collisions
 (e.g. <code>ch_s004</code>, <code>cv_s004</code>).</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>panel <span class="ot">&lt;-</span> <span class="fu">merge_liss_panel</span>(results, <span class="at">write_to =</span> <span class="st">&quot;./output/liss_panel.sav&quot;</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co"># only respondent-years present in all modules</span></span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>panel_inner <span class="ot">&lt;-</span> <span class="fu">merge_liss_panel</span>(results, <span class="at">join_type =</span> <span class="st">&quot;inner&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>panel <span class="ot">&lt;-</span> <span class="fu">merge_liss_panel</span>(results, <span class="at">write_to =</span> <span class="st">&quot;./output/liss_panel.sav&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># only respondent-years present in all modules</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>panel_inner <span class="ot">&lt;-</span> <span class="fu">merge_liss_panel</span>(results, <span class="at">join_type =</span> <span class="st">&quot;inner&quot;</span>)</span></code></pre></div>
 </div>
 <div id="validate-recipes" class="section level2">
 <h2>Validate recipes</h2>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">validate_recipe</span>(recipe, <span class="st">&quot;ch_merge_recipe.yml&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">validate_recipe</span>(recipe, <span class="st">&quot;ch_merge_recipe.yml&quot;</span>)</span></code></pre></div>
 </div>
 <div id="onboard-a-new-wave" class="section level2">
 <h2>Onboard a new wave</h2>
 <p>When a new wave is released, the onboarding helper automates most of
 the checklist: variable diffs, candidate wave_index entry,
 expected-presence checks, and boundary alerts.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">onboard_new_wave</span>(</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">recipe_path  =</span> <span class="fu">system.file</span>(<span class="st">&quot;recipes&quot;</span>, <span class="st">&quot;ch_merge_recipe.yml&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>),</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">new_file     =</span> <span class="st">&quot;ch25r_EN_1.0p.sav&quot;</span>,</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">prev_wave_id =</span> <span class="st">&quot;ch24q&quot;</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">onboard_new_wave</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">recipe_path  =</span> <span class="fu">system.file</span>(<span class="st">&quot;recipes&quot;</span>, <span class="st">&quot;ch_merge_recipe.yml&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>),</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">new_file     =</span> <span class="st">&quot;ch25r_EN_1.0p.sav&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">prev_wave_id =</span> <span class="st">&quot;ch24q&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 <div id="background-variables" class="section level2">
 <h2>Background variables</h2>
-<p>The background variables module (CA) is a monthly snapshot used as
-the linkage backbone for all other modules. When merging background
-variables with survey data:</p>
+<p>The Background Variables file (<code>avars</code>) is a monthly
+snapshot used as the linkage backbone for all other modules. It is a
+separate release, not one of the ten core modules. When merging
+background variables with survey data:</p>
 <ol style="list-style-type: decimal">
 <li>Use only <code>nomem_encr</code> as the join key (never
 <code>nohouse_encr</code>).</li>
@@ -423,22 +453,22 @@ variables with survey data:</p>
 </ol>
 <p>The merged output includes a <code>fieldwork_ym</code> column (YYYYMM
 integer) derived automatically from the LISS <code>_m</code> suffix.
-Background variable files carry the period in their filename rather than
-as a column, so you need to tag each file before stacking:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># example: merge Health survey with background variables</span></span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>survey <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;output/ch_merged.sav&quot;</span>)</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co"># read avars files and tag each with YYYYMM from the filename</span></span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">&quot;data/avars/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.sav$&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>bg_data  <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(bg_files, <span class="cf">function</span>(f) {</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  ym <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(stringr<span class="sc">::</span><span class="fu">str_extract</span>(<span class="fu">basename</span>(f), <span class="st">&quot;</span><span class="sc">\\</span><span class="st">d{6}&quot;</span>))</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  haven<span class="sc">::</span><span class="fu">read_sav</span>(f) <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">fieldwork_ym =</span> ym)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>})</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>merged <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  survey, bg_data,</span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>)</span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>)</span></code></pre></div>
+Each <code>avars</code> file carries its fieldwork period as a
+<code>wave</code> column (YYYYMM), so stacking monthly files needs no
+filename parsing:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># example: merge Health survey with background variables</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>survey <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;output/ch_merged.sav&quot;</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># read avars files; the period is the `wave` column in each file</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">&quot;data/avars/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.sav$&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>bg_data  <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(bg_files, <span class="cf">function</span>(f) {</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  haven<span class="sc">::</span><span class="fu">read_sav</span>(f) <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">fieldwork_ym =</span> <span class="fu">as.integer</span>(wave))</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>})</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>merged <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  survey, bg_data,</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>)</span></code></pre></div>
 </div>
 
 

@@ -347,9 +347,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 </div>
 <div id="store-credentials" class="section level2">
 <h2>Store credentials</h2>
-<p>Store your username and password in the system keyring so lissr can
-retrieve them automatically. The password is never saved in plain text
-or in your R history.</p>
+<p>Store your username and password in the system keyring (macOS
+Keychain, Windows Credential Store, or Linux Secret Service) so lissr
+can retrieve them automatically; the <code>keyring</code> package is a
+dependency and installs with lissr. The password is never saved in plain
+text or in your R history.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(lissr)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">liss_store_credentials</span>(<span class="st">&quot;1234&quot;</span>)</span></code></pre></div>
 </div>
@@ -369,12 +371,31 @@ email.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>selection <span class="ot">&lt;-</span> <span class="fu">liss_select</span>()</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">liss_download</span>(selection)</span></code></pre></div>
 </div>
+<div id="merge-downloaded-modules" class="section level2">
+<h2>Merge downloaded modules</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">merge_liss_modules</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="at">data_dir =</span> <span class="st">&quot;liss&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">output_dir =</span> <span class="st">&quot;./output&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>)</span></code></pre></div>
+<p>The batch detects supported core-module wave files, then uses the
+corresponding built-in recipes in alphabetical module-code order. For
+each module, it checks the module-code subdirectory (for example
+<code>liss/ch/</code>) when present, otherwise the main data folder.
+Existing recipes still determine which waves can be processed. You do
+not need to repeat your module selection or merge a single module first.
+Modules without local files are omitted from the automatic batch;
+warnings about the recipes and data being processed remain visible.</p>
+<p>This uses all supported local files in the folder, including previous
+downloads. It does not use the most recent <code>selection</code> to
+restrict the merge or choose variables for your analysis. Use a
+dedicated data folder when you want to keep a download separate.</p>
+</div>
 <div id="next-steps" class="section level2">
 <h2>Next steps</h2>
 <p>See <a href="merge-workflow.html">Merging LISS Panel Data</a> for
-merging longitudinal data. <em>(or run
-<code>vignette(&quot;merge-workflow&quot;, package = &quot;lissr&quot;)</code> in the
-console)</em></p>
+output details and optional single-module or custom-recipe control.
+<em>(or run <code>vignette(&quot;merge-workflow&quot;, package = &quot;lissr&quot;)</code>
+in the console)</em></p>
 </div>
 
 

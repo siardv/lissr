@@ -4,13 +4,19 @@
 \alias{merge_liss_modules}
 \title{merge multiple modules sequentially}
 \usage{
-merge_liss_modules(recipe_paths, data_dir, output_dir = ".", strict = FALSE)
+merge_liss_modules(
+  recipe_paths = NULL,
+  data_dir,
+  output_dir = ".",
+  strict = FALSE
+)
 }
 \arguments{
-\item{recipe_paths}{character vector of paths to YAML recipe files.}
+\item{recipe_paths}{optional character vector of paths to YAML recipe files.
+default \code{NULL} selects built-in recipes for modules with local wave data.}
 
 \item{data_dir}{character. root data directory. per-module subdirectories
-are tried first (e.g. \verb{data_dir/ch/}), falling back to \code{data_dir}.}
+are used when present (e.g. \verb{data_dir/ch/}); otherwise scans \code{data_dir}.}
 
 \item{output_dir}{character. directory for output files.}
 
@@ -20,6 +26,20 @@ are tried first (e.g. \verb{data_dir/ch/}), falling back to \code{data_dir}.}
 a named list of per-module results (invisibly).
 }
 \description{
-validates all recipes first, then runs each module merge. modules
-with no data files in \code{data_dir} are silently skipped.
+by default, detects modules with local wave data and uses their built-in
+recipes, in module-code order. detection accepts \code{.sav}, \code{.zsav}, \code{.dta}
+and \code{.csv} files named with a module-wave prefix (e.g. \code{ch07a_}). it uses
+the contents of \code{data_dir}, including earlier downloads, rather than the
+most recent download selection. recipe wave coverage remains unchanged.
+}
+\details{
+validates the selected recipes before running any module merge. when
+\code{recipe_paths} is supplied, uses those recipes in the supplied order and
+reports modules with no data files as skipped. recipe and data warnings
+remain visible in both modes.
+}
+\examples{
+\dontrun{
+results <- merge_liss_modules(data_dir = "liss", output_dir = "output")
+}
 }

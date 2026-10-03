@@ -8,6 +8,12 @@ knitr::opts_chunk$set(
 ## -----------------------------------------------------------------------------
 # library(lissr)
 # 
+# results <- merge_liss_modules(
+#   data_dir   = "liss",
+#   output_dir = "./output"
+# )
+
+## -----------------------------------------------------------------------------
 # recipe <- liss_recipe("ch")
 # result <- merge_liss_module(
 #   recipe,
@@ -16,13 +22,8 @@ knitr::opts_chunk$set(
 # )
 
 ## -----------------------------------------------------------------------------
-# modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci")
-# recipe_paths <- purrr::map_chr(modules, ~ {
-#   system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
-# })
-# 
-# results <- merge_liss_modules(
-#   recipe_paths,
+# custom_results <- merge_liss_modules(
+#   recipe_paths = "my_ch_recipe.yml",
 #   data_dir   = "liss",
 #   output_dir = "./output"
 # )
@@ -48,11 +49,10 @@ knitr::opts_chunk$set(
 # # example: merge Health survey with background variables
 # survey <- haven::read_sav("output/ch_merged.sav")
 # 
-# # read avars files and tag each with YYYYMM from the filename
+# # read avars files; the period is the `wave` column in each file
 # bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
 # bg_data  <- purrr::map_dfr(bg_files, function(f) {
-#   ym <- as.integer(stringr::str_extract(basename(f), "\\d{6}"))
-#   haven::read_sav(f) |> dplyr::mutate(fieldwork_ym = ym)
+#   haven::read_sav(f) |> dplyr::mutate(fieldwork_ym = as.integer(wave))
 # })
 # 
 # merged <- dplyr::left_join(

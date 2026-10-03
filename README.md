@@ -48,19 +48,28 @@ selection <- liss_select()
 # 5. download
 liss_download(selection)
 
-# 6. merge a module using the built-in recipe
-recipe <- liss_recipe("ch")
-result <- merge_liss_module(recipe, data_dir = "liss", output_dir = "./output")
-
-# 7. batch merge all core modules
-modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci", "ca", "cr")
+# 6. merge downloaded core modules using their built-in recipes
 results <- merge_liss_modules(
-  purrr::map_chr(modules, ~ system.file("recipes", paste0(.x, "_merge_recipe.yml"),
-                                         package = "lissr")),
   data_dir = "liss",
   output_dir = "./output"
 )
 ```
+
+No module list or recipe paths are needed. The batch finds supported local
+wave files (`.sav`, `.zsav`, `.dta`, `.csv`), then loads the built-in recipe
+for each detected core module in alphabetical module-code order. For each
+module, it uses `data_dir/ch/` (for example) when that subdirectory exists,
+otherwise `data_dir` itself. Wave filenames must retain their module-wave
+prefix, such as `ch07a_`; each recipe still determines which waves can be
+processed.
+Modules without local data are omitted from the automatic batch. Existing
+recipe, comparability, and data warnings still apply to modules being merged.
+
+Discovery uses the folder's contents, including earlier downloads; it does
+not depend on the most recent `selection` or determine which variables your
+analysis needs. Use a dedicated data folder to limit the batch to a particular
+download. Explicit recipe paths and `merge_liss_module()` remain available
+when you want to restrict processing or use a custom recipe.
 
 ## Vignettes
 
@@ -72,7 +81,7 @@ rendered versions in your browser without installing:
 - [Getting Started with lissr](https://siardv.github.io/lissr/articles/getting-started.html):
   a short orientation to the package and its workflow.
 - [Merging LISS Panel Data](https://siardv.github.io/lissr/articles/merge-workflow.html):
-  the core single-module merge, from recipe to merged output.
+  automatically merging downloaded modules, with optional recipe controls.
 - [Longitudinal Panel Analysis](https://siardv.github.io/lissr/articles/longitudinal-panel-analysis.html):
   assembling and analyzing data across multiple waves.
 - [Cross-Sectional Analysis with a Single Wave](https://siardv.github.io/lissr/articles/cross-sectional-analysis.html):
@@ -136,7 +145,7 @@ Each `avars` file carries the fieldwork period as a `wave` column
 # in liss_select() / the blueprint; download it, then read and join
 avars <- haven::read_sav("data/avars/avars_202411_EN_1_0p.sav")
 # the fieldwork period is in the `wave` column (here: 202411)
-merged_with_demographics <- dplyr::left_join(result, avars, by = "nomem_encr")
+merged_with_demographics <- dplyr::left_join(results$ch$data, avars, by = "nomem_encr")
 ```
 
 `liss_clean_income()` can attach a background frame itself (its `P01`
@@ -169,8 +178,10 @@ it does not validate that a non-`.sav` format is handled correctly downstream.
 The engine discovers each wave's file inside `data_dir` by the recipe's
 `file_pattern`, which is the canonical `{wave_id}_*` glob for every
 bundled recipe (matching archive names such as `ch07a_EN_1.0p.sav`).
-Keep one module per directory (for example `data/ch/`) or pass a flat
-directory containing only that module's files. When several files match
+The automatic batch accepts a common parent directory with module
+subdirectories (for example `data/ch/`) or a flat directory with wave files
+from several modules. The single-module helper also accepts that module's
+own directory. When several files match
 one wave, the engine ranks release versions, records the decision in
 the provenance block, and a `wave_index` entry may pin
 `expected_release`; a violated pin invalidates the output and aborts

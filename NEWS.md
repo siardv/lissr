@@ -1,5 +1,15 @@
 # lissr (development)
 
+* `merge_liss_modules()` now discovers local core-module wave files when
+  `recipe_paths` is omitted. Supply only `data_dir` and `output_dir`; the batch
+  loads built-in recipes for detected modules, without a manual module list
+  or skipped-module messages for absent inputs. Discovery checks module-code
+  subdirectories when present, otherwise the parent folder, and includes
+  earlier downloads in the same folder. Modules run in alphabetical code
+  order, with existing recipe wave coverage. Explicit
+  recipe paths, custom recipes, and warnings from processed modules retain
+  their existing behavior.
+
 * The installed-package test runner now checks every recorded failure and error
   before returning success. This prevents a test error followed by a cleanup
   warning or skip from being hidden by testthat's result summary. The standard

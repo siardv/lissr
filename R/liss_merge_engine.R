@@ -3727,20 +3727,68 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   ))
 }
 
+#' find built-in recipes with local wave data (internal)
+#' @noRd
+.available_builtin_recipes <- function(data_dir) {
+  recipe_dir <- system.file("recipes", package = "lissr", mustWork = TRUE)
+  paths <- list.files(recipe_dir, pattern = "^[a-z]{2}_merge_recipe\\.yml$",
+                      full.names = TRUE)
+  if (length(paths) == 0)
+    cli::cli_abort("no built-in merge recipes found")
+
+  modules <- sub("_merge_recipe\\.yml$", "", basename(paths))
+  has_data <- vapply(modules, function(mod) {
+    mod_data_dir <- file.path(data_dir, mod)
+    if (!dir.exists(mod_data_dir)) mod_data_dir <- data_dir
+    candidates <- list.files(mod_data_dir,
+      pattern = paste0("^", mod, "[0-9]{2}[a-z][_.].*\\.(sav|zsav|dta|csv)$"),
+      full.names = TRUE, ignore.case = TRUE)
+    file_info <- suppressWarnings(file.info(candidates, extra_cols = FALSE))
+    is_file <- !is.na(file_info$isdir) & !file_info$isdir
+    # match wave discovery's handling of unresolved windows links
+    if (.Platform$OS.type == "windows")
+      is_file <- is_file & !is.na(file_info$mtime)
+    any(is_file)
+  }, logical(1))
+  paths[has_data]
+}
+
 #' merge multiple modules sequentially
 #'
-#' validates all recipes first, then runs each module merge. modules
-#' with no data files in `data_dir` are silently skipped.
+#' by default, detects modules with local wave data and uses their built-in
+#' recipes, in module-code order. detection accepts `.sav`, `.zsav`, `.dta`
+#' and `.csv` files named with a module-wave prefix (e.g. `ch07a_`). it uses
+#' the contents of `data_dir`, including earlier downloads, rather than the
+#' most recent download selection. recipe wave coverage remains unchanged.
 #'
-#' @param recipe_paths character vector of paths to YAML recipe files.
+#' validates the selected recipes before running any module merge. when
+#' `recipe_paths` is supplied, uses those recipes in the supplied order and
+#' reports modules with no data files as skipped. recipe and data warnings
+#' remain visible in both modes.
+#'
+#' @param recipe_paths optional character vector of paths to YAML recipe files.
+#'   default `NULL` selects built-in recipes for modules with local wave data.
 #' @param data_dir character. root data directory. per-module subdirectories
-#'   are tried first (e.g. `data_dir/ch/`), falling back to `data_dir`.
+#'   are used when present (e.g. `data_dir/ch/`); otherwise scans `data_dir`.
 #' @param output_dir character. directory for output files.
 #' @param strict logical. forwarded to [merge_liss_module()].
 #' @return a named list of per-module results (invisibly).
 #' @export
-merge_liss_modules <- function(recipe_paths, data_dir, output_dir = ".",
+#' @examples
+#' \dontrun{
+#' results <- merge_liss_modules(data_dir = "liss", output_dir = "output")
+#' }
+merge_liss_modules <- function(recipe_paths = NULL, data_dir, output_dir = ".",
                                strict = FALSE) {
+  if (is.null(recipe_paths)) {
+    recipe_paths <- .available_builtin_recipes(data_dir)
+    if (length(recipe_paths) == 0) {
+      cli::cli_abort(c(
+        "no data files found for any module in {.path {data_dir}}",
+        "i" = "download data first with {.code liss_download()}"
+      ))
+    }
+  }
   recipes <- load_recipes(recipe_paths)
   results <- list()
 

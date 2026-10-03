@@ -20,3 +20,9 @@ knitr::opts_chunk$set(
 # selection <- liss_select()
 # liss_download(selection)
 
+## -----------------------------------------------------------------------------
+# results <- merge_liss_modules(
+#   data_dir = "liss",
+#   output_dir = "./output"
+# )
+

@@ -12,46 +12,34 @@ knitr::opts_chunk$set(
 # 
 # liss_login()
 # 
-# # download all waves for three modules
+# # download all waves for three modules. map each module code to a
+# # distinctive fragment of its archive display name; matching by
+# # fragment is robust to small display-name changes, and the code (not
+# # the display name) names the directory the recipes expect
 # bp <- liss_blueprint()
-# for (mod in c("Health", "Economic Integration: Income", "Politics and Values")) {
-#   files <- bp |> filter(module == mod, type == "spss")
-#   mod_dir <- file.path("data", tolower(substr(mod, 1, 2)))
-#   liss_download(files, .dir = mod_dir)
+# mods <- c(ch = "Health", ci = "Income", cv = "Politics")
+# for (code in names(mods)) {
+#   files <- bp |>
+#     filter(grepl(mods[[code]], module, ignore.case = TRUE), type == "spss")
+#   liss_download(files, .dir = file.path("data", code))
 # }
 # 
-# # merge each module with its own recipe
-# modules <- c("ch", "ci", "cv")
-# results <- purrr::map(modules, function(mod) {
-#   recipe <- liss_recipe(mod)
-#   merge_liss_module(
-#     recipe,
-#     data_dir   = file.path("data", mod),
-#     output_dir = file.path("output", mod)
-#   )
-# }) |> purrr::set_names(modules)
-
-## ----batch-merge--------------------------------------------------------------
-# recipe_paths <- purrr::map_chr(modules, ~ {
-#   system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
-# })
-# 
-# results <- merge_liss_modules(recipe_paths, data_dir = "data", output_dir = "output")
+# # detect downloaded modules and merge each with its built-in recipe
+# results <- merge_liss_modules(data_dir = "data", output_dir = "output")
 
 ## ----select-vars--------------------------------------------------------------
-# # health: self-rated health (s001) and BMI (s038)
+# # the suffixes below are illustrative; the same suffix means different
+# # things in different modules, so confirm each one against the module
+# # codebook or the merge report before analysis
 # health <- results$ch$data |>
 #   select(nomem_encr, wave_year,
-#          srh = s001,
-#          bmi = s038)
+#          srh = s001)
 # 
-# # income: main employment status (s001 in CI = net personal income)
 # income <- results$ci$data |>
 #   select(nomem_encr, wave_year,
 #          net_income = s001,
 #          employed   = s006)
 # 
-# # politics: voted in last election (s012 in CV)
 # politics <- results$cv$data |>
 #   select(nomem_encr, wave_year,
 #          voted_last_election = s012,
@@ -62,15 +50,15 @@ knitr::opts_chunk$set(
 # purrr::map(results, ~ sort(unique(.x$data$wave_year)))
 # #> $ch
 # #>  [1] 2007 2008 2009 2010 2011 2012 2013 2015 2016 2017 2018 2019 2020 2021
-# #>      2022 2023 2024
+# #>      2022 2023 2024 2025
 # #>
 # #> $ci
-# #>  [1] 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020
-# #>      2021 2022 2023 2024
+# #>  [1] 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021
+# #>      2022 2023 2024 2025
 # #>
 # #> $cv
-# #>  [1] 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 2019 2020 2021
-# #>      2022 2023 2024
+# #>  [1] 2008 2009 2010 2011 2012 2013 2014 2016 2017 2018 2019 2020 2021 2022
+# #>      2023 2024 2025 2026
 # 
 # # find the overlapping years
 # common_years <- Reduce(
@@ -78,8 +66,8 @@ knitr::opts_chunk$set(
 #   purrr::map(results, ~ unique(.x$data$wave_year))
 # )
 # common_years
-# #> [1] 2008 2009 2010 2011 2012 2013 2015 2016 2017 2018 2019 2020 2021 2022
-# #>     2023 2024
+# #> [1] 2008 2009 2010 2011 2012 2013 2016 2017 2018 2019 2020 2021 2022 2023
+# #>     2024 2025
 
 ## ----join---------------------------------------------------------------------
 # # full join preserves all person-years from any module
@@ -141,13 +129,8 @@ knitr::opts_chunk$set(
 # })
 
 ## ----full-batch---------------------------------------------------------------
-# all_modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci")
-# recipe_paths <- purrr::map_chr(all_modules, ~ {
-#   system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
-# })
-# 
 # all_results <- merge_liss_modules(
-#   recipe_paths, data_dir = "data", output_dir = "output"
+#   data_dir = "data", output_dir = "output"
 # )
 # 
 # # join all modules progressively
