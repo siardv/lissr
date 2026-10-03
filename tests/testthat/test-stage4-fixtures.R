@@ -178,6 +178,15 @@
     lapply(recipe$harmonization_rules %||% list(), .collect_suffixes),
     lapply(recipe$validation_checks %||% list(), .collect_suffixes)
   )))
+  # referenced harmonized targets need their raw rename sources before execution
+  renamed_sources <- unlist(lapply(c(recipe$variable_rules, recipe$harmonization_rules),
+    function(rule) {
+      if (!identical(rule$action, "rename")) return(character(0))
+      mapping <- unlist(rule$mapping)
+      names(mapping)[mapping %in% sfx]
+    }))
+  renamed_sources <- sub("^(s|stem_|q|Q)([0-9]{3})$", "\\2", renamed_sources)
+  renamed_sources <- renamed_sources[grepl("^[0-9]{3}$", renamed_sources)]
   sfx <- sfx[grepl("^[0-9]{3}$", sfx)]
   sfx <- utils::head(sort(unique(sfx)), 40)
   plant <- .plant_specs(recipe)
@@ -187,7 +196,7 @@
   extra <- setdiff(grep("^[0-9]{3}$",
                         c(names(plant$allowed), names(plant$present)),
                         value = TRUE), sfx)
-  sfx <- unique(c(sfx, extra, .required_absence_suffixes(recipe),
+  sfx <- unique(c(sfx, extra, renamed_sources, .required_absence_suffixes(recipe),
                  .required_na_rate_suffixes(recipe),
                  structural_targets[grepl("^[0-9]{3}$", structural_targets)]))
   # boundary split_variable sources must exist for era-scoped outputs

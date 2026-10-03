@@ -8,7 +8,7 @@
 meta:
   module: cd
   module_label: Housing
-  recipe_version: "1.2.0"
+  recipe_version: "1.2.1"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -37,7 +37,8 @@ meta:
     1 cd09b-cd23p, 2 cd24q-cd25r); corrected the cd25r expansion count to 127;
     restored structured dependencies on the four copy-derived variables and
     wave_values on h_recall_months (TODO_REEXPRESS); filled CHK04; added CHK11
-    as the executable form of the B01 post_check.
+    as the executable form of the B01 post_check. sentinel recodes target
+    the harmonized satisfaction, mortgage and WOZ fields after renaming.
   schema_version: "1.0.0"
 global:
   id_variable: nomem_encr
@@ -524,7 +525,7 @@ variable_rules:
 harmonization_rules:
 - rule_id: S01a_scale_999_era1  # REEXPRESSED_FROM: note_only
   anomaly_ref: A-01
-  description: recode 999 (DK) to NA on 0-10 satisfaction scales; suffix list per era-1 value-label evidence
+  description: recode 999 (DK) to NA on renamed 0-10 satisfaction scales; targets per era-1 value-label evidence
   action: recode_to_na
   waves:
   - cd08a
@@ -539,8 +540,8 @@ harmonization_rules:
   - cd17j
   - cd18k
   variables:
-  - '001'
-  - '002'
+  - h_satisfaction_dwelling
+  - h_satisfaction_vicinity
   mapping:
     999: null
   log: count recoded values per variable per wave
@@ -617,6 +618,7 @@ harmonization_rules:
   variables:
   - '014'
   - '029'
+  - h_woz_ref_year
   mapping:
     99999: null
     '9999999999': null
@@ -624,7 +626,7 @@ harmonization_rules:
   log: count recoded values per variable per wave
 - rule_id: S01e_monetary_big_sentinels_era1  # REEXPRESSED_FROM: note_only
   anomaly_ref: A-01
-  description: recode monetary DK/PNTS sentinels to NA; identical 17-suffix list labelled for both codes per era-1 value-label evidence
+  description: recode monetary DK/PNTS sentinels to NA; retain the 17 suffixes and renamed mortgage field labelled for both codes per era-1 value-label evidence
   action: recode_to_na
   waves:
   - cd08a
@@ -656,13 +658,14 @@ harmonization_rules:
   - '072'
   - '083'
   - '085'
+  - h_mortgage_debt
   mapping:
     '9999999998': null
     '9999999999': null
   log: count recoded values per variable per wave
 - rule_id: S02a_scale_dk9_era2  # REEXPRESSED_FROM: note_only
   anomaly_ref: A-01
-  description: recode -9 (DK) to NA on 0-10 satisfaction scales; suffix list per era-2 value-label evidence
+  description: recode -9 (DK) to NA on renamed 0-10 satisfaction scales; targets per era-2 value-label evidence
   action: recode_to_na
   waves:
   - cd19l
@@ -673,8 +676,8 @@ harmonization_rules:
   - cd24q
   - cd25r
   variables:
-  - '091'
-  - '092'
+  - h_satisfaction_dwelling
+  - h_satisfaction_vicinity
   mapping:
     -9: null
   log: count recoded values per variable per wave
@@ -693,6 +696,7 @@ harmonization_rules:
   variables:
   - '014'  # purchase year, all era-2 waves
   - '029'  # WOZ year, present only cd20m-cd22o
+  - h_woz_ref_year
   mapping:
     -9: null
   log: count recoded values per variable per wave
@@ -806,6 +810,8 @@ harmonization_rules:
   - '214'  # cd25r only
   - '217'  # cd25r only
   - '218'  # cd25r only
+  - h_mortgage_debt
+  - h_woz_latest_value
   mapping:
     -9: null
   log: count recoded values per variable per wave
@@ -841,6 +847,8 @@ harmonization_rules:
   - '105'  # cd25r only; currency field paired with 104
   - '203'  # cd25r only
   - '208'  # cd25r only
+  - h_mortgage_debt
+  - h_woz_latest_value
   mapping:
     -8: null
   log: count recoded values per variable per wave
