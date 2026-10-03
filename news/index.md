@@ -2,6 +2,14 @@
 
 ## lissr 1.4.1.9000
 
+- The Housing (`cd`) recipe now applies its existing missing-code
+  recodes to renamed satisfaction, mortgage-debt and WOZ fields.
+  Previously those rules still targeted the old suffix names after
+  renaming, leaving declared missing codes in the merged data and
+  causing range-check failures. CD recipe version 1.2.1 preserves the
+  existing wave scopes, recode mappings and validation rules; surviving
+  original suffix targets and substantive values are retained.
+
 - [`merge_liss_modules()`](https://siardv.github.io/lissr/reference/merge_liss_modules.md)
   now discovers local core-module wave files when `recipe_paths` is
   omitted. Supply only `data_dir` and `output_dir`; the batch loads
