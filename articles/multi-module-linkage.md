@@ -32,7 +32,7 @@ Each module is merged independently using its own recipe (different
 sentinel codes, different boundary rules, different variable numbering),
 then the cleaned outputs are joined on `nomem_encr` + `wave_year`.
 
-## Step 1 — merge each module separately
+## Step 1 — merge downloaded modules
 
 ``` r
 
@@ -54,28 +54,24 @@ for (code in names(mods)) {
   liss_download(files, .dir = file.path("data", code))
 }
 
-# merge each module with its own recipe
-modules <- c("ch", "ci", "cv")
-results <- purrr::map(modules, function(mod) {
-  recipe <- liss_recipe(mod)
-  merge_liss_module(
-    recipe,
-    data_dir   = file.path("data", mod),
-    output_dir = file.path("output", mod)
-  )
-}) |> purrr::set_names(modules)
+# detect downloaded modules and merge each with its built-in recipe
+results <- merge_liss_modules(data_dir = "data", output_dir = "output")
 ```
 
-Alternatively, use the batch interface:
+The batch detects supported local core-module wave files and merges
+modules in alphabetical module-code order, so there is no second module
+list to maintain for merging. It checks each module-code subdirectory
+(for example `data/ch/`) when present, otherwise the parent data folder.
+Existing recipe wave coverage still determines which waves can be
+processed. Modules without local data are omitted from the automatic
+batch; warnings about processed recipes and data remain visible.
 
-``` r
-
-recipe_paths <- purrr::map_chr(modules, ~ {
-  system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
-})
-
-results <- merge_liss_modules(recipe_paths, data_dir = "data", output_dir = "output")
-```
+Use a dedicated `data` folder for this analysis. Discovery includes
+earlier downloads in the folder, not just the last download selection,
+and it does not infer which variables your analysis needs. If you need
+explicit control, the batch accepts `recipe_paths`, and
+[`merge_liss_module()`](https://siardv.github.io/lissr/reference/merge_liss_module.md)
+remains an optional way to process a single built-in or custom recipe.
 
 ## Step 2 — select variables from each module
 
@@ -238,17 +234,13 @@ purrr::map(results, ~ {
 
 ## Scaling to all ten modules
 
-If you need variables from every module, the batch merge handles it:
+After downloading every module to the data folder, the same automatic
+batch call handles all ten:
 
 ``` r
 
-all_modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci", "ca", "cr")
-recipe_paths <- purrr::map_chr(all_modules, ~ {
-  system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
-})
-
 all_results <- merge_liss_modules(
-  recipe_paths, data_dir = "data", output_dir = "output"
+  data_dir = "data", output_dir = "output"
 )
 
 # join all modules progressively

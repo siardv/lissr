@@ -109,18 +109,13 @@
 <span><span class="co"># 5. download</span></span>
 <span><span class="fu"><a href="reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">selection</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 6. merge a module using the built-in recipe</span></span>
-<span><span class="va">recipe</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ch"</span><span class="op">)</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span><span class="va">recipe</span>, data_dir <span class="op">=</span> <span class="st">"liss"</span>, output_dir <span class="op">=</span> <span class="st">"./output"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 7. batch merge all core modules</span></span>
-<span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch"</span>, <span class="st">"cv"</span>, <span class="st">"cd"</span>, <span class="st">"cf"</span>, <span class="st">"cw"</span>, <span class="st">"cp"</span>, <span class="st">"cs"</span>, <span class="st">"ci"</span>, <span class="st">"ca"</span>, <span class="st">"cr"</span><span class="op">)</span></span>
+<span><span class="co"># 6. merge downloaded core modules using their built-in recipes</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
-<span>  <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_chr</a></span><span class="op">(</span><span class="va">modules</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"recipes"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">.x</span>, <span class="st">"_merge_recipe.yml"</span><span class="op">)</span>,</span>
-<span>                                         package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  data_dir <span class="op">=</span> <span class="st">"liss"</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"./output"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>No module list or recipe paths are needed. The batch finds supported local wave files (<code>.sav</code>, <code>.zsav</code>, <code>.dta</code>, <code>.csv</code>), then loads the built-in recipe for each detected core module in alphabetical module-code order. For each module, it uses <code>data_dir/ch/</code> (for example) when that subdirectory exists, otherwise <code>data_dir</code> itself. Wave filenames must retain their module-wave prefix, such as <code>ch07a_</code>; each recipe still determines which waves can be processed. Modules without local data are omitted from the automatic batch. Existing recipe, comparability, and data warnings still apply to modules being merged.</p>
+<p>Discovery uses the folder’s contents, including earlier downloads; it does not depend on the most recent <code>selection</code> or determine which variables your analysis needs. Use a dedicated data folder to limit the batch to a particular download. Explicit recipe paths and <code><a href="reference/merge_liss_module.html">merge_liss_module()</a></code> remain available when you want to restrict processing or use a custom recipe.</p>
 </div>
 <div class="section level2">
 <h2 id="vignettes">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes"></a>
@@ -130,7 +125,7 @@
 <li>
 <a href="https://siardv.github.io/lissr/articles/getting-started.html">Getting Started with lissr</a>: a short orientation to the package and its workflow.</li>
 <li>
-<a href="https://siardv.github.io/lissr/articles/merge-workflow.html">Merging LISS Panel Data</a>: the core single-module merge, from recipe to merged output.</li>
+<a href="https://siardv.github.io/lissr/articles/merge-workflow.html">Merging LISS Panel Data</a>: automatically merging downloaded modules, with optional recipe controls.</li>
 <li>
 <a href="https://siardv.github.io/lissr/articles/longitudinal-panel-analysis.html">Longitudinal Panel Analysis</a>: assembling and analyzing data across multiple waves.</li>
 <li>
@@ -165,7 +160,7 @@
 <span><span class="co"># in liss_select() / the blueprint; download it, then read and join</span></span>
 <span><span class="va">avars</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars/avars_202411_EN_1_0p.sav"</span><span class="op">)</span></span>
 <span><span class="co"># the fieldwork period is in the `wave` column (here: 202411)</span></span>
-<span><span class="va">merged_with_demographics</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">result</span>, <span class="va">avars</span>, by <span class="op">=</span> <span class="st">"nomem_encr"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">merged_with_demographics</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">ch</span><span class="op">$</span><span class="va">data</span>, <span class="va">avars</span>, by <span class="op">=</span> <span class="st">"nomem_encr"</span><span class="op">)</span></span></code></pre></div>
 <p><code><a href="reference/liss_clean_income.html">liss_clean_income()</a></code> can attach a background frame itself (its <code>P01</code> rule aligns monthly <code>avars</code> waves to the annual scale and reports the join match rate); see the income-cleaning vignette.</p>
 <p>Join on <code>nomem_encr</code> only, never <code>nohouse_encr</code> (the household id is not a stable person-level key and changes when household composition changes), and match the Background Variables fieldwork month to your wave data. The <code>cross-sectional-analysis</code> and <code>multi-module-linkage</code> vignettes show the full workflow.</p>
 </div>
@@ -177,7 +172,7 @@
 <div class="section level3">
 <h3 id="directory-and-naming-contract">Directory and naming contract<a class="anchor" aria-label="anchor" href="#directory-and-naming-contract"></a>
 </h3>
-<p>The engine discovers each wave’s file inside <code>data_dir</code> by the recipe’s <code>file_pattern</code>, which is the canonical <code>{wave_id}_*</code> glob for every bundled recipe (matching archive names such as <code>ch07a_EN_1.0p.sav</code>). Keep one module per directory (for example <code>data/ch/</code>) or pass a flat directory containing only that module’s files. When several files match one wave, the engine ranks release versions, records the decision in the provenance block, and a <code>wave_index</code> entry may pin <code>expected_release</code>; a violated pin invalidates the output and aborts under <code>strict = TRUE</code>.</p>
+<p>The engine discovers each wave’s file inside <code>data_dir</code> by the recipe’s <code>file_pattern</code>, which is the canonical <code>{wave_id}_*</code> glob for every bundled recipe (matching archive names such as <code>ch07a_EN_1.0p.sav</code>). The automatic batch accepts a common parent directory with module subdirectories (for example <code>data/ch/</code>) or a flat directory with wave files from several modules. The single-module helper also accepts that module’s own directory. When several files match one wave, the engine ranks release versions, records the decision in the provenance block, and a <code>wave_index</code> entry may pin <code>expected_release</code>; a violated pin invalidates the output and aborts under <code>strict = TRUE</code>.</p>
 </div>
 </div>
 <div class="section level2">

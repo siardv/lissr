@@ -96,18 +96,34 @@ preserve variable labels, value labels, and user-defined missing
 values.</p>
 </div>
 <div class="section level2">
-<h2 id="single-module-merge">Single module merge<a class="anchor" aria-label="anchor" href="#single-module-merge"></a>
+<h2 id="merge-downloaded-modules">Merge downloaded modules<a class="anchor" aria-label="anchor" href="#merge-downloaded-modules"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://siardv.github.io/lissr/">lissr</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">recipe</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ch"</span><span class="op">)</span></span>
-<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
-<span>  <span class="va">recipe</span>,</span>
-<span>  data_dir   <span class="op">=</span> <span class="st">"liss/ch"</span>,</span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
+<span>  data_dir   <span class="op">=</span> <span class="st">"liss"</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"./output"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>This produces four files:</p>
+<p>No module list or recipe paths are required. The batch detects
+supported core-module wave files (<code>.sav</code>, <code>.zsav</code>,
+<code>.dta</code>, <code>.csv</code>), then loads only the corresponding
+built-in recipes in alphabetical module-code order. For each module, it
+checks its module-code subdirectory (for example <code>liss/ch/</code>)
+if that directory exists, otherwise <code>data_dir</code> itself. An
+existing empty module subdirectory therefore takes precedence over files
+for that module in the parent folder. Filenames must retain their
+module-wave prefix, such as <code>ch07a_</code>; existing recipe wave
+coverage still determines which waves can be processed. Modules without
+local files are omitted from the automatic batch. Recipe, comparability,
+and data warnings from processed modules remain visible. Finding a file
+does not establish that its format or contents are analytically valid;
+review each module’s report.</p>
+<p>Discovery uses everything available in that folder, including older
+downloads. It does not restrict the merge to the most recent
+<code>selection</code> or infer which variables your analysis needs. Use
+a dedicated data folder to keep a particular download separate.</p>
+<p>Each module writes its own outputs. For example, Health produces:</p>
 <ul>
 <li>
 <code>ch_merged.sav</code> — merged data (SPSS format, preserving
@@ -120,22 +136,31 @@ recipe)</li>
 <li>
 <code>ch_merge_report.txt</code> — human-readable report</li>
 </ul>
-<p>The returned object additionally carries <code>provenance</code>
-(package, recipe, and schema versions, per-input md5 hashes,
-release-selection decisions) and a <code>valid_for_analysis</code>
-verdict, both reproduced in the report.</p>
+<p>The returned list is named by module code, so <code>results$ch</code>
+contains the Health result when local Health files are available. Each
+module result additionally carries <code>provenance</code> (package,
+recipe, and schema versions, per-input md5 hashes, release-selection
+decisions) and a <code>valid_for_analysis</code> verdict, both
+reproduced in the report.</p>
 </div>
 <div class="section level2">
-<h2 id="batch-merge">Batch merge<a class="anchor" aria-label="anchor" href="#batch-merge"></a>
+<h2 id="optional-recipe-controls">Optional recipe controls<a class="anchor" aria-label="anchor" href="#optional-recipe-controls"></a>
 </h2>
+<p>To merge only one module, or supply an already loaded custom recipe,
+use the single-module helper. This is an alternative to the automatic
+batch, not a preliminary step:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch"</span>, <span class="st">"cv"</span>, <span class="st">"cd"</span>, <span class="st">"cf"</span>, <span class="st">"cw"</span>, <span class="st">"cp"</span>, <span class="st">"cs"</span>, <span class="st">"ci"</span>, <span class="st">"ca"</span>, <span class="st">"cr"</span><span class="op">)</span></span>
-<span><span class="va">recipe_paths</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_chr</a></span><span class="op">(</span><span class="va">modules</span>, <span class="op">~</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"recipes"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">.x</span>, <span class="st">"_merge_recipe.yml"</span><span class="op">)</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
-<span>  <span class="va">recipe_paths</span>,</span>
+<code class="sourceCode R"><span><span class="va">recipe</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ch"</span><span class="op">)</span></span>
+<span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
+<span>  <span class="va">recipe</span>,</span>
+<span>  data_dir   <span class="op">=</span> <span class="st">"liss/ch"</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"./output"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The batch also accepts explicit recipe paths to restrict which
+recipes run or to use custom recipes:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">custom_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
+<span>  recipe_paths <span class="op">=</span> <span class="st">"my_ch_recipe.yml"</span>,</span>
 <span>  data_dir   <span class="op">=</span> <span class="st">"liss"</span>,</span>
 <span>  output_dir <span class="op">=</span> <span class="st">"./output"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -146,7 +171,7 @@ verdict, both reproduced in the report.</p>
 <p>After merging individual modules, combine them into one wide dataset.
 Columns are prefixed with the module code to avoid collisions
 (e.g. <code>ch_s004</code>, <code>cv_s004</code>).</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">panel</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_panel.html">merge_liss_panel</a></span><span class="op">(</span><span class="va">results</span>, write_to <span class="op">=</span> <span class="st">"./output/liss_panel.sav"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># only respondent-years present in all modules</span></span>
@@ -155,7 +180,7 @@ Columns are prefixed with the module code to avoid collisions
 <div class="section level2">
 <h2 id="validate-recipes">Validate recipes<a class="anchor" aria-label="anchor" href="#validate-recipes"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">recipe</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ch"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/validate_recipe.html">validate_recipe</a></span><span class="op">(</span><span class="va">recipe</span>, <span class="st">"ch_merge_recipe.yml"</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -165,7 +190,7 @@ Columns are prefixed with the module code to avoid collisions
 <p>When a new wave is released, the onboarding helper automates most of
 the checklist: variable diffs, candidate wave_index entry,
 expected-presence checks, and boundary alerts.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/onboard_new_wave.html">onboard_new_wave</a></span><span class="op">(</span></span>
 <span>  recipe_path  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"recipes"</span>, <span class="st">"ch_merge_recipe.yml"</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span>,</span>
 <span>  new_file     <span class="op">=</span> <span class="st">"ch25r_EN_1.0p.sav"</span>,</span>
@@ -189,7 +214,7 @@ integer) derived automatically from the LISS <code>_m</code> suffix.
 Each <code>avars</code> file carries its fieldwork period as a
 <code>wave</code> column (YYYYMM), so stacking monthly files needs no
 filename parsing:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># example: merge Health survey with background variables</span></span>
 <span><span class="va">survey</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"output/ch_merged.sav"</span><span class="op">)</span></span>
 <span></span>

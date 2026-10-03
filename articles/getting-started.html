@@ -122,12 +122,33 @@ email.</p>
 <span><span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">selection</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="merge-downloaded-modules">Merge downloaded modules<a class="anchor" aria-label="anchor" href="#merge-downloaded-modules"></a>
+</h2>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
+<span>  data_dir <span class="op">=</span> <span class="st">"liss"</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"./output"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The batch detects supported core-module wave files, then uses the
+corresponding built-in recipes in alphabetical module-code order. For
+each module, it checks the module-code subdirectory (for example
+<code>liss/ch/</code>) when present, otherwise the main data folder.
+Existing recipes still determine which waves can be processed. You do
+not need to repeat your module selection or merge a single module first.
+Modules without local files are omitted from the automatic batch;
+warnings about the recipes and data being processed remain visible.</p>
+<p>This uses all supported local files in the folder, including previous
+downloads. It does not use the most recent <code>selection</code> to
+restrict the merge or choose variables for your analysis. Use a
+dedicated data folder when you want to keep a download separate.</p>
+</div>
+<div class="section level2">
 <h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
 </h2>
 <p>See <a href="merge-workflow.html">Merging LISS Panel Data</a> for
-merging longitudinal data. <em>(or run
-<code><a href="../articles/merge-workflow.html">vignette("merge-workflow", package = "lissr")</a></code> in the
-console)</em></p>
+output details and optional single-module or custom-recipe control.
+<em>(or run <code><a href="../articles/merge-workflow.html">vignette("merge-workflow", package = "lissr")</a></code>
+in the console)</em></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

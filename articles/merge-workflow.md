@@ -12,11 +12,57 @@ validation checks.
 All merged output is written in SPSS `.sav` format to preserve variable
 labels, value labels, and user-defined missing values.
 
-## Single module merge
+## Merge downloaded modules
 
 ``` r
 
 library(lissr)
+
+results <- merge_liss_modules(
+  data_dir   = "liss",
+  output_dir = "./output"
+)
+```
+
+No module list or recipe paths are required. The batch detects supported
+core-module wave files (`.sav`, `.zsav`, `.dta`, `.csv`), then loads
+only the corresponding built-in recipes in alphabetical module-code
+order. For each module, it checks its module-code subdirectory (for
+example `liss/ch/`) if that directory exists, otherwise `data_dir`
+itself. An existing empty module subdirectory therefore takes precedence
+over files for that module in the parent folder. Filenames must retain
+their module-wave prefix, such as `ch07a_`; existing recipe wave
+coverage still determines which waves can be processed. Modules without
+local files are omitted from the automatic batch. Recipe, comparability,
+and data warnings from processed modules remain visible. Finding a file
+does not establish that its format or contents are analytically valid;
+review each module’s report.
+
+Discovery uses everything available in that folder, including older
+downloads. It does not restrict the merge to the most recent `selection`
+or infer which variables your analysis needs. Use a dedicated data
+folder to keep a particular download separate.
+
+Each module writes its own outputs. For example, Health produces:
+
+- `ch_merged.sav` — merged data (SPSS format, preserving all labels)
+- `ch_merge_log.jsonl` — audit-grade structured log
+- `ch_merge_summary.json` — per-run summary (if enabled in recipe)
+- `ch_merge_report.txt` — human-readable report
+
+The returned list is named by module code, so `results$ch` contains the
+Health result when local Health files are available. Each module result
+additionally carries `provenance` (package, recipe, and schema versions,
+per-input md5 hashes, release-selection decisions) and a
+`valid_for_analysis` verdict, both reproduced in the report.
+
+## Optional recipe controls
+
+To merge only one module, or supply an already loaded custom recipe, use
+the single-module helper. This is an alternative to the automatic batch,
+not a preliminary step:
+
+``` r
 
 recipe <- liss_recipe("ch")
 result <- merge_liss_module(
@@ -26,28 +72,13 @@ result <- merge_liss_module(
 )
 ```
 
-This produces four files:
-
-- `ch_merged.sav` — merged data (SPSS format, preserving all labels)
-- `ch_merge_log.jsonl` — audit-grade structured log
-- `ch_merge_summary.json` — per-run summary (if enabled in recipe)
-- `ch_merge_report.txt` — human-readable report
-
-The returned object additionally carries `provenance` (package, recipe,
-and schema versions, per-input md5 hashes, release-selection decisions)
-and a `valid_for_analysis` verdict, both reproduced in the report.
-
-## Batch merge
+The batch also accepts explicit recipe paths to restrict which recipes
+run or to use custom recipes:
 
 ``` r
 
-modules <- c("ch", "cv", "cd", "cf", "cw", "cp", "cs", "ci", "ca", "cr")
-recipe_paths <- purrr::map_chr(modules, ~ {
-  system.file("recipes", paste0(.x, "_merge_recipe.yml"), package = "lissr")
-})
-
-results <- merge_liss_modules(
-  recipe_paths,
+custom_results <- merge_liss_modules(
+  recipe_paths = "my_ch_recipe.yml",
   data_dir   = "liss",
   output_dir = "./output"
 )

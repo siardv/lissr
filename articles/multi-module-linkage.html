@@ -120,7 +120,7 @@ then the cleaned outputs are joined on <code>nomem_encr</code> +
 <code>wave_year</code>.</p>
 </div>
 <div class="section level2">
-<h2 id="step-1-merge-each-module-separately">Step 1 — merge each module separately<a class="anchor" aria-label="anchor" href="#step-1-merge-each-module-separately"></a>
+<h2 id="step-1-merge-downloaded-modules">Step 1 — merge downloaded modules<a class="anchor" aria-label="anchor" href="#step-1-merge-downloaded-modules"></a>
 </h2>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://siardv.github.io/lissr/">lissr</a></span><span class="op">)</span></span>
@@ -141,23 +141,22 @@ then the cleaned outputs are joined on <code>nomem_encr</code> +
 <span>  <span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">files</span>, .dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="va">code</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span>
 <span></span>
-<span><span class="co"># merge each module with its own recipe</span></span>
-<span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch"</span>, <span class="st">"ci"</span>, <span class="st">"cv"</span><span class="op">)</span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">modules</span>, <span class="kw">function</span><span class="op">(</span><span class="va">mod</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">recipe</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="va">mod</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
-<span>    <span class="va">recipe</span>,</span>
-<span>    data_dir   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"data"</span>, <span class="va">mod</span><span class="op">)</span>,</span>
-<span>    output_dir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="st">"output"</span>, <span class="va">mod</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://rlang.r-lib.org/reference/set_names.html" class="external-link">set_names</a></span><span class="op">(</span><span class="va">modules</span><span class="op">)</span></span></code></pre></div>
-<p>Alternatively, use the batch interface:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">recipe_paths</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_chr</a></span><span class="op">(</span><span class="va">modules</span>, <span class="op">~</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"recipes"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">.x</span>, <span class="st">"_merge_recipe.yml"</span><span class="op">)</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span><span class="va">recipe_paths</span>, data_dir <span class="op">=</span> <span class="st">"data"</span>, output_dir <span class="op">=</span> <span class="st">"output"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># detect downloaded modules and merge each with its built-in recipe</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span>data_dir <span class="op">=</span> <span class="st">"data"</span>, output_dir <span class="op">=</span> <span class="st">"output"</span><span class="op">)</span></span></code></pre></div>
+<p>The batch detects supported local core-module wave files and merges
+modules in alphabetical module-code order, so there is no second module
+list to maintain for merging. It checks each module-code subdirectory
+(for example <code>data/ch/</code>) when present, otherwise the parent
+data folder. Existing recipe wave coverage still determines which waves
+can be processed. Modules without local data are omitted from the
+automatic batch; warnings about processed recipes and data remain
+visible.</p>
+<p>Use a dedicated <code>data</code> folder for this analysis. Discovery
+includes earlier downloads in the folder, not just the last download
+selection, and it does not infer which variables your analysis needs. If
+you need explicit control, the batch accepts <code>recipe_paths</code>,
+and <code><a href="../reference/merge_liss_module.html">merge_liss_module()</a></code> remains an optional way to process
+a single built-in or custom recipe.</p>
 </div>
 <div class="section level2">
 <h2 id="step-2-select-variables-from-each-module">Step 2 — select variables from each module<a class="anchor" aria-label="anchor" href="#step-2-select-variables-from-each-module"></a>
@@ -166,7 +165,7 @@ then the cleaned outputs are joined on <code>nomem_encr</code> +
 of columns. For a focused analysis, select only the variables you need
 before joining — this keeps the linked dataset manageable and avoids
 column-name collisions.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the suffixes below are illustrative; the same suffix means different</span></span>
 <span><span class="co"># things in different modules, so confirm each one against the module</span></span>
 <span><span class="co"># codebook or the merge report before analysis</span></span>
@@ -192,7 +191,7 @@ module skipped 2014 (there is no ch14 wave) and Politics and Values
 skipped 2015; the Work module has 15 waves while Health has 18. When
 joining on <code>wave_year</code>, you get <code>NA</code> in modules
 that did not have a wave that year. This is expected, not an error.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># which years does each module cover?</span></span>
 <span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">results</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">.x</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">wave_year</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $ch</span></span>
@@ -219,7 +218,7 @@ that did not have a wave that year. This is expected, not an error.</p>
 <div class="section level2">
 <h2 id="step-4-join-modules">Step 4 — join modules<a class="anchor" aria-label="anchor" href="#step-4-join-modules"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># full join preserves all person-years from any module</span></span>
 <span><span class="va">linked</span> <span class="op">&lt;-</span> <span class="va">health</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">full_join</a></span><span class="op">(</span><span class="va">income</span>,   by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nomem_encr"</span>, <span class="st">"wave_year"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -241,7 +240,7 @@ Health.</p>
 </h2>
 <p>Background variables supply time-varying demographics (age, education
 level, household income) that are not part of any survey module.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># read all monthly background variable files</span></span>
 <span><span class="va">bg_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="st">"data/avars"</span>, pattern <span class="op">=</span> <span class="st">"\\.sav$"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">bg</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map_dfr.html" class="external-link">map_dfr</a></span><span class="op">(</span><span class="va">bg_files</span>, \<span class="op">(</span><span class="va">f</span><span class="op">)</span> <span class="op">{</span></span>
@@ -272,7 +271,7 @@ level, household income) that are not part of any survey module.</p>
 </h2>
 <p>Does job loss predict a decline in self-rated health, controlling for
 person fixed effects?</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lrberge.github.io/fixest/" class="external-link">fixest</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">linked</span> <span class="op">&lt;-</span> <span class="va">linked</span> <span class="op">|&gt;</span></span>
@@ -307,7 +306,7 @@ join.</li>
 <strong>Document which recipe versions</strong> you used for each
 module.</li>
 </ul>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># list all era/period/flag columns across modules</span></span>
 <span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">results</span>, <span class="op">~</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">grep</a></span><span class="op">(</span><span class="st">"_flag$|_period$|_era$"</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">.x</span><span class="op">$</span><span class="va">data</span><span class="op">)</span>, value <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -316,16 +315,11 @@ module.</li>
 <div class="section level2">
 <h2 id="scaling-to-all-ten-modules">Scaling to all ten modules<a class="anchor" aria-label="anchor" href="#scaling-to-all-ten-modules"></a>
 </h2>
-<p>If you need variables from every module, the batch merge handles
-it:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">all_modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ch"</span>, <span class="st">"cv"</span>, <span class="st">"cd"</span>, <span class="st">"cf"</span>, <span class="st">"cw"</span>, <span class="st">"cp"</span>, <span class="st">"cs"</span>, <span class="st">"ci"</span>, <span class="st">"ca"</span>, <span class="st">"cr"</span><span class="op">)</span></span>
-<span><span class="va">recipe_paths</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_chr</a></span><span class="op">(</span><span class="va">all_modules</span>, <span class="op">~</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"recipes"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">.x</span>, <span class="st">"_merge_recipe.yml"</span><span class="op">)</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">all_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
-<span>  <span class="va">recipe_paths</span>, data_dir <span class="op">=</span> <span class="st">"data"</span>, output_dir <span class="op">=</span> <span class="st">"output"</span></span>
+<p>After downloading every module to the data folder, the same automatic
+batch call handles all ten:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">all_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_modules.html">merge_liss_modules</a></span><span class="op">(</span></span>
+<span>  data_dir <span class="op">=</span> <span class="st">"data"</span>, output_dir <span class="op">=</span> <span class="st">"output"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># join all modules progressively</span></span>
