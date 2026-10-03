@@ -1,4 +1,4 @@
-# lissr (development)
+# lissr 1.4.1.9000
 
 * `merge_liss_modules()` now discovers local core-module wave files when
   `recipe_paths` is omitted. Supply only `data_dir` and `output_dir`; the batch
