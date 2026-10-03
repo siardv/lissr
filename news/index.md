@@ -1,5 +1,142 @@
 # Changelog
 
+## lissr 1.4.1.9000
+
+- [`merge_liss_modules()`](https://siardv.github.io/lissr/reference/merge_liss_modules.md)
+  now discovers local core-module wave files when `recipe_paths` is
+  omitted. Supply only `data_dir` and `output_dir`; the batch loads
+  built-in recipes for detected modules, without a manual module list or
+  skipped-module messages for absent inputs. Discovery checks
+  module-code subdirectories when present, otherwise the parent folder,
+  and includes earlier downloads in the same folder. Modules run in
+  alphabetical code order, with existing recipe wave coverage. Explicit
+  recipe paths, custom recipes, and warnings from processed modules
+  retain their existing behavior.
+
+- The installed-package test runner now checks every recorded failure
+  and error before returning success. This prevents a test error
+  followed by a cleanup warning or skip from being hidden by testthat’s
+  result summary. The standard reporter and successful warning-only or
+  skipped runs are preserved.
+
+- The Politics and Values (`cv`) check `VC01_no_raw_dk` now exempts
+  structural -9 on `_m1`, `_m2`, `_m3` and `242` through a separate
+  validation block, while continuing to reject 99 and 999 on those
+  columns. Both blocks preserve the existing 28 exclusions and support
+  wave subsets; `160` remains checked. Diagnostics report the first
+  violating block and column, with 99/999 checked before -9. This
+  changes validation outcomes without changing transformation or
+  serialization rules; a report-mode comparison over cv17i-cv26r
+  confirmed identical returned data and SAV read-back values and
+  attributes. Other error-severity validation failures still prevent
+  output from being valid for analysis.
+
+- The Politics and Values (`cv`) recipe now combines its existing
+  `VC01_no_raw_dk` exclusions under one `exclude_variables` key.
+  Previously the `cv17i_Total` declaration masked all 27 suffix
+  exclusions, producing false error-level failures for values the recipe
+  intended to exempt. Retained targets still reject 99, 999 and -9.
+  Transformations and merged values are unchanged; this repairs
+  validation outcomes without introducing new exemptions or changing the
+  engine’s exclusion precedence.
+
+- The Income (`ci`) recipe now reports missing `nomem_encr` values
+  through a separate warning-level `V-05_nonmissing` check. `V-05`
+  retains its existing within-wave uniqueness check and now describes
+  that predicate accurately. Actual NA/NaN identifiers are detected
+  without changing identifier values, shared validation behavior or
+  warning-level output eligibility. Existing loader errors for missing
+  identifier columns and duplicate nonmissing IDs remain unchanged.
+
+- The Work and Schooling (`cw`) recipe now enforces its declared wage
+  (0–1000000, error) and pension-date (1990–2030, warning) bounds using
+  executable `min`/`max` fields. The previous `valid_range` declarations
+  were ignored. Wage sentinel exceptions are removed from the check
+  because existing harmonization converts `-9`/`-8` to NA before
+  validation, and the separate sentinel check rejects residual codes.
+  Transformations and merged values are unchanged; out-of-range
+  observations now receive the declared validation result.
+
+- `value_absence` and its aliases now validate every active
+  forbidden-value payload after resolving all block scopes and before
+  comparing observations. Malformed payloads are unevaluable with the
+  declared severity, even on empty scopes, all-excluded columns or after
+  an earlier block violation. Numeric members of mixed numeric/text
+  lists retain their precision for numeric matching. Existing
+  text/logical matching and type promotion, NA/NaN exclusion,
+  alias/parent fallback, empty-payload behavior, scopes and exclusions
+  are preserved; target value conversion remains unchanged.
+
+- `value_present` and `value_present_per_wave` now validate the entire
+  active `value`/`values` payload before matching observations.
+  Malformed text and list elements can no longer create accidental NA
+  matches, and exact field lookup prevents unrelated fields from
+  supplying requested values. Invalid payloads are unevaluable with the
+  declared severity. Numeric vectors and supported wrappers, explicit
+  NA/NaN matching, empty requests, alias/null precedence, required scope
+  resolution and any-target-per-wave matching are preserved. Target
+  numeric coercion remains unchanged.
+
+- `value_in_set` and its aliases now validate allowed sets and the
+  global `allow_na` flag before comparing values, including every
+  per-variable set. Malformed payloads are unevaluable with the declared
+  severity, even on empty data or after an earlier value violation.
+  Nonnumeric allowed text can no longer accidentally admit NA values,
+  and `list(FALSE)` now disables the missing-value exemption. Mixed
+  numeric/text lists retain numeric precision. Numeric vectors and
+  supported wrappers, explicit NA/NaN membership, null/empty sets, alias
+  precedence, scope resolution and target numeric coercion retain their
+  documented behavior.
+
+- `value_range` and its aliases now parse both exact `min`/`max` bounds
+  before comparing values. Numeric text compares numerically; malformed
+  or reversed bounds are unevaluable with the declared severity, even
+  when the other bound is violated or targets are empty, all-NA or
+  nonnumeric. Scalar wrappers are normalized, including one-cell arrays
+  with multiple selected observations. Defaults, inclusive
+  fractional/infinite bounds, numeric-column-only evaluation, scope
+  resolution and valid empty/all-NA behavior are preserved. Unsupported
+  `valid_range` and sentinel-exception fields remain unimplemented.
+
+- `na_rate` and its aliases now parse the active threshold numerically
+  and require direction `above` or `below` before condition filtering or
+  comparison. Malformed payloads are unevaluable with the declared
+  severity, including on empty selections; unknown directions no longer
+  silently mean `below`. Exact field lookup, numeric-text comparisons
+  and parsed threshold diagnostics prevent unintended comparisons.
+  Supported scalar wrappers, alias/null defaults, threshold precedence,
+  signed-infinite/out-of-range thresholds, pooled rates, scope
+  resolution and valid empty-selection behavior are preserved.
+
+- `per_wave_mean` now parses both bounds before iterating over means.
+  Numeric text compares numerically; malformed or reversed bounds are
+  unevaluable with the declared severity, including on empty or
+  all-nonfinite data. Exact field lookup prevents unrelated fields from
+  supplying limits. Scalar wrappers, defaults, inclusive comparisons and
+  valid empty/nonfinite-mean behavior are preserved; violation details
+  show the parsed numeric endpoints.
+
+- `row_count` and `assert_row_count_range` now parse both bounds
+  numerically before comparison. Malformed or reversed bounds are
+  unevaluable with the declared severity, even when another comparison
+  fails or global data are empty. Flat scalar lists are supported for
+  both bounds. Reports show the applied numeric limits, including
+  negative infinity. Defaults, inclusive comparisons, valid
+  fractional/infinite bounds and wave resolution are preserved.
+
+- `wave_count` and `n_distinct_wave` now parse their active bound before
+  comparing counts. Numeric text limits use numeric comparisons;
+  malformed bounds are unevaluable with the declared severity, including
+  on empty data. Existing scalar wrappers, expected-count truncation,
+  signed infinite maximum bounds, mode precedence and null defaults are
+  preserved. Classed, logical, raw and complex payloads no longer supply
+  accidental counts through coercion.
+
+- Text reports now label documentary validation checks `DOC`, matching
+  the execution console. Unknown and unevaluable executable checks
+  remain `SKIP`. Severities, diagnostic details, validation results and
+  strict/report output eligibility are unchanged.
+
 ## lissr 1.4.1
 
 Correctness fixes for data-file discovery and validation of required
