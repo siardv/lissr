@@ -292,9 +292,9 @@ test_that("a decimal-comma OutDec changes neither grouping nor tokens", {
   expect_identical(no_time(out$log_line), no_time(ref$log_line))
 })
 
-# a decimal-comma numeric locale changes what C-level sprintf() writes, which
-# options(OutDec) does not; each locale is skipped explicitly where the system
-# lacks it, so coverage needs a system that has at least one of them
+# a decimal-comma numeric locale can change what sprintf() writes; the raw
+# decimal mark varies by platform. each locale is skipped explicitly where
+# the system lacks it, so coverage needs a system that has at least one of them
 for (loc in c("de_DE.UTF-8", "nl_NL.UTF-8", "fr_FR.UTF-8")) {
   test_that(paste0("LC_NUMERIC ", loc, " keeps exact decimal-point tokens and valid JSON"), {
     dir_c <- new_dir()
@@ -315,8 +315,9 @@ for (loc in c("de_DE.UTF-8", "nl_NL.UTF-8", "fr_FR.UTF-8")) {
     expect_identical(Sys.getlocale("LC_NUMERIC"), locale_before)
     if (is.null(res))
       skip(paste0("numeric locale ", loc, " is unavailable or has no decimal comma"))
-    # the locale was active: unrepaired %.17g output would carry a comma
-    expect_identical(res$raw_token, "1,2345678899999999")
+    # the helper verifies a decimal-comma locale; raw sprintf() may use a dot
+    expect_true(res$raw_token %in% c("1,2345678899999999",
+                                   "1.2345678899999999"))
     expect_identical(res$warnings, character(0))
     # the writers left the caller's numeric locale and OutDec untouched
     expect_identical(res$state_after, res$state_before)
