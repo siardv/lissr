@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: 8992ec6ea134db24727a07844df2f20d -->
+<!-- schema-source-md5: 5871189298ac4cef83113c552f19ce2a -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1354,38 +1354,55 @@ two ordered <code>value_absence</code> target blocks at error severity,
 both selecting all numeric columns:</p>
 <ul>
 <li>Block 1 rejects 99 and 999, preserving the existing 27 suffix
-exclusions and <code>cv17i_Total</code> in one 28-name
-<code>exclude_variables</code> list.</li>
-<li>Block 2 rejects -9, with the same 28 exclusions plus
+exclusions and <code>cv17i_Total</code>, and adding the duration
+suffixes <code>301</code>, <code>302</code> and <code>303</code> in one
+31-name <code>exclude_variables</code> list. The inspected cv18j-cv26r
+releases define these three columns as duration in seconds for parts
+1-3, with no value labels or user-missing declarations. Retained 99 and
+999 are legitimate seconds on these columns.</li>
+<li>Block 2 rejects -9, with the original 28 exclusions plus
 <code>_m1</code>, <code>_m2</code>, <code>_m3</code> and
 <code>242</code>. This additional exemption is specific to the
 structural -9 on the part-fieldwork columns and the part-2
 voting-version variable; 99 and 999 on those four columns still fail
 block 1. <code>160</code> is not exempt: HR00 recodes its -9 to -7
-before validation, so a residual -9 remains a failure.</li>
+before validation, so a residual -9 remains a failure. The duration
+columns also remain checked for residual -9.</li>
 </ul>
-<p>The parent declares neither exclusion key nor
+<p>The bundled <code>cv</code> check <code>VC02_no_raw_ref</code>
+likewise uses two ordered <code>value_absence</code> blocks at error
+severity, both selecting all numeric columns:</p>
+<ul>
+<li>Block 1 rejects 998, excluding only the duration suffixes
+<code>301</code>, <code>302</code> and <code>303</code>, where retained
+998 is a legitimate duration in seconds.</li>
+<li>Block 2 rejects -8 without exclusions, including on the duration
+columns.</li>
+</ul>
+<p>Neither parent declares exclusion keys or
 <code>forbidden_values</code>; each block provides its own values and
-exclusions. This preserves the first-non-null precedence above without a
-parent list masking block 2. Bare suffixes and exact names use the
-existing resolution mechanism. Both blocks deliberately apply to all
-waves: optional exclusion names can be absent from a wave subset,
-whereas an explicit wave scope requires every named wave to be present.
-The additional exemption therefore does not make subset runs unevaluable
-merely because other waves or excluded columns are absent.</p>
+any exclusions. This preserves the first-non-null precedence above
+without a parent list masking a block’s exclusions. Bare suffixes and
+exact names use the existing resolution mechanism. All blocks
+deliberately apply to all waves: optional exclusion names can be absent
+from a wave subset, whereas an explicit wave scope requires every named
+wave to be present. The exemptions therefore do not make subset runs
+unevaluable merely because other waves or excluded columns are
+absent.</p>
 <p>The first violation follows block order, then column order within the
 block. Its reported count covers that block’s forbidden values in the
 first offending column, not the union of values across both blocks. Thus
 a retained 99/999 violation is reported before a -9 violation in an
-earlier column. Other CV checks, severity and output-eligibility rules
-are unchanged; retained 99/999 on <code>s301</code>-<code>s303</code>
-and the separate VC02 failures still invalidate observed data.</p>
+earlier column for VC01; VC02 checks 998 before -8. Retained substantive
+columns continue to reject their respective forbidden codes. Other CV
+checks, severity and output-eligibility rules are unchanged.</p>
 <p>This is a recipe-specific validation change, not a change to the
 engine’s exclusion semantics, transformations or serialization rules.
-The report-mode comparison over cv17i-cv26r found identical returned
-data and SAV read-back values and attributes under both declarations;
-this does not establish output equivalence across different wave
-selections. A VC01 pass alone does not establish overall analytical
+Existing early-wave recodes still run before these checks; the duration
+exemptions apply to the values that reach validation. Genuine failed or
+unevaluable error-severity checks and release-pin violations still
+prevent <code>valid_for_analysis = TRUE</code> and strict-mode output.
+Passing these two checks alone does not establish overall analytical
 validity or strict-mode success.</p>
 </div>
 <div id="value_absence-forbidden-value-payloads" class="section level5">

@@ -8,7 +8,7 @@
 meta:
   module: cv
   module_label: Politics and Values
-  recipe_version: "1.2.0"
+  recipe_version: "1.2.1"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -51,6 +51,9 @@ meta:
     not-eligible. (11) 1.2.0: DV06-DV08 deleted (all-NA duplicates of the
     BR01-BR03 flag columns); DV09 re-expressed as an executable
     fieldwork_ym mod-100 derivation (NA where a wave carries no _m).
+    (12) 1.2.1: VC01/VC02 admit retained positive duration seconds
+    99/999/998 on suffixes 301-303 through value-specific blocks, while
+    continuing to reject residual -9/-8 on these columns.
   schema_version: 1.1.0
 global:
   id_variable: nomem_encr
@@ -998,13 +1001,13 @@ derived_variables:
 validation_checks:
 - check_id: VC01_no_raw_dk
   anomaly_ref: §3.1
-  description: no 99, 999, or −9 remains in valid substantive range
+  description: no 99, 999, or −9 remains outside value-specific exclusions
   type: assert_absent_values
   severity: error
   scope: all_numeric
   # each block resolves its own values and exclusions. omit parent exclusion
   # keys because they take precedence over every block's own list and would
-  # mask the value-specific structural-code exemption in block 2.
+  # mask the value-specific exemptions.
   targets:
   # block 1: 99/999 on every retained numeric column, all waves.
   # percent-chance batteries excluded; they are 0-100 scales where 99
@@ -1013,6 +1016,8 @@ validation_checks:
   # suffix exists in every wave). 243 also retains structural 999/-9
   # eligibility codes post HR01c/HR02 carve-outs. cv17i_Total is the renamed
   # cv17i Total column (VR04).
+  # 301-303 record duration in seconds for parts 1-3 in cv18j-cv26r;
+  # retained 99/999 are valid seconds. their residual -9 remains checked.
   - scope: all_numeric
     forbidden_values:
     - 99
@@ -1038,6 +1043,9 @@ validation_checks:
     - '261'
     - '262'
     - '263'
+    - '301'
+    - '302'
+    - '303'
     - '304'
     - '321'
     - '322'
@@ -1093,13 +1101,23 @@ validation_checks:
     - '242'
 - check_id: VC02_no_raw_ref
   anomaly_ref: §3.1
-  description: no 998 or −8 remains in valid substantive range
+  description: no 998 or −8 remains outside value-specific exclusions
   type: assert_absent_values
   severity: error
   scope: all_numeric
-  forbidden_values:
-  - 998
-  - -8
+  # duration seconds can legitimately equal 998; their residual -8 still
+  # fails in block 2. omit parent exclusions to preserve each block's scope.
+  targets:
+  - scope: all_numeric
+    forbidden_values:
+    - 998
+    exclude_variables:
+    - '301'
+    - '302'
+    - '303'
+  - scope: all_numeric
+    forbidden_values:
+    - -8
 - check_id: VC03_party_name_populated
   anomaly_ref: §3.2
   description: vote_actual_party is a string (not raw integer) wherever vote_actual is non-NA

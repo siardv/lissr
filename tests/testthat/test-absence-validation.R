@@ -579,6 +579,12 @@ test_that("bundled absence declarations retain integer, numeric-text and literal
     lissr:::run_validations(data, list(check), list())))$results[[1]]
 }
 .cv_vc01_structural_minus9 <- c("_m1", "_m2", "_m3", "242")
+.cv_duration_suffixes <- c("301", "302", "303")
+.cv_vc02_check <- function() {
+  recipe <- yaml::yaml.load_file(.cv_vc01_recipe_path())
+  Filter(function(check) identical(check$check_id, "VC02_no_raw_ref"),
+         recipe$validation_checks)[[1]]
+}
 .expect_exact_names <- function(actual, expected, label) {
   actual <- as.character(unlist(actual))
   expect_identical(sort(actual), sort(expected), label = label)
@@ -597,7 +603,9 @@ test_that("cv VC01 declares value-specific blocks that resolve every carve-out",
   expect_identical(b1$scope, "all_numeric"); expect_identical(b2$scope, "all_numeric")
   expect_identical(sort(as.numeric(unlist(b1$forbidden_values))), c(99, 999))
   expect_identical(as.numeric(unlist(b2$forbidden_values)), -9)
-  .expect_exact_names(b1$exclude_variables, .cv_vc01_exclusions, "block 1 exclusions")
+  .expect_exact_names(b1$exclude_variables,
+                      c(.cv_vc01_exclusions, .cv_duration_suffixes),
+                      "block 1 exclusions")
   .expect_exact_names(b2$exclude_variables,
                       c(.cv_vc01_exclusions, .cv_vc01_structural_minus9),
                       "block 2 exclusions")
@@ -606,10 +614,96 @@ test_that("cv VC01 declares value-specific blocks that resolve every carve-out",
                     paste0("s", .cv_vc01_exclusions), .cv_vc01_exclusions)
   df <- as.data.frame(stats::setNames(rep(list(1), length(columns)), columns))
   df$s001 <- 1; df$s_m1 <- 1; df$s_m2 <- 1; df$s_m3 <- 1; df$s242 <- 1
+  df$s301 <- 1; df$s302 <- 1; df$s303 <- 1
   blocks <- lissr:::.resolve_absence_blocks(df, check)
   expect_length(blocks, 2L)
   expect_setequal(blocks[[1]]$columns, c("s001", "s_m1", "s_m2", "s_m3", "s242"))
-  expect_identical(blocks[[2]]$columns, "s001")
+  expect_setequal(blocks[[2]]$columns, c("s001", "s301", "s302", "s303"))
+})
+
+test_that("cv VC02 exempts duration 998 separately from residual -8", {
+  check <- .cv_vc02_check()
+  expect_identical(check$severity, "error")
+  expect_identical(check$scope, "all_numeric")
+  expect_length(intersect(c("exclude_variables", "exclude_suffixes"), names(check)), 0L)
+  expect_null(check$forbidden_values)
+  expect_length(check$targets, 2L)
+  if (length(check$targets) == 2L) {
+    b1 <- check$targets[[1]]; b2 <- check$targets[[2]]
+    expect_identical(b1$scope, "all_numeric"); expect_identical(b2$scope, "all_numeric")
+    expect_identical(as.numeric(unlist(b1$forbidden_values)), 998)
+    expect_identical(as.numeric(unlist(b2$forbidden_values)), -8)
+    .expect_exact_names(b1$exclude_variables, .cv_duration_suffixes,
+                        "refusal block 1 exclusions")
+    expect_null(b2$exclude_variables); expect_null(b2$exclude_suffixes)
+    expect_null(b1$waves); expect_null(b2$waves)
+    df <- data.frame(s001 = 1, s301 = 1, s302 = 1, s303 = 1)
+    blocks <- lissr:::.resolve_absence_blocks(df, check)
+    expect_identical(blocks[[1]]$columns, "s001")
+    expect_setequal(blocks[[2]]$columns, names(df))
+  }
+})
+
+test_that("cv sentinel checks admit retained positive durations without exempting negative codes", {
+  base <- data.frame(wave_id = rep("cv26r", 3), nomem_encr = 1:3,
+                     s001 = c(1, 2, 3))
+  vc01 <- .cv_vc01_check(); vc02 <- .cv_vc02_check()
+  for (column in paste0("s", .cv_duration_suffixes)) {
+    for (value in c(99, 999, 998)) {
+      df <- base; df[[column]] <- c(value, 10, NA)
+      expect_true(.cv_vc01_result(df, vc01)$passed, label = paste(column, value, "VC01"))
+      expect_true(.cv_vc01_result(df, vc02)$passed, label = paste(column, value, "VC02"))
+    }
+    for (value in c(-9, -8)) {
+      df <- base; df[[column]] <- c(value, 10, NA)
+      check <- if (value == -9) vc01 else vc02
+      result <- .cv_vc01_result(df, check)
+      expect_false(result$passed, label = paste(column, value))
+      expect_match(result$detail,
+                   paste0("1 forbidden value(s) in ", column, "; block 2"), fixed = TRUE)
+      expect_identical(result$severity, "error")
+    }
+  }
+  # all three duration columns can carry all three positive values together
+  df <- base
+  for (column in paste0("s", .cv_duration_suffixes)) df[[column]] <- c(99, 999, 998)
+  expect_true(.cv_vc01_result(df, vc01)$passed)
+  expect_true(.cv_vc01_result(df, vc02)$passed)
+  for (value in c(99, 999, 998, -9, -8)) {
+    retained <- df; retained$s001[[1]] <- value
+    check <- if (value %in% c(99, 999, -9)) vc01 else vc02
+    result <- .cv_vc01_result(retained, check)
+    expect_false(result$passed, label = paste("retained response", value))
+    expect_match(result$detail, "1 forbidden value(s) in s001", fixed = TRUE)
+  }
+  # the existing structural -9 exemption does not admit positive sentinels or -8
+  for (column in c("s_m1", "s_m2", "s_m3", "s242")) {
+    for (value in c(99, 999, 998, -8)) {
+      retained <- df; retained[[column]] <- c(value, 1, 2)
+      check <- if (value %in% c(99, 999)) vc01 else vc02
+      result <- .cv_vc01_result(retained, check)
+      expect_false(result$passed, label = paste("structural column", column, value))
+      expect_match(result$detail, paste0("1 forbidden value(s) in ", column), fixed = TRUE)
+    }
+  }
+})
+
+test_that("cv duration exemptions remain optional in wave subsets and preserve block precedence", {
+  vc01 <- .cv_vc01_check(); vc02 <- .cv_vc02_check()
+  for (wave in c("cv08a", "cv18j", "cv26r")) {
+    df <- data.frame(wave_id = rep(wave, 3), s001 = c(1, 2, 3))
+    for (check in list(vc01, vc02)) {
+      expect_true(.cv_vc01_result(df, check)$passed)
+      expect_true(.cv_vc01_result(df[FALSE, , drop = FALSE], check)$passed)
+    }
+  }
+  df <- data.frame(wave_id = rep("cv26r", 3), s001 = c(-8, 1, 2),
+                   s002 = c(998, 1, 2), s301 = c(99, 999, 998))
+  expect_match(.cv_vc01_result(df, vc02)$detail,
+               "1 forbidden value(s) in s002; block 1", fixed = TRUE)
+  df$s002 <- c(1, 2, 3)
+  expect_match(.cv_vc01_result(df, vc02)$detail,
+               "1 forbidden value(s) in s001; block 2", fixed = TRUE)
 })
 
 test_that("cv VC01 exempts only the structural -9 on the part-participation paradata", {

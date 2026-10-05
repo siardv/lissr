@@ -1052,6 +1052,115 @@ test_that("cv VC01 outcomes preserve strict outputs, reports and serialized carv
   }
 })
 
+test_that("cv duration validation preserves full outputs and strict residual-code protection", {
+  skip_if_not_installed("haven")
+  recipe_path <- system.file("recipes", "cv_merge_recipe.yml", package = "lissr",
+                             mustWork = TRUE)
+  recipe <- yaml::yaml.load_file(recipe_path)
+  baseline <- recipe
+  vc01_index <- which(vapply(baseline$validation_checks,
+    function(check) identical(check$check_id, "VC01_no_raw_dk"), logical(1)))
+  vc02_index <- which(vapply(baseline$validation_checks,
+    function(check) identical(check$check_id, "VC02_no_raw_ref"), logical(1)))
+  # reconstruct the preceding validation predicates without altering transformations
+  baseline$validation_checks[[vc01_index]]$targets[[1]]$exclude_variables <-
+    setdiff(as.character(unlist(
+      baseline$validation_checks[[vc01_index]]$targets[[1]]$exclude_variables)),
+      c("301", "302", "303"))
+  baseline$validation_checks[[vc02_index]]$targets <- NULL
+  baseline$validation_checks[[vc02_index]]$forbidden_values <- list(998, -8)
+
+  for (scenario in c("positive", "residual")) {
+    fixture_dir <- withr::local_tempdir("lissr_cv_duration_")
+    data_dir <- file.path(fixture_dir, "data")
+    baseline_dir <- file.path(fixture_dir, "baseline")
+    candidate_dir <- file.path(fixture_dir, "candidate")
+    strict_dir <- file.path(fixture_dir, "strict")
+    dir.create(data_dir)
+    .gen_module_fixture(recipe, data_dir)
+    edit <- function(wave, values) {
+      path <- file.path(data_dir, paste0(wave, "_EN_1.0p.sav"))
+      raw <- haven::read_sav(path)
+      for (part in 1:3) {
+        column <- paste0(wave, 300 + part)
+        raw[[column]] <- as.numeric(values)
+        attr(raw[[column]], "label") <- paste0("Duration in seconds - part ", part)
+      }
+      haven::write_sav(raw, path)
+    }
+    # positive durations survive later-wave harmonization; earlier waves retain
+    # the negative codes needed to exercise the strict validation guard
+    edit("cv26r", c(99, 999, 998))
+    if (scenario == "residual") edit("cv19k", c(-9, -8, NA))
+    source_hashes <- tools::md5sum(list.files(data_dir, full.names = TRUE))
+    old <- suppressWarnings(suppressMessages(merge_liss_module(
+      baseline, data_dir, baseline_dir, strict = FALSE)))
+    current <- suppressWarnings(suppressMessages(merge_liss_module(
+      recipe_path, data_dir, candidate_dir, strict = FALSE)))
+    expect_false(old$valid_for_analysis)
+    expect_identical(current$valid_for_analysis, scenario == "positive")
+    expect_identical(current$data, old$data)
+    saved_old <- haven::read_sav(file.path(baseline_dir, "cv_merged.sav"), user_na = TRUE)
+    saved_current <- haven::read_sav(file.path(candidate_dir, "cv_merged.sav"), user_na = TRUE)
+    expect_identical(saved_current, saved_old)
+    other_checks <- function(result) Filter(function(check)
+      !(check$check_id %in% c("VC01_no_raw_dk", "VC02_no_raw_ref")), result$validation)
+    expect_identical(other_checks(current), other_checks(old))
+    checks <- stats::setNames(current$validation,
+      vapply(current$validation, function(check) check$check_id, character(1)))
+    for (cid in c("VC01_no_raw_dk", "VC02_no_raw_ref"))
+      expect_identical(checks[[cid]]$passed, scenario == "positive")
+    old_checks <- stats::setNames(old$validation,
+      vapply(old$validation, function(check) check$check_id, character(1)))
+    expect_false(old_checks$VC01_no_raw_dk$passed)
+    expect_false(old_checks$VC02_no_raw_ref$passed)
+    report <- readLines(file.path(candidate_dir, "cv_merge_report.txt"))
+    expect_true(any(grepl(paste0("Valid for analysis: ", scenario == "positive"),
+                          report, fixed = TRUE)))
+    for (cid in c("VC01_no_raw_dk", "VC02_no_raw_ref")) {
+      expect_true(any(grepl(paste0("[error] ", cid, ": ",
+        if (scenario == "positive") "PASS" else "FAIL"), report, fixed = TRUE)))
+      if (scenario == "residual") {
+        expect_match(checks[[cid]]$detail,
+                     "1 forbidden value(s) in s301; block 2", fixed = TRUE)
+        expect_true(any(grepl(checks[[cid]]$detail, report, fixed = TRUE)))
+      }
+    }
+    for (data in list(current$data, saved_current)) {
+      w26 <- data$wave_id == "cv26r"
+      for (column in c("s301", "s302", "s303"))
+        expect_equal(as.numeric(data[[column]][w26]), c(99, 999, 998))
+      if (scenario == "residual") {
+        w19 <- data$wave_id == "cv19k"
+        for (column in c("s301", "s302", "s303"))
+          expect_equal(as.numeric(data[[column]][w19]), c(-9, -8, NA))
+      }
+    }
+    dir.create(strict_dir)
+    marker <- file.path(strict_dir, "existing.txt")
+    writeLines("keep this", marker)
+    marker_hash <- unname(tools::md5sum(marker))
+    strict_run <- tryCatch(suppressWarnings(suppressMessages(merge_liss_module(
+      recipe_path, data_dir, strict_dir, strict = TRUE))), error = function(e) e)
+    if (scenario == "positive") {
+      expect_false(inherits(strict_run, "error"),
+                   info = if (inherits(strict_run, "error")) conditionMessage(strict_run))
+      if (!inherits(strict_run, "error")) {
+        expect_true(strict_run$valid_for_analysis)
+        expect_identical(strict_run$data, current$data)
+        saved_strict <- haven::read_sav(file.path(strict_dir, "cv_merged.sav"), user_na = TRUE)
+        expect_identical(saved_strict, saved_current)
+      }
+    } else {
+      expect_s3_class(strict_run, "error")
+      expect_match(conditionMessage(strict_run), "strict mode: no outputs were written")
+      expect_identical(list.files(strict_dir), "existing.txt")
+    }
+    expect_identical(unname(tools::md5sum(marker)), marker_hash)
+    expect_identical(tools::md5sum(list.files(data_dir, full.names = TRUE)), source_hashes)
+  }
+})
+
 test_that("every bundled recipe merges a synthetic panel end to end", {
   skip_if_not_installed("haven")
   mods <- c("ca", "cd", "cf", "ch", "ci", "cp", "cr", "cs", "cv", "cw")

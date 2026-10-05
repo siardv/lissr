@@ -165,15 +165,22 @@ test_that("cv HR01 fires, exclude carve-outs survive the residual sweep", {
   vc01 <- Filter(function(check) identical(check$check_id, "VC01_no_raw_dk"),
                  result$validation)
   expect_length(vc01, 1L)
-  # excluded s243 no longer fails first; retained s301 still has forbidden values
-  expect_false(vc01[[1]]$passed)
-  expect_match(vc01[[1]]$detail, "5 forbidden value(s) in s301", fixed = TRUE)
+  # positive duration seconds no longer cause a false sentinel failure
+  expect_true(vc01[[1]]$passed)
+  vc02 <- Filter(function(check) identical(check$check_id, "VC02_no_raw_ref"),
+                 result$validation)
+  expect_length(vc02, 1L)
+  expect_true(vc02[[1]]$passed)
   out <- haven::read_sav(file.path(od, "cv_merged.sav"), user_na = TRUE)
   w08 <- out[out$wave_id == "cv08a", ]
   n99 <- sum(vapply(paste0("s", c("008", "053", "102", "103", "104", "105")),
                     function(c) sum(num(w08[[c]]) == 99, na.rm = TRUE), numeric(1)))
   expect_equal(n99, 0)
   w20 <- out[out$wave_id == "cv20l", ]
+  expect_equal(sum(num(w20$s301) == 99, na.rm = TRUE), 4)
+  expect_equal(sum(num(w20$s301) == 999, na.rm = TRUE), 1)
+  expect_equal(sum(num(w20$s302) == 99, na.rm = TRUE), 5)
+  expect_equal(sum(num(w20$s303) == 99, na.rm = TRUE), 2)
   expect_equal(sum(num(w20$s243) == -9, na.rm = TRUE), 154)
   lab_cols <- sum(vapply(out, function(c) inherits(c, "haven_labelled"), logical(1)))
   expect_gt(lab_cols, 0)

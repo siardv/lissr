@@ -1,5 +1,13 @@
 # lissr 1.4.1.9000
 
+* The Politics and Values (`cv`) recipe now permits retained 99, 999 and 998
+  on `s301`, `s302` and `s303`, which record duration in seconds for parts 1-3.
+  CV recipe version 1.2.1 uses value-specific validation blocks: residual -9
+  and -8 on these columns still fail, and the existing structural exclusions
+  and checks on substantive columns are preserved. This corrects false
+  validation failures while preserving transformations and merged values;
+  other error-severity failures still prevent analytical eligibility.
+
 * Merges under `labelled_policy: to_numeric` now disclose the residual
   user-missing sweep, which runs after the validation checks, so validation
   details can count values that the sweep later sets to `NA`. Every `NA_SWEEP`
