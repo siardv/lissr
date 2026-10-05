@@ -2,6 +2,19 @@
 
 ## lissr 1.4.1.9000
 
+- Merges under `labelled_policy: to_numeric` now disclose the residual
+  user-missing sweep, which runs after the validation checks, so
+  validation details can count values that the sweep later sets to `NA`.
+  Every `NA_SWEEP` log entry carries a `details` table (column, wave,
+  code, n) in the returned log and the JSONL file, with zero rows when
+  nothing was swept; the text report adds a sweep section only when
+  cells were swept. Codes are grouped by exact numeric value and written
+  with up to 17 significant digits and a `.` decimal mark, also under a
+  decimal-comma `options(OutDec)` or numeric locale (`LC_NUMERIC`);
+  neither setting is changed. All other log fields are serialized as
+  before. Data, sweep predicates, validation results, log-entry counts,
+  summary totals and the top-level merge result fields are unchanged.
+
 - The Housing (`cd`) recipe now applies its existing missing-code
   recodes to renamed satisfaction, mortgage-debt and WOZ fields.
   Previously those rules still targeted the old suffix names after
