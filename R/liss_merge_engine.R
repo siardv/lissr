@@ -820,10 +820,14 @@ restore_value_labels <- function(merged, registry) {
 #' user-missing code, for any wave that declared it, becomes NA rather than
 #' leaking into the output as a substantive value. recipes retain first claim
 #' because they run earlier and may have moved the code (e.g. cs 999 -> -9).
+#' `details` counts the swept cells per column, row wave and exact code
+#' (column, wave, code, n) in `cols` order, then wave, then ascending code;
+#' it has zero rows when nothing was swept.
 #' @noRd
 sweep_user_missing <- function(merged, registry, cols,
                                wave_var = "wave_id", veto = list()) {
   swept <- 0L
+  details <- list()
   wave_col <- if (wave_var %in% names(merged)) merged[[wave_var]] else NULL
   col_vetoed <- function(col, sfx_waves) {
     # a column is veto-covered for a wave when a recipe exclude block named
@@ -836,6 +840,25 @@ sweep_user_missing <- function(merged, registry, cols,
         return(sfx_waves[[sfx]])
     }
     character(0)
+  }
+  code_counts <- function(col, codes, waves) {
+    # group by exact double equality through unique()/match(), never through
+    # formatted labels: table() names keep 15 significant digits and follow
+    # options(OutDec), so they can merge distinct nearby doubles or fail to
+    # parse back. -0 folds into 0, which it equals under the predicate;
+    # waves sort in the C locale and codes ascend within each wave
+    codes <- as.double(codes)
+    codes[codes == 0] <- 0
+    uw <- unique(waves)
+    uw <- uw[order(uw, method = "radix")]
+    do.call(rbind, lapply(uw, function(w) {
+      v <- codes[if (is.na(w)) is.na(waves) else !is.na(waves) & waves == w]
+      u <- unique(v)
+      u <- u[order(u, method = "radix")]
+      data.frame(column = rep(col, length(u)), wave = rep(w, length(u)),
+                 code = u, n = tabulate(match(v, u), nbins = length(u)),
+                 stringsAsFactors = FALSE)
+    }))
   }
   for (col in cols) {
     if (!(col %in% names(merged)) || !is.numeric(merged[[col]])) next
@@ -861,11 +884,19 @@ sweep_user_missing <- function(merged, registry, cols,
     }
     n <- sum(hit)
     if (n > 0) {
+      waves <- if (is.null(wave_col)) rep(NA_character_, n)
+               else as.character(wave_col[hit])
+      details[[length(details) + 1L]] <- code_counts(col, x[hit], waves)
       merged[[col]][hit] <- NA
       swept <- swept + n
     }
   }
-  list(data = merged, swept = swept)
+  details <- if (length(details) > 0) do.call(rbind, details)
+             else data.frame(column = character(0), wave = character(0),
+                             code = numeric(0), n = integer(0),
+                             stringsAsFactors = FALSE)
+  rownames(details) <- NULL
+  list(data = merged, swept = swept, details = details)
 }
 
 # ============================================================================
@@ -966,7 +997,35 @@ write_jsonl <- function(log_entries, path) {
          "Install it with: install.packages(\"jsonlite\")", call. = FALSE)
   }
   lines <- purrr::map_chr(log_entries, function(entry) {
-    jsonlite::toJSON(entry, auto_unbox = TRUE)
+    det <- entry[["details"]]
+    if (!identical(entry[["rule_id"]], "NA_SWEEP") || !is.data.frame(det))
+      return(jsonlite::toJSON(entry, auto_unbox = TRUE))
+    # every other field keeps the unchanged call; only the details array is
+    # assembled here and spliced in at a unique placeholder string. finite
+    # codes: 17 significant digits with the C library's (LC_NUMERIC) decimal
+    # mark replaced by '.', exact JSON numbers without touching the locale
+    # or options; non-finite codes keep jsonlite's string form ("Inf")
+    tok <- sprintf("%.17g", as.double(det$code))
+    dp <- Sys.localeconv()[["decimal_point"]]
+    if (nzchar(dp) && dp != ".")
+      tok <- gsub(dp, ".", tok, fixed = TRUE, useBytes = TRUE)
+    str_json <- function(v)
+      as.character(jsonlite::toJSON(as.character(unclass(v)), auto_unbox = TRUE))
+    rows <- vapply(seq_len(nrow(det)), function(i) paste0(
+      "{\"column\":", str_json(det$column[i]), ",\"wave\":", str_json(det$wave[i]),
+      ",\"code\":", if (is.finite(det$code[i])) tok[i] else paste0("\"", tok[i], "\""),
+      ",\"n\":", as.integer(det$n[i]), "}"), character(1))
+    k <- 0L
+    repeat {
+      key <- paste0("lissr_na_sweep_details_", k)
+      entry[["details"]] <- key
+      out <- as.character(jsonlite::toJSON(entry, auto_unbox = TRUE))
+      at <- gregexpr(paste0("\"", key, "\""), out, fixed = TRUE)[[1]]
+      if (length(at) == 1L && at[[1]] > 0L) break
+      k <- k + 1L
+    }
+    paste0(substr(out, 1L, at[[1]] - 1L), "[", paste(rows, collapse = ","), "]",
+           substr(out, at[[1]] + nchar(key) + 2L, nchar(out)))
   })
   writeLines(lines, path)
 }
@@ -3619,6 +3678,7 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   # where provably safe; sweep declared missing codes the recipes left behind
   # on every column that could not be restored, so no dk/refusal code ever
   # leaks into the output as a substantive value
+  sweep_details <- NULL
   if (identical(lbl_policy, "to_numeric")) {
     rl <- restore_value_labels(merged, label_registry)
     merged <- rl$data
@@ -3651,6 +3711,10 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
       make_log("NA_SWEEP", "*", paste0(length(rl$skipped), " col(s)"),
                "sweep_user_missing", sw$swept,
                values_changed = sw$swept)))
+    # the sweep runs after phase-6 validation; disclose its cells per column,
+    # wave and exact code (zero rows when nothing was swept)
+    sweep_details <- sw$details
+    log_entries[[length(log_entries)]]$details <- sweep_details
   }
 
   # merged data (SPSS .sav carries the variable labels and the restored value labels)
@@ -3707,7 +3771,8 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     log_cfg$report_file %||% paste0(mod_code, "_merge_report.txt"))
   write_report(merged, val$results, log_entries, recipe, report_file,
                provenance = provenance,
-               valid_for_analysis = valid_for_analysis)
+               valid_for_analysis = valid_for_analysis,
+               sweep = sweep_details)
   cli::cli_inform("  report: {.file {report_file}}")
 
   cli::cli_alert_success(
@@ -3857,7 +3922,8 @@ merge_liss_modules <- function(recipe_paths = NULL, data_dir, output_dir = ".",
 
 #' @noRd
 write_report <- function(merged, validation_results, log_entries, recipe, path,
-                         provenance = NULL, valid_for_analysis = NA) {
+                         provenance = NULL, valid_for_analysis = NA,
+                         sweep = NULL) {
   mod <- recipe$meta$module
   lines <- c(
     paste0("LISS ", toupper(mod), " Module \u2014 Merge Report"),
@@ -3884,6 +3950,31 @@ write_report <- function(merged, validation_results, log_entries, recipe, path,
               else if (isTRUE(vr[["documentary"]])) "DOC" else "SKIP"
     lines <- c(lines, paste0("[", vr$severity, "] ", vr$check_id, ": ", status,
                              if (!is.null(vr$detail)) paste0(" -- ", vr$detail) else ""))
+  }
+
+  # residual sweep disclosure, only when cells were swept. 17 significant
+  # digits identify every finite double; sprintf() ignores options(OutDec)
+  # but follows LC_NUMERIC, so its decimal mark is replaced by '.' (the
+  # locale is never changed); %g keeps integer codes plain (-9999)
+  if (is.data.frame(sweep) && nrow(sweep) > 0) {
+    tok <- sprintf("%.17g", as.double(sweep$code))
+    dp <- Sys.localeconv()[["decimal_point"]]
+    if (nzchar(dp) && dp != ".")
+      tok <- gsub(dp, ".", tok, fixed = TRUE, useBytes = TRUE)
+    lines <- c(lines, "", "--- Residual User-Missing Sweep (after validation) ---",
+               paste0("Cells set to NA after the checks above: ", sum(sweep$n),
+                      " (exact codes, '.' decimal mark)"))
+    for (cl in unique(sweep$column)) {
+      r <- which(sweep$column == cl)
+      wv <- sweep$wave[r]
+      parts <- vapply(unique(wv), function(w) {
+        rw <- r[if (is.na(w)) is.na(wv) else !is.na(wv) & wv == w]
+        paste0(if (is.na(w)) "NA" else w, ": ",
+               paste0(tok[rw], " x", sweep$n[rw], collapse = ", "))
+      }, character(1))
+      lines <- c(lines, paste0(cl, ": ", sum(sweep$n[r]), " cell(s) set to NA (",
+                               paste(parts, collapse = "; "), ")"))
+    }
   }
 
   # comparability warnings
