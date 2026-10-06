@@ -78,12 +78,16 @@ scraped directly.</p>
 
 <dl><dt id="arg--details">.details<a class="anchor" aria-label="anchor" href="#arg--details"></a></dt>
 <dd><p>logical. if <code>TRUE</code>, includes file counts per type
-(requires a cached blueprint).</p></dd>
+(requires a cached blueprint).
+Cached details include an <code>archives</code> count for ZIP releases.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>a tibble with columns <code>module</code>, <code>module_id</code>, and <code>waves</code>.</p>
+    <p>a tibble with columns <code>module</code>, <code>module_id</code>, and <code>waves</code>.
+Without a cache and with <code>.details = FALSE</code>, only the first two
+columns are returned. Background Variables counts distinct monthly
+releases as waves; its undated documents do not add a wave.</p>
     </div>
 
     <div class="section level2">

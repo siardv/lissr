@@ -3,7 +3,10 @@
 prints a cross-tabulation showing which modules have data available in
 which waves. uses the cached blueprint if available, otherwise calls
 [`liss_blueprint()`](https://siardv.github.io/lissr/reference/liss_blueprint.md)
-first.
+first. Monthly Background Variables releases are omitted because YYYYMM
+months are not core study wave numbers; inspect
+[`liss_blueprint()`](https://siardv.github.io/lissr/reference/liss_blueprint.md)
+for their availability instead.
 
 ## Usage
 

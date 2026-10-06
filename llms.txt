@@ -138,42 +138,56 @@ separate monthly release, not one of these modules.
 
 ## Background variables
 
-The merge engine covers the ten core study modules above; it does not
-fetch or attach the LISS Background Variables (the monthly `avars`
-file). Demographics such as age, sex, education, income, and household
-composition live in that separate file, and you join them yourself after
-merging.
+The merge engine covers the ten core study modules above. Monthly
+Background Variables releases are available separately through the
+downloader; the merge engine does not attach them. Demographics such as
+age, sex, education, income, and household composition live in those
+separate files.
 
-Two identifier columns are preserved through every merge: `nomem_encr`
-(the respondent id, used as the merge key) and `nohouse_encr` (the
-encrypted household id). `nohouse_encr` is present only in early waves
-of most modules and is dropped later, so for recent waves the household
-id has to come from the Background Variables file.
-
-To attach demographics, download the Background Variables file for the
-same fieldwork month as your merged data, then left-join on
-`nomem_encr`. Each `avars` file carries the fieldwork period as a `wave`
-column (YYYYMM), so you never need to parse it out of the filename:
+Refresh an existing catalogue after updating lissr. Background Variables
+has `module_id = 322`, monthly ZIP releases have `type = "archive"` and
+a `wave` code in YYYYMM, and its documents have `wave = NA`. The
+filenames, release versions and descriptions are retained as published,
+without choosing a latest month or preferring a version.
+[`liss_select()`](https://siardv.github.io/lissr/reference/liss_select.md)
+prompts for background months separately from core waves, then offers
+ZIP archives and documents.
+[`liss_wave_matrix()`](https://siardv.github.io/lissr/reference/liss_wave_matrix.md)
+continues to show core study waves only.
 
 ``` r
 
-# the Background Variables file appears as the "Background Variables" module
-# in liss_select() / the blueprint; download it, then read and join
-avars <- haven::read_sav("data/avars/avars_202411_EN_1_0p.sav")
-# the fieldwork period is in the `wave` column (here: 202411)
-merged_with_demographics <- dplyr::left_join(results$ch$data, avars, by = "nomem_encr")
+bp <- liss_blueprint(refresh = TRUE)
+# illustrative month: choose it from the timing of the survey items
+bg_files <- dplyr::filter(bp, module_id == 322L, type == "archive", wave == 202511L)
+bg_files[c("wave", "name", "file")]
+# inspect the available language and release version before downloading
+stopifnot(nrow(bg_files) == 1L)
+liss_download(bg_files, .dir = "data/avars")
 ```
+
+The downloader requires
+[`liss_login()`](https://siardv.github.io/lissr/reference/liss_login.md)
+and verifies ZIP extraction. The catalogue does not inspect archive
+contents or certify their data format. Inspect the extracted files and
+verify their observed `wave` period before using them. The default SPSS
+download selection still matches `.sav` files; ZIP releases require an
+explicit selection.
+
+Use `nomem_encr` as the respondent key, never `nohouse_encr`: household
+assignments can change over time. For stacked monthly snapshots, join on
+both the respondent and the selected month, reject duplicate background
+keys, and never match missing keys. The survey month must be appropriate
+for the items being analysed. In particular, three-part CV waves record
+part-1 `fieldwork_ym`, which is not an automatic month anchor for other
+parts. The merge-workflow and cross-sectional-analysis guides show
+guarded joins with verified local SPSS files; their file paths are
+illustrative.
 
 [`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)
 can attach a background frame itself (its `P01` rule aligns monthly
 `avars` waves to the annual scale and reports the join match rate); see
 the income-cleaning vignette.
-
-Join on `nomem_encr` only, never `nohouse_encr` (the household id is not
-a stable person-level key and changes when household composition
-changes), and match the Background Variables fieldwork month to your
-wave data. The `cross-sectional-analysis` and `multi-module-linkage`
-vignettes show the full workflow.
 
 ## File formats
 

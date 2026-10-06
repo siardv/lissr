@@ -17,11 +17,15 @@ liss_modules(.details = FALSE)
 - .details:
 
   logical. if `TRUE`, includes file counts per type (requires a cached
-  blueprint).
+  blueprint). Cached details include an `archives` count for ZIP
+  releases.
 
 ## Value
 
-a tibble with columns `module`, `module_id`, and `waves`.
+a tibble with columns `module`, `module_id`, and `waves`. Without a
+cache and with `.details = FALSE`, only the first two columns are
+returned. Background Variables counts distinct monthly releases as
+waves; its undated documents do not add a wave.
 
 ## Examples
 

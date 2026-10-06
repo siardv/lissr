@@ -64,10 +64,21 @@ bp <- liss_blueprint()
 health_files <- dplyr::filter(bp, module == "Health", type == "spss")
 liss_download(health_files, .dir = "data/ch")
 
-# download background variables for all available months
-bg_files <- dplyr::filter(bp, module == "Background Variables", type == "spss")
+# choose background months for the survey items and inspect releases
+background_months <- c(202511L, 202512L)
+bg_files <- dplyr::filter(bp, module_id == 322L, type == "archive",
+                          wave %in% background_months)
+bg_files[c("wave", "name", "file")]
+stopifnot(setequal(unique(bg_files$wave), background_months))
 liss_download(bg_files, .dir = "data/avars")
 ```
+
+Background month codes come from published filenames. Archive contents
+and observed periods must be checked after extraction; no language or
+release version is preferred automatically. The ZIP selection does not
+certify an SPSS payload. Background attachment remains a separate,
+explicit join with verified respondent-month keys, as in the
+merge-workflow guide.
 
 ## Step 2 — recipe-driven merge with full audit trail
 

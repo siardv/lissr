@@ -183,12 +183,16 @@ fallback to another part. Part-1 timing is not automatically the
 appropriate background month for part-2, part-3 or particular CV items.
 Check their timing before choosing a snapshot, even if a merged column’s
 label no longer conveys its part-specific meaning.</p>
-<p>This example uses Health data. Obtain the monthly Background
-Variables release separately from the LISS Data Archive and extract its
-SPSS file locally; the current blueprint file inventory does not provide
-these background downloads. The November 2025 month and file path below
-are illustrative. Inspect the actual Health fieldwork month and replace
-both together; the checks verify observed periods before the join.</p>
+<p>This example uses Health data. Select monthly Background Variables
+ZIP releases with <code>liss_blueprint(refresh = TRUE)</code> or
+<code><a href="../reference/liss_select.html">liss_select()</a></code> (<code>module_id = 322</code>,
+<code>type = "archive"</code>, <code>wave = YYYYMM</code>). Inspect
+release descriptions and extracted contents; catalogue metadata does not
+verify the data format or observed period. This example requires a local
+SPSS file, acquired separately if the selected ZIP contains another
+format. The November 2025 month and file path below are illustrative.
+Inspect the actual Health fieldwork month and replace both together; the
+checks verify observed periods before the join.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">expected_month</span> <span class="op">&lt;-</span> <span class="fl">202511L</span></span>
 <span><span class="va">survey_month</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">health</span><span class="op">$</span><span class="va">fieldwork_ym</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">health</span><span class="op">$</span><span class="va">fieldwork_ym</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>

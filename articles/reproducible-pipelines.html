@@ -147,9 +147,19 @@ form the replication package.</p>
 <span><span class="va">health_files</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">bp</span>, <span class="va">module</span> <span class="op">==</span> <span class="st">"Health"</span>, <span class="va">type</span> <span class="op">==</span> <span class="st">"spss"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">health_files</span>, .dir <span class="op">=</span> <span class="st">"data/ch"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># download background variables for all available months</span></span>
-<span><span class="va">bg_files</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">bp</span>, <span class="va">module</span> <span class="op">==</span> <span class="st">"Background Variables"</span>, <span class="va">type</span> <span class="op">==</span> <span class="st">"spss"</span><span class="op">)</span></span>
+<span><span class="co"># choose background months for the survey items and inspect releases</span></span>
+<span><span class="va">background_months</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">202511L</span>, <span class="fl">202512L</span><span class="op">)</span></span>
+<span><span class="va">bg_files</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">bp</span>, <span class="va">module_id</span> <span class="op">==</span> <span class="fl">322L</span>, <span class="va">type</span> <span class="op">==</span> <span class="st">"archive"</span>,</span>
+<span>                          <span class="va">wave</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">background_months</span><span class="op">)</span></span>
+<span><span class="va">bg_files</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"wave"</span>, <span class="st">"name"</span>, <span class="st">"file"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">setequal</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">bg_files</span><span class="op">$</span><span class="va">wave</span><span class="op">)</span>, <span class="va">background_months</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">bg_files</span>, .dir <span class="op">=</span> <span class="st">"data/avars"</span><span class="op">)</span></span></code></pre></div>
+<p>Background month codes come from published filenames. Archive
+contents and observed periods must be checked after extraction; no
+language or release version is preferred automatically. The ZIP
+selection does not certify an SPSS payload. Background attachment
+remains a separate, explicit join with verified respondent-month keys,
+as in the merge-workflow guide.</p>
 </div>
 <div class="section level2">
 <h2 id="step-2-recipe-driven-merge-with-full-audit-trail">Step 2 — recipe-driven merge with full audit trail<a class="anchor" aria-label="anchor" href="#step-2-recipe-driven-merge-with-full-audit-trail"></a>
