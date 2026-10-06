@@ -402,9 +402,19 @@ form the replication package.</p>
 <span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>health_files <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(bp, module <span class="sc">==</span> <span class="st">&quot;Health&quot;</span>, type <span class="sc">==</span> <span class="st">&quot;spss&quot;</span>)</span>
 <span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">liss_download</span>(health_files, <span class="at">.dir =</span> <span class="st">&quot;data/ch&quot;</span>)</span>
 <span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co"># download background variables for all available months</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(bp, module <span class="sc">==</span> <span class="st">&quot;Background Variables&quot;</span>, type <span class="sc">==</span> <span class="st">&quot;spss&quot;</span>)</span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">liss_download</span>(bg_files, <span class="at">.dir =</span> <span class="st">&quot;data/avars&quot;</span>)</span></code></pre></div>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co"># choose background months for the survey items and inspect releases</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>background_months <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">202511</span><span class="dt">L</span>, <span class="dv">202512</span><span class="dt">L</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">filter</span>(bp, module_id <span class="sc">==</span> <span class="dv">322</span><span class="dt">L</span>, type <span class="sc">==</span> <span class="st">&quot;archive&quot;</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>                          wave <span class="sc">%in%</span> background_months)</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>bg_files[<span class="fu">c</span>(<span class="st">&quot;wave&quot;</span>, <span class="st">&quot;name&quot;</span>, <span class="st">&quot;file&quot;</span>)]</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">setequal</span>(<span class="fu">unique</span>(bg_files<span class="sc">$</span>wave), background_months))</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="fu">liss_download</span>(bg_files, <span class="at">.dir =</span> <span class="st">&quot;data/avars&quot;</span>)</span></code></pre></div>
+<p>Background month codes come from published filenames. Archive
+contents and observed periods must be checked after extraction; no
+language or release version is preferred automatically. The ZIP
+selection does not certify an SPSS payload. Background attachment
+remains a separate, explicit join with verified respondent-month keys,
+as in the merge-workflow guide.</p>
 </div>
 <div id="step-2-recipe-driven-merge-with-full-audit-trail" class="section level2">
 <h2>Step 2 — recipe-driven merge with full audit trail</h2>

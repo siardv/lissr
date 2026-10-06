@@ -50,7 +50,7 @@ knitr::opts_chunk$set(
 # survey <- haven::read_sav("output/ch_merged.sav")
 # table(survey$fieldwork_ym, useNA = "ifany")
 #
-# # read separately acquired monthly files; verify each observed period
+# # read local monthly SPSS files; verify each observed period
 # bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
 # stopifnot(length(bg_files) > 0L)
 # bg_data <- purrr::map_dfr(bg_files, function(f) {
@@ -68,4 +68,3 @@ knitr::opts_chunk$set(
 #   by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
 # )
 # stopifnot(nrow(merged) == nrow(survey))
-

@@ -16,8 +16,12 @@ knitr::opts_chunk$set(
 # health_files <- dplyr::filter(bp, module == "Health", type == "spss")
 # liss_download(health_files, .dir = "data/ch")
 #
-# # download background variables for all available months
-# bg_files <- dplyr::filter(bp, module == "Background Variables", type == "spss")
+# # choose background months for the survey items and inspect releases
+# background_months <- c(202511L, 202512L)
+# bg_files <- dplyr::filter(bp, module_id == 322L, type == "archive",
+#                           wave %in% background_months)
+# bg_files[c("wave", "name", "file")]
+# stopifnot(setequal(unique(bg_files$wave), background_months))
 # liss_download(bg_files, .dir = "data/avars")
 
 ## ----02-merge-----------------------------------------------------------------
@@ -123,4 +127,3 @@ knitr::opts_chunk$set(
 #   new_file     = "data/ch/ch25r_EN_1.0p.sav",
 #   prev_wave_id = "ch24q"
 # )
-

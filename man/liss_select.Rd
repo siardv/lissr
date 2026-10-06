@@ -13,7 +13,11 @@ cancels at any step.
 \description{
 presents a series of interactive menus to choose which modules, waves,
 and file types to include in a download. the result can be passed
-directly to \code{\link[=liss_download]{liss_download()}}.
+directly to \code{\link[=liss_download]{liss_download()}}. Background Variables months (YYYYMM)
+are selected separately from core wave numbers. Its undated documents
+remain available at the file-type step. ZIP archives are explicit choices;
+all listed languages and release versions remain available, without
+preferring a version or choosing a month automatically.
 }
 \examples{
 \dontrun{

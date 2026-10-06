@@ -7,7 +7,11 @@
 #'
 #' @param .details logical. if `TRUE`, includes file counts per type
 #'   (requires a cached blueprint).
+#'   Cached details include an `archives` count for ZIP releases.
 #' @return a tibble with columns `module`, `module_id`, and `waves`.
+#'   Without a cache and with `.details = FALSE`, only the first two
+#'   columns are returned. Background Variables counts distinct monthly
+#'   releases as waves; its undated documents do not add a wave.
 #' @export
 #' @examples
 #' \dontrun{
@@ -20,11 +24,12 @@ liss_modules <- function(.details = FALSE) {
     overview <- bp %>%
       dplyr::group_by(.data$module, .data$module_id) %>%
       dplyr::summarise(
-        waves     = dplyr::n_distinct(.data$wave),
+        waves     = dplyr::n_distinct(.data$wave, na.rm = TRUE),
         files     = dplyr::n(),
         spss      = sum(.data$type == "spss"),
         stata     = sum(.data$type == "stata"),
         codebooks = sum(.data$type == "codebook"),
+        archives  = sum(.data$type == "archive"),
         .groups   = "drop"
       ) %>%
       dplyr::arrange(.data$module)
@@ -34,7 +39,7 @@ liss_modules <- function(.details = FALSE) {
 
   base_url <- "https://www.dataarchive.lissdata.nl"
   cli::cli_alert_info("Fetching module index...")
-  index_page <- xml2::read_html(paste0(base_url, "/study-units/view/1"))
+  index_page <- .liss_archive_html(paste0(base_url, "/study-units/view/1"))
   mods <- purrr::map_dfr(c("#id1 > .card-body", "#id2 > .card-body"), function(sel) {
     links <- rvest::html_elements(rvest::html_element(index_page, sel), "a")
     tibble::tibble(
@@ -49,10 +54,14 @@ liss_modules <- function(.details = FALSE) {
   cli::cli_alert_info("Fetching wave counts for {nrow(mods)} module(s)...")
   mods$waves <- purrr::map_int(mods$module_id, function(id) {
     page <- tryCatch(
-      xml2::read_html(paste0(base_url, "/study-units/view/", id)),
+      .liss_archive_html(paste0(base_url, "/study-units/view/", id)),
       error = function(e) NULL
     )
     if (is.null(page)) return(0L)
+    if (id == 322L) {
+      files <- .liss_background_files(page, "Background Variables", id)
+      return(dplyr::n_distinct(files$wave, na.rm = TRUE))
+    }
     mes <- rvest::html_element(page, "#id_mes")
     if (is.na(mes)) return(0L)
     length(rvest::html_elements(mes, "a[href*='study-units/view']"))

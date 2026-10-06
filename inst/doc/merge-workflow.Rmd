@@ -150,10 +150,13 @@ part-2, part-3 or particular survey items. Check the relevant item or part
 timing before choosing a monthly snapshot; the caveat must not depend on
 a column label surviving a multi-wave merge.
 
-The example below remains a Health join. Obtain the monthly Background
-Variables releases separately from the LISS Data Archive and extract their
-SPSS files locally; the current blueprint file inventory does not provide
-these background downloads. The paths are illustrative. Each monthly file
+The example below remains a Health join. Use `liss_blueprint(refresh = TRUE)` or `liss_select()` to select monthly
+Background Variables ZIP releases (`module_id = 322`, `type = "archive"`,
+`wave = YYYYMM`). Choose the required months and inspect the published
+release descriptions and extracted contents. The catalogue does not verify
+their data format or observed periods. This join requires locally available
+SPSS files; acquire those separately if the selected ZIP contains another
+format. The paths are illustrative. Each monthly SPSS file
 records its period in `wave`; inspect the observed survey months and verify
 the background periods before joining, rather than inferring them from
 filenames:
@@ -163,7 +166,7 @@ filenames:
 survey <- haven::read_sav("output/ch_merged.sav")
 table(survey$fieldwork_ym, useNA = "ifany")
 
-# read separately acquired monthly files; verify each observed period
+# read local monthly SPSS files; verify each observed period
 bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
 stopifnot(length(bg_files) > 0L)
 bg_data <- purrr::map_dfr(bg_files, function(f) {

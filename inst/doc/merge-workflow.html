@@ -462,18 +462,23 @@ automatically appropriate background month for part-2, part-3 or
 particular survey items. Check the relevant item or part timing before
 choosing a monthly snapshot; the caveat must not depend on a column
 label surviving a multi-wave merge.</p>
-<p>The example below remains a Health join. Obtain the monthly
-Background Variables releases separately from the LISS Data Archive and
-extract their SPSS files locally; the current blueprint file inventory
-does not provide these background downloads. The paths are illustrative.
-Each monthly file records its period in <code>wave</code>; inspect the
+<p>The example below remains a Health join. Use
+<code>liss_blueprint(refresh = TRUE)</code> or
+<code>liss_select()</code> to select monthly Background Variables ZIP
+releases (<code>module_id = 322</code>, <code>type = &quot;archive&quot;</code>,
+<code>wave = YYYYMM</code>). Choose the required months and inspect the
+published release descriptions and extracted contents. The catalogue
+does not verify their data format or observed periods. This join
+requires locally available SPSS files; acquire those separately if the
+selected ZIP contains another format. The paths are illustrative. Each
+monthly SPSS file records its period in <code>wave</code>; inspect the
 observed survey months and verify the background periods before joining,
 rather than inferring them from filenames:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># example: merge Health survey with background variables</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>survey <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;output/ch_merged.sav&quot;</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">table</span>(survey<span class="sc">$</span>fieldwork_ym, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>)</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co"># read separately acquired monthly files; verify each observed period</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co"># read local monthly SPSS files; verify each observed period</span></span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">&quot;data/avars/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.sav$&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(bg_files) <span class="sc">&gt;</span> <span class="dv">0</span><span class="dt">L</span>)</span>
 <span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>bg_data <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(bg_files, <span class="cf">function</span>(f) {</span>

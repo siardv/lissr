@@ -20,11 +20,81 @@ parse_wave_input <- function(x) {
   sort(unique(out))
 }
 
+# calendar ranges use successive months, including December to January
+parse_month_input <- function(x) {
+  x <- gsub("[[:space:]]", "", x %||% "")
+  if (!nzchar(x)) return(integer(0))
+  parts <- strsplit(x, ",", fixed = TRUE)[[1]]
+  if (!length(parts) || !all(grepl("^[0-9]{6}(:[0-9]{6})?$", parts))) return(NULL)
+  values <- unlist(strsplit(parts, ":", fixed = TRUE))
+  values <- as.integer(values)
+  if (any(values < 100001L | !values %% 100L %in% 1:12)) return(NULL)
+  out <- unlist(lapply(parts, function(p) {
+    endpoints <- as.integer(strsplit(p, ":", fixed = TRUE)[[1]])
+    indices <- endpoints %/% 100L * 12L + endpoints %% 100L - 1L
+    if (length(indices) == 2L) indices <- seq.int(indices[1], indices[2])
+    indices %/% 12L * 100L + indices %% 12L + 1L
+  }))
+  sort(unique(as.integer(out)))
+}
+
+# interactive I/O is separate from the selection rules
+.liss_select_list <- function(...) utils::select.list(...)
+.liss_readline <- function(...) readline(...)
+
+# background document language tokens must not match substrings in Dutch names
+.liss_match_file_type <- function(pattern, files, module_id) {
+  matches <- grepl(pattern, files, ignore.case = TRUE)
+  background <- module_id == 322L
+  if (pattern %in% c("EN.*\\.pdf$", "NL.*\\.pdf$")) {
+    language <- if (pattern == "EN.*\\.pdf$") "EN" else "NL"
+    matches[background] <- grepl(paste0("_", language, "([_. -].*)?\\.pdf$"),
+      files[background], ignore.case = TRUE)
+  }
+  matches
+}
+
+.liss_select_periods <- function(available, monthly = FALSE) {
+  available <- sort(unique(available[!is.na(available)]))
+  if (!length(available)) {
+    cli::cli_alert_warning("No dated releases available.")
+    return(NULL)
+  }
+  if (monthly) {
+    cli::cli_alert_info("Available Background Variables months: {paste(available, collapse = ', ')}")
+    input <- .liss_readline("Enter months (YYYYMM, e.g., 202511, 202512:202601, or 'all'): ")
+  } else {
+    cli::cli_alert_info("Available waves: {min(available)}-{max(available)}")
+    input <- .liss_readline("Enter waves (e.g., 1:5, 1,3,7, or 'all'): ")
+  }
+  clean <- gsub("^[\"']+|[\"']+$", "", trimws(input))
+  if (tolower(clean) == "all") {
+    selected <- available
+  } else {
+    selected <- if (monthly) parse_month_input(clean) else parse_wave_input(clean)
+  }
+  if (is.null(selected) || !length(selected)) {
+    cli::cli_alert_warning("No valid {if (monthly) 'months' else 'waves'} selected.")
+    return(NULL)
+  }
+  invalid <- setdiff(selected, available)
+  if (length(invalid)) {
+    cli::cli_alert_warning("{if (monthly) 'Months' else 'Waves'} not available: {paste(invalid, collapse = ', ')}")
+  }
+  selected <- intersect(selected, available)
+  if (!length(selected)) return(NULL)
+  sort(unique(as.integer(selected)))
+}
+
 #' interactively select modules, waves, and file types
 #'
 #' presents a series of interactive menus to choose which modules, waves,
 #' and file types to include in a download. the result can be passed
-#' directly to [liss_download()].
+#' directly to [liss_download()]. Background Variables months (YYYYMM)
+#' are selected separately from core wave numbers. Its undated documents
+#' remain available at the file-type step. ZIP archives are explicit choices;
+#' all listed languages and release versions remain available, without
+#' preferring a version or choosing a month automatically.
 #'
 #' @return a tibble suitable for [liss_download()], or `NULL` if the user
 #'   cancels at any step.
@@ -46,46 +116,36 @@ liss_select <- function() {
   cli::cli_alert_info(
     "{length(all_mods)} module(s) available. Select one or more, or 0 to cancel."
   )
-  sel_mods <- utils::select.list(all_mods, multiple = TRUE, title = "Select module(s)")
+  sel_mods <- .liss_select_list(all_mods, multiple = TRUE, title = "Select module(s)")
   if (length(sel_mods) == 0) {
     cli::cli_alert_info("No modules selected.")
     return(invisible(NULL))
   }
 
-  # step 2: select waves
+  # step 2: select core waves and background months independently
   bp_filtered <- dplyr::filter(bp, .data$module %in% sel_mods)
-  available_waves <- sort(unique(bp_filtered$wave))
-  cli::cli_alert_info("Available waves: {min(available_waves)}-{max(available_waves)}")
-  wave_input <- readline("Enter waves (e.g., 1:5, 1,3,7, or 'all'): ")
-
-  # strip surrounding quotes and whitespace so both all and 'all' work
-  wave_clean <- gsub("^[\"']+|[\"']+$", "", trimws(wave_input))
-
-  if (tolower(wave_clean) == "all") {
-    sel_waves <- available_waves
-  } else {
-    sel_waves <- parse_wave_input(wave_clean)
-    if (is.null(sel_waves)) {
-      cli::cli_alert_danger("Could not parse wave input (use e.g. 1:5 or 1,3,7).")
+  core <- dplyr::filter(bp_filtered, .data$module_id != 322L)
+  background <- dplyr::filter(bp_filtered, .data$module_id == 322L)
+  sel_waves <- integer(0)
+  sel_months <- integer(0)
+  if (nrow(core)) {
+    sel_waves <- .liss_select_periods(core$wave)
+    if (is.null(sel_waves)) return(invisible(NULL))
+  }
+  if (nrow(background)) {
+    if (all(is.na(background$wave))) {
+      cli::cli_alert_info("Only undated Background Variables documents are available.")
+    } else {
+      sel_months <- .liss_select_periods(background$wave, monthly = TRUE)
+      if (is.null(sel_months)) return(invisible(NULL))
     }
-  }
-  if (is.null(sel_waves) || length(sel_waves) == 0) {
-    cli::cli_alert_info("No waves selected.")
-    return(invisible(NULL))
-  }
-  sel_waves <- sort(unique(as.integer(sel_waves)))
-
-  invalid <- setdiff(sel_waves, available_waves)
-  if (length(invalid) > 0) {
-    cli::cli_alert_warning("Waves not available: {paste(invalid, collapse = ', ')}")
-    sel_waves <- intersect(sel_waves, available_waves)
   }
 
   # step 3: check coverage
-  presence <- bp_filtered %>%
+  presence <- core %>%
     dplyr::filter(.data$wave %in% sel_waves) %>%
     dplyr::distinct(.data$module, .data$wave)
-  expected <- tidyr::expand_grid(module = sel_mods, wave = sel_waves)
+  expected <- tidyr::expand_grid(module = unique(core$module), wave = sel_waves)
   missing  <- dplyr::anti_join(expected, presence, by = c("module", "wave"))
 
   if (nrow(missing) > 0) {
@@ -107,10 +167,11 @@ liss_select <- function() {
     }
   }
 
-  # step 4: filter to selected modules and waves
-  result <- bp_filtered %>%
-    dplyr::filter(.data$wave %in% sel_waves) %>%
-    dplyr::arrange(.data$module, .data$wave, .data$type)
+  # step 4: undated background documents are optional at the type step
+  result <- dplyr::bind_rows(
+    dplyr::filter(core, .data$wave %in% sel_waves),
+    dplyr::filter(background, .data$wave %in% sel_months | is.na(.data$wave))
+  ) %>% dplyr::arrange(.data$module, .data$wave, .data$type)
 
   # step 5: select file types
   type_map <- c(
@@ -119,9 +180,13 @@ liss_select <- function() {
     "Codebook (English)" = "EN.*\\.pdf$",
     "Codebook (Dutch)"   = "NL.*\\.pdf$"
   )
+  if (nrow(background)) {
+    type_map <- c(type_map, "ZIP archives (.zip)" = "\\.zip$",
+                  "Documents (.pdf)" = "\\.pdf$")
+  }
   available_types <- purrr::keep(
     type_map,
-    function(p) any(grepl(p, result$file, ignore.case = TRUE))
+    function(p) any(.liss_match_file_type(p, result$file, result$module_id))
   )
   if (length(available_types) == 0) {
     cli::cli_alert_warning("No recognized file types found in selection.")
@@ -129,7 +194,7 @@ liss_select <- function() {
   }
 
   cli::cli_alert_info("Select which file type(s) to include, or 0 to cancel.")
-  sel_types <- utils::select.list(
+  sel_types <- .liss_select_list(
     names(available_types), multiple = TRUE, title = "Select file type(s)"
   )
   if (length(sel_types) == 0) {
@@ -137,8 +202,9 @@ liss_select <- function() {
     return(invisible(NULL))
   }
 
-  combined <- paste(unname(available_types[sel_types]), collapse = "|")
-  result <- dplyr::filter(result, grepl(combined, .data$file, ignore.case = TRUE))
+  selected_files <- Reduce(`|`, lapply(unname(available_types[sel_types]),
+    function(p) .liss_match_file_type(p, result$file, result$module_id)))
+  result <- dplyr::filter(result, selected_files)
 
   if (nrow(result) == 0) {
     cli::cli_alert_warning("No files match the selected types.")
@@ -147,10 +213,10 @@ liss_select <- function() {
 
   n_files <- nrow(result)
   n_mods  <- dplyr::n_distinct(result$module)
-  n_waves <- dplyr::n_distinct(result$wave)
+  n_waves <- dplyr::n_distinct(result$wave, na.rm = TRUE)
   types_str <- paste(sel_types, collapse = ", ")
   cli::cli_alert_success(
-    "Selected {n_files} file(s) across {n_mods} module(s) and {n_waves} wave(s) [{types_str}]"
+    "Selected {n_files} file(s) across {n_mods} module(s) and {n_waves} wave/month code(s) [{types_str}]"
   )
   cli::cli_alert_info("Use {.code liss_download(selection)} to download.")
 

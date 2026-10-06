@@ -8,10 +8,14 @@ liss_modules(.details = FALSE)
 }
 \arguments{
 \item{.details}{logical. if \code{TRUE}, includes file counts per type
-(requires a cached blueprint).}
+(requires a cached blueprint).
+Cached details include an \code{archives} count for ZIP releases.}
 }
 \value{
 a tibble with columns \code{module}, \code{module_id}, and \code{waves}.
+Without a cache and with \code{.details = FALSE}, only the first two
+columns are returned. Background Variables counts distinct monthly
+releases as waves; its undated documents do not add a wave.
 }
 \description{
 returns a data frame of modules available in the LISS Data Archive. if

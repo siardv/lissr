@@ -1,5 +1,18 @@
 # lissr 1.4.1.9000
 
+* The file catalogue now includes monthly Background Variables ZIP releases
+  from study 322, with filename-derived YYYYMM `wave` codes, `type: archive`,
+  exact published filenames alongside their release descriptions. Its documents have no month
+  (`wave: NA`). Invalid archive month filenames are warned about and omitted.
+  Refresh an existing in-memory catalogue after updating the package.
+* Interactive selection prompts for background months separately from core
+  waves and offers ZIP archives and documents explicitly. Calendar month
+  ranges cross year boundaries correctly. Module listings count distinct
+  dated releases, and cached details expose archive counts; the availability matrix retains
+  core waves only. Default SPSS downloads and the ten merge recipes are
+  unchanged. Catalogue metadata does not verify archive contents or provide
+  automatic background attachment or a survey-item month policy.
+
 * The Politics and Values (`cv`) recipe now derives recorded fieldwork
   year-months in all 18 waves. Recipe version 1.3.0 uses `_m` in eight
   single-part waves, `maandnr` for group 0 and `maandnr_lang` for groups 1/2

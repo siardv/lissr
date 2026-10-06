@@ -3,6 +3,9 @@
 #' prints a cross-tabulation showing which modules have data available
 #' in which waves. uses the cached blueprint if available, otherwise
 #' calls [liss_blueprint()] first.
+#' Monthly Background Variables releases are omitted because YYYYMM
+#' months are not core study wave numbers; inspect [liss_blueprint()]
+#' for their availability instead.
 #'
 #' @return a data frame (invisibly) with modules as rows and waves as
 #'   columns. available cells contain a multiplication sign (unicode
@@ -19,6 +22,15 @@ liss_wave_matrix <- function() {
     bp <- liss_blueprint()
   }
 
+  if (any(bp$module_id == 322L)) {
+    cli::cli_alert_info("Background Variables uses monthly releases; inspect {.fn liss_blueprint} for YYYYMM availability.")
+    bp <- dplyr::filter(bp, .data$module_id != 322L)
+  }
+  if (!nrow(bp)) {
+    out <- data.frame()
+    print(out)
+    return(invisible(out))
+  }
   presence <- bp %>%
     dplyr::distinct(.data$module, .data$wave) %>%
     dplyr::mutate(available = TRUE)

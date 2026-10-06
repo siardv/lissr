@@ -115,10 +115,12 @@ automatically the appropriate background month for part-2, part-3 or
 particular CV items. Check their timing before choosing a snapshot, even
 if a merged column's label no longer conveys its part-specific meaning.
 
-This example uses Health data. Obtain the monthly Background Variables
-release separately from the LISS Data Archive and extract its SPSS file
-locally; the current blueprint file inventory does not provide these
-background downloads. The November 2025 month and file path below are
+This example uses Health data. Select monthly Background Variables ZIP releases
+with `liss_blueprint(refresh = TRUE)` or `liss_select()` (`module_id = 322`,
+`type = "archive"`, `wave = YYYYMM`). Inspect release descriptions and
+extracted contents; catalogue metadata does not verify the data format or
+observed period. This example requires a local SPSS file, acquired separately
+if the selected ZIP contains another format. The November 2025 month and file path below are
 illustrative. Inspect the actual Health fieldwork month and replace both
 together; the checks verify observed periods before the join.
 

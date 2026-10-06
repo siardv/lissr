@@ -1,13 +1,19 @@
 #' build a complete file inventory of the LISS Data Archive
 #'
 #' scrapes every module page to build a data frame listing all downloadable
-#' files (SPSS, Stata, codebooks) across every wave. the result is cached
+#' files (SPSS, Stata, codebooks, and monthly Background Variables ZIP
+#' archives) across every wave. the result is cached
 #' in memory so subsequent calls return instantly.
 #'
 #' @param refresh logical. if `TRUE`, re-scrapes the archive even when a
 #'   cached blueprint exists.
 #' @return a tibble with columns `module`, `module_id`, `wave`, `wave_id`,
 #'   `type`, `name`, `file`, and `path`.
+#'   For Background Variables (module 322), `wave` is the filename's
+#'   YYYYMM month, `wave_id` is 322, and ZIP files have `type = "archive"`.
+#'   Its documents have `wave = NA` because they are not monthly releases.
+#'   Filenames and published descriptions are preserved; archive contents
+#'   and their observed periods are not verified by the catalogue.
 #' @export
 #' @examples
 #' \dontrun{
@@ -25,7 +31,7 @@ liss_blueprint <- function(refresh = FALSE) {
 
   cli::cli_alert_info("Fetching module index...")
   index_page <- tryCatch(
-    xml2::read_html(paste0(base_url, "/study-units/view/1")),
+    .liss_archive_html(paste0(base_url, "/study-units/view/1")),
     error = function(e) NULL
   )
   if (is.null(index_page)) {
@@ -59,7 +65,7 @@ liss_blueprint <- function(refresh = FALSE) {
   blueprint <- purrr::map_dfr(seq_len(nrow(mods)), function(i) {
     mod <- mods[i, ]
     page <- tryCatch(
-      xml2::read_html(paste0(base_url, "/study-units/view/", mod$module_id)),
+      .liss_archive_html(paste0(base_url, "/study-units/view/", mod$module_id)),
       error = function(e) NULL
     )
     if (is.null(page)) {
@@ -67,6 +73,9 @@ liss_blueprint <- function(refresh = FALSE) {
       return(NULL)
     }
 
+    if (mod$module_id == 322L) {
+      return(.liss_background_files(page, mod$module, mod$module_id))
+    }
     mes <- rvest::html_element(page, "#id_mes")
     if (length(mes) == 0 || is.na(mes)) return(NULL)
     wave_links <- rvest::html_elements(mes, "a[href*='study-units/view']")
@@ -82,7 +91,7 @@ liss_blueprint <- function(refresh = FALSE) {
     purrr::map_dfr(seq_len(nrow(waves)), function(j) {
       w <- waves[j, ]
       wp <- tryCatch(
-        xml2::read_html(paste0(base_url, "/study-units/view/", w$wave_id)),
+        .liss_archive_html(paste0(base_url, "/study-units/view/", w$wave_id)),
         error = function(e) NULL
       )
       if (is.null(wp)) {
@@ -117,10 +126,7 @@ liss_blueprint <- function(refresh = FALSE) {
           )
         )
     })
-  }, .progress = TRUE) %>%
-    dplyr::select("module", "module_id", "wave", "wave_id",
-                  "type", "name", "file", "path") %>%
-    dplyr::arrange(.data$module, .data$wave, .data$type)
+  }, .progress = TRUE)
 
   if (nrow(blueprint) == 0) {
     cli::cli_abort(c(
@@ -128,6 +134,10 @@ liss_blueprint <- function(refresh = FALSE) {
       "i" = "the page layout may have changed, or every page failed to load ({fails$modules} module page{?s}, {fails$waves} wave page{?s} failed)"
     ))
   }
+  blueprint <- blueprint %>%
+    dplyr::select("module", "module_id", "wave", "wave_id",
+                  "type", "name", "file", "path") %>%
+    dplyr::arrange(.data$module, .data$wave, .data$type)
   if (fails$modules > 0 || fails$waves > 0) {
     cli::cli_warn(c(
       "{fails$modules} module page{?s} and {fails$waves} wave page{?s} failed to load; the cached blueprint may be incomplete",
@@ -139,9 +149,9 @@ liss_blueprint <- function(refresh = FALSE) {
   .liss_cache$timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M")
 
   n_mods  <- dplyr::n_distinct(blueprint$module)
-  n_waves <- dplyr::n_distinct(blueprint$wave)
+  n_waves <- dplyr::n_distinct(blueprint$wave, na.rm = TRUE)
   cli::cli_alert_success(
-    "Blueprint cached: {nrow(blueprint)} files across {n_mods} modules and {n_waves} waves"
+    "Blueprint cached: {nrow(blueprint)} files across {n_mods} modules and {n_waves} wave/month codes"
   )
   blueprint
 }

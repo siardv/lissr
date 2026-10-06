@@ -13,10 +13,16 @@ cached blueprint exists.}
 \value{
 a tibble with columns \code{module}, \code{module_id}, \code{wave}, \code{wave_id},
 \code{type}, \code{name}, \code{file}, and \code{path}.
+For Background Variables (module 322), \code{wave} is the filename's
+YYYYMM month, \code{wave_id} is 322, and ZIP files have \code{type = "archive"}.
+Its documents have \code{wave = NA} because they are not monthly releases.
+Filenames and published descriptions are preserved; archive contents
+and their observed periods are not verified by the catalogue.
 }
 \description{
 scrapes every module page to build a data frame listing all downloadable
-files (SPSS, Stata, codebooks) across every wave. the result is cached
+files (SPSS, Stata, codebooks, and monthly Background Variables ZIP
+archives) across every wave. the result is cached
 in memory so subsequent calls return instantly.
 }
 \examples{

@@ -15,6 +15,9 @@ U+00D7) and missing cells contain a middle dot (unicode U+00B7).
 prints a cross-tabulation showing which modules have data available
 in which waves. uses the cached blueprint if available, otherwise
 calls \code{\link[=liss_blueprint]{liss_blueprint()}} first.
+Monthly Background Variables releases are omitted because YYYYMM
+months are not core study wave numbers; inspect \code{\link[=liss_blueprint]{liss_blueprint()}}
+for their availability instead.
 }
 \examples{
 \dontrun{

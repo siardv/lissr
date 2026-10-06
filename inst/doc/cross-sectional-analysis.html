@@ -437,12 +437,16 @@ fallback to another part. Part-1 timing is not automatically the
 appropriate background month for part-2, part-3 or particular CV items.
 Check their timing before choosing a snapshot, even if a merged column’s
 label no longer conveys its part-specific meaning.</p>
-<p>This example uses Health data. Obtain the monthly Background
-Variables release separately from the LISS Data Archive and extract its
-SPSS file locally; the current blueprint file inventory does not provide
-these background downloads. The November 2025 month and file path below
-are illustrative. Inspect the actual Health fieldwork month and replace
-both together; the checks verify observed periods before the join.</p>
+<p>This example uses Health data. Select monthly Background Variables
+ZIP releases with <code>liss_blueprint(refresh = TRUE)</code> or
+<code>liss_select()</code> (<code>module_id = 322</code>,
+<code>type = &quot;archive&quot;</code>, <code>wave = YYYYMM</code>). Inspect
+release descriptions and extracted contents; catalogue metadata does not
+verify the data format or observed period. This example requires a local
+SPSS file, acquired separately if the selected ZIP contains another
+format. The November 2025 month and file path below are illustrative.
+Inspect the actual Health fieldwork month and replace both together; the
+checks verify observed periods before the join.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>expected_month <span class="ot">&lt;-</span> <span class="dv">202511</span><span class="dt">L</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>survey_month <span class="ot">&lt;-</span> <span class="fu">unique</span>(health<span class="sc">$</span>fieldwork_ym[<span class="sc">!</span><span class="fu">is.na</span>(health<span class="sc">$</span>fieldwork_ym)])</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(survey_month) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span>, survey_month <span class="sc">==</span> expected_month)</span>
