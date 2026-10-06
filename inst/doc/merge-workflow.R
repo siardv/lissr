@@ -46,25 +46,26 @@ knitr::opts_chunk$set(
 # )
 
 ## -----------------------------------------------------------------------------
-# # example: merge Health survey with background variables
+# # example: attach age to a Health survey using selected monthly snapshots
 # survey <- haven::read_sav("output/ch_merged.sav")
 # table(survey$fieldwork_ym, useNA = "ifany")
 #
-# # read local monthly SPSS files; verify each observed period
-# bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
-# stopifnot(length(bg_files) > 0L)
-# bg_data <- purrr::map_dfr(bg_files, function(f) {
-#   bg <- haven::read_sav(f)
-#   bg_month <- unique(as.integer(bg$wave))
-#   stopifnot(length(bg_month) == 1L, !anyNA(bg_month),
-#             bg_month %in% survey$fieldwork_ym)
-#   dplyr::mutate(bg, fieldwork_ym = as.integer(wave))
-# })
-#
-# bg_keys <- bg_data[c("nomem_encr", "fieldwork_ym")]
-# stopifnot(!anyNA(bg_keys), !anyDuplicated(bg_keys))
-# merged <- dplyr::left_join(
-#   survey, bg_data,
-#   by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
+# sources <- data.frame(
+#   sav_path = c(
+#     "data/avars/avars_202411_EN_1.0p.sav",
+#     "data/avars/avars_202412_EN_1.0p.sav"
+#   ),
+#   expected_month = c(202411L, 202412L)
 # )
+#
+# attachment <- liss_attach_background(
+#   data = survey,
+#   sources = sources,
+#   month_col = "fieldwork_ym",
+#   variables = "leeftijd"
+# )
+#
+# merged <- attachment$data
 # stopifnot(nrow(merged) == nrow(survey))
+# attachment$audit
+# attachment$provenance

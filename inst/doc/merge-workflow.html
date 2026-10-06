@@ -462,40 +462,73 @@ automatically appropriate background month for part-2, part-3 or
 particular survey items. Check the relevant item or part timing before
 choosing a monthly snapshot; the caveat must not depend on a column
 label surviving a multi-wave merge.</p>
-<p>The example below remains a Health join. Use
+<p>The example below remains a Health attachment. Use
 <code>liss_blueprint(refresh = TRUE)</code> or
 <code>liss_select()</code> to select monthly Background Variables ZIP
 releases (<code>module_id = 322</code>, <code>type = &quot;archive&quot;</code>,
 <code>wave = YYYYMM</code>). Choose the required months and inspect the
 published release descriptions and extracted contents. The catalogue
-does not verify their data format or observed periods. This join
-requires locally available SPSS files; acquire those separately if the
-selected ZIP contains another format. The paths are illustrative. Each
-monthly SPSS file records its period in <code>wave</code>; inspect the
-observed survey months and verify the background periods before joining,
-rather than inferring them from filenames:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># example: merge Health survey with background variables</span></span>
+does not verify their data format or observed periods.</p>
+<p><code>liss_attach_background()</code> requires explicitly selected
+local <code>.sav</code> files, their expected months and the exact
+variables to copy. It checks standard SAV signatures before reading,
+validates each observed <code>wave</code> against the expected month,
+and permits one source per month. It rejects missing or duplicate
+background keys and incompatible storage or metadata for selected
+variables across files. Differences in variable labels, value labels or
+SPSS missing definitions need an explicit harmonization decision before
+using such files together.</p>
+<p>The paths and two months below are illustrative. Inspect the survey
+months and choose the snapshots appropriate for the Health items being
+analysed; do not derive that choice from a filename alone:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># example: attach age to a Health survey using selected monthly snapshots</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>survey <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;output/ch_merged.sav&quot;</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">table</span>(survey<span class="sc">$</span>fieldwork_ym, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>)</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co"># read local monthly SPSS files; verify each observed period</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">&quot;data/avars/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.sav$&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(bg_files) <span class="sc">&gt;</span> <span class="dv">0</span><span class="dt">L</span>)</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>bg_data <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(bg_files, <span class="cf">function</span>(f) {</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  bg <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(f)</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  bg_month <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">as.integer</span>(bg<span class="sc">$</span>wave))</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  <span class="fu">stopifnot</span>(<span class="fu">length</span>(bg_month) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span>, <span class="sc">!</span><span class="fu">anyNA</span>(bg_month),</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>            bg_month <span class="sc">%in%</span> survey<span class="sc">$</span>fieldwork_ym)</span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(bg, <span class="at">fieldwork_ym =</span> <span class="fu">as.integer</span>(wave))</span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>})</span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>bg_keys <span class="ot">&lt;-</span> bg_data[<span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>)]</span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyNA</span>(bg_keys), <span class="sc">!</span><span class="fu">anyDuplicated</span>(bg_keys))</span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>merged <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  survey, bg_data,</span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>), <span class="at">na_matches =</span> <span class="st">&quot;never&quot;</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>)</span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(merged) <span class="sc">==</span> <span class="fu">nrow</span>(survey))</span></code></pre></div>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>sources <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">sav_path =</span> <span class="fu">c</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="st">&quot;data/avars/avars_202411_EN_1.0p.sav&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="st">&quot;data/avars/avars_202412_EN_1.0p.sav&quot;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  ),</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  <span class="at">expected_month =</span> <span class="fu">c</span>(<span class="dv">202411</span><span class="dt">L</span>, <span class="dv">202412</span><span class="dt">L</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>)</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>attachment <span class="ot">&lt;-</span> <span class="fu">liss_attach_background</span>(</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  <span class="at">data =</span> survey,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="at">sources =</span> sources,</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="at">month_col =</span> <span class="st">&quot;fieldwork_ym&quot;</span>,</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>  <span class="at">variables =</span> <span class="st">&quot;leeftijd&quot;</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>)</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>merged <span class="ot">&lt;-</span> attachment<span class="sc">$</span>data</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(merged) <span class="sc">==</span> <span class="fu">nrow</span>(survey))</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>attachment<span class="sc">$</span>audit</span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>attachment<span class="sc">$</span>provenance</span></code></pre></div>
+<p>The default prefix creates <code>avars_leeftijd</code>; original
+survey columns and their metadata remain unchanged. The returned plain
+list contains attached <code>data</code>, coverage and validation
+<code>audit</code>, and file <code>provenance</code>. Repeated survey
+respondent-month rows are preserved. Missing survey keys never match,
+and partial coverage produces one aggregate warning while retaining all
+survey rows. Review the audit before using the result: a matched row can
+still have a source-missing covariate. A nonempty survey with no
+eligible keys or no matches fails, rather than returning a
+usable-looking attachment.</p>
+<p>The manifest may also provide paired <code>archive_path</code> and
+<code>archive_member</code> columns for local ZIP provenance. The helper
+verifies that the exact member bytes match the selected SAV and records
+their separate hashes; omitted archive lineage is reported as
+standalone. File hashes establish byte identity, not an authoritative
+release or correct item timing. Selected metadata is recorded as type,
+class and a fingerprint in provenance; full labels and missing
+definitions remain on the attached data columns.</p>
+<p>Initial payload characterization covered seven releases, not every
+historical snapshot. Runtime checks validate the supplied files but do
+not establish long-term respondent identity or covariate comparability.
+A snapshot month does not prove when each item was freshly answered. The
+helper does not download or extract files, choose a format or release,
+infer another month, recode covariates, or change the annual
+income-cleaning attachment policy.</p>
 </div>
 
 

@@ -73,6 +73,9 @@ reference:
   - merge_liss_module
   - merge_liss_modules
   - merge_liss_panel
+- title: Background variables
+  contents:
+  - liss_attach_background
 - title: Income cleaning
   contents:
   - liss_clean_income
