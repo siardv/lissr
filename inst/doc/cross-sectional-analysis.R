@@ -5,95 +5,101 @@ knitr::opts_chunk$set(
   eval = FALSE
 )
 
+
 ## ----download-single----------------------------------------------------------
-# library(lissr)
-#
-# # authenticate (once per session)
-# liss_login()
-#
-# # build the file inventory
-# bp <- liss_blueprint()
-#
-# # filter to the latest Health wave, SPSS format
-# latest_health <- bp |>
-#   dplyr::filter(
-#     module == "Health",
-#     type   == "spss"
-#   ) |>
-#   dplyr::filter(wave == max(wave))
-#
-# latest_health
-# #> # A tibble: 1 × 8
-# #>   module module_id  wave wave_id type  name       file              path
-# #>   <chr>      <int> <int>   <int> <chr> <chr>      <chr>             <chr>
-# #> 1 Health        18    18    1102 spss  ch25r 1.0p ch25r_1_0p_EN.sav /down…
-#
-# # download just that one file
-# liss_download(latest_health, .dir = "data/ch")
+library(lissr)
+library(magrittr)
+
+# authenticate (once per session)
+liss_login()
+
+# build the file inventory
+bp <- liss_blueprint()
+
+# pin the release used in this example
+health_file <- "ch25r_EN_1.0p.sav"
+selected_health <- bp %>%
+  dplyr::filter(
+    module == "Health",
+    type == "spss",
+    .data$file == .env$health_file
+  )
+stopifnot(nrow(selected_health) == 1L)
+
+selected_health
+
+# download just that one file
+liss_download(selected_health, .dir = "data/ch")
+
 
 ## ----clean-via-recipe---------------------------------------------------------
-# library(haven)
-# library(dplyr)
-#
-# # option A: read raw and clean yourself
-# raw <- haven::read_sav("data/ch/ch25r_1_0p_EN.sav")
-# dim(raw)
-# #> [1] 4892  271
-#
-# # option B: use the merge engine for a single wave
-# # (this applies prefix stripping, sentinel recoding, and labelled policy)
-# recipe <- liss_recipe("ch")
-#
-# # temporarily trim the recipe to just the wave you need
-# recipe$wave_index <- purrr::keep(
-#   recipe$wave_index,
-#   ~ .x$id == "ch25r"
-# )
-#
-# result <- merge_liss_module(recipe, data_dir = "data/ch", output_dir = "output")
-# health <- result$data
-# dim(health)
-# #> [1] 4892  265
+# option A: read raw and clean yourself
+raw <- haven::read_sav(file.path("data/ch", health_file))
+dim(raw)
+
+# option B: use the merge engine for a single wave
+recipe <- liss_recipe("ch")
+
+# temporarily trim the recipe to just the wave you need
+recipe$wave_index <- purrr::keep(
+  recipe$wave_index,
+  ~ .x$id == "ch25r"
+)
+
+result <- merge_liss_module(recipe, data_dir = "data/ch", output_dir = "output")
+health <- result$data
+dim(health)
+result$valid_for_analysis
+
+
+## ----inspect-months-----------------------------------------------------------
+table(health$fieldwork_ym, useNA = "ifany")
+
 
 ## ----attach-demographics------------------------------------------------------
-# expected_month <- 202511L
-# survey_month <- unique(health$fieldwork_ym[!is.na(health$fieldwork_ym)])
-# stopifnot(length(survey_month) == 1L, survey_month == expected_month)
-# bg_raw <- haven::read_sav("data/avars/avars_202511_EN_1_0p.sav")
-# bg_month <- unique(as.integer(bg_raw$wave))
-# stopifnot(length(bg_month) == 1L, !anyNA(bg_month),
-#           bg_month == expected_month)
-#
-# avars <- haven::zap_labels(bg_raw) %>%
-#   dplyr::mutate(fieldwork_ym = as.integer(wave)) %>%
-#   dplyr::select(
-#     nomem_encr, fieldwork_ym,
-#     age       = leeftijd,
-#     sex       = geslacht,
-#     edu_level = oplcat,
-#     hh_income = nettohh_f,
-#     urban     = sted
-#   )
-#
-# bg_keys <- avars[c("nomem_encr", "fieldwork_ym")]
-# stopifnot(!anyNA(bg_keys), !anyDuplicated(bg_keys))
-# analysis_df <- dplyr::left_join(
-#   health, avars,
-#   by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
-# )
-# stopifnot(nrow(analysis_df) == nrow(health))
-#
-# nrow(analysis_df)
-# #> [1] 4892
+# caller-confirmed month column for this illustration
+month_col <- "fieldwork_ym"
+sources <- data.frame(
+  sav_path = c(
+    "data/avars/avars_202511_EN_1.0p.sav",
+    "data/avars/avars_202512_EN_1.0p.sav"
+  ),
+  expected_month = c(202511L, 202512L)
+)
+
+attachment <- liss_attach_background(
+  data = health,
+  sources = sources,
+  month_col = month_col,
+  variables = c("leeftijd", "geslacht", "oplcat")
+)
+
+analysis_df <- attachment$data
+stopifnot(nrow(analysis_df) == nrow(health))
+attachment$audit
+attachment$provenance
+
 
 ## ----model--------------------------------------------------------------------
-# analysis_df <- analysis_df |>
-#   dplyr::mutate(
-#     srh = factor(s001, levels = 1:5,
-#                  labels = c("poor", "moderate", "good", "very good", "excellent")),
-#     female = as.integer(sex == 2)
-#   )
-#
-# fit <- MASS::polr(srh ~ edu_level + age + female, data = analysis_df)
-# summary(fit)
+model_df <- analysis_df %>%
+  dplyr::transmute(
+    health_code = as.numeric(haven::zap_missing(s004)),
+    age = as.numeric(haven::zap_missing(avars_leeftijd)),
+    sex = as.numeric(haven::zap_missing(avars_geslacht)),
+    edu_level = as.numeric(haven::zap_missing(avars_oplcat))
+  )
+stopifnot(all(is.na(model_df$health_code) | model_df$health_code %in% 1:5))
+
+model_df <- model_df %>%
+  dplyr::mutate(
+    srh = factor(health_code, levels = 1:5, ordered = TRUE,
+                 labels = c("poor", "moderate", "good", "very good", "excellent")),
+    female = as.integer(sex == 2)
+  )
+
+colSums(is.na(model_df[c("srh", "edu_level", "age", "female")]))
+stopifnot(all(stats::complete.cases(model_df[c("srh", "edu_level", "age", "female")])))
+fit <- MASS::polr(srh ~ edu_level + age + female, data = model_df,
+                 na.action = stats::na.fail)
+summary(fit)
 

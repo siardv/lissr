@@ -347,84 +347,90 @@ Wave</h1>
 <p>A cross-sectional design treats one wave as a population snapshot.
 This is appropriate when you need a point-in-time estimate (prevalence,
 association) and do not require within-person change. Common examples
-include a Master’s thesis using the most recent Health wave, or a
-methods paper demonstrating a new estimator on a single data
-release.</p>
-<p>Even for a single-wave analysis, lissr adds value: it automates
-authentication, lets you pick exactly the files you need, and gives you
-access to the merge engine’s sentinel-code cleaning so you start from
-analysis-ready data instead of raw SPSS.</p>
+include a Master’s thesis using a selected Health wave, or a methods
+paper demonstrating a new estimator on a single data release.</p>
+<p>Even for a single-wave analysis, lissr helps you select files and
+apply the recipe’s declared harmonization and validation rules. Review
+the module report, variable definitions, missing values and
+comparability limits before deciding whether the result supports your
+analysis.</p>
 </div>
 <div id="step-1-download-one-wave-of-one-module" class="section level2">
 <h2>Step 1 — download one wave of one module</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(lissr)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co"># authenticate (once per session)</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">liss_login</span>()</span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># build the file inventory</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>bp <span class="ot">&lt;-</span> <span class="fu">liss_blueprint</span>()</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co"># filter to the latest Health wave, SPSS format</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>latest_health <span class="ot">&lt;-</span> bp <span class="sc">|&gt;</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>    module <span class="sc">==</span> <span class="st">&quot;Health&quot;</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>    type   <span class="sc">==</span> <span class="st">&quot;spss&quot;</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(wave <span class="sc">==</span> <span class="fu">max</span>(wave))</span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>latest_health</span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt; # A tibble: 1 × 8</span></span>
-<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a><span class="co">#&gt;   module module_id  wave wave_id type  name       file              path</span></span>
-<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;      &lt;int&gt; &lt;int&gt;   &lt;int&gt; &lt;chr&gt; &lt;chr&gt;      &lt;chr&gt;             &lt;chr&gt;</span></span>
-<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a><span class="co">#&gt; 1 Health        18    18    1102 spss  ch25r 1.0p ch25r_1_0p_EN.sav /down…</span></span>
-<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a></span>
-<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="co"># download just that one file</span></span>
-<span id="cb1-24"><a href="#cb1-24" tabindex="-1"></a><span class="fu">liss_download</span>(latest_health, <span class="at">.dir =</span> <span class="st">&quot;data/ch&quot;</span>)</span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(magrittr)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co"># authenticate (once per session)</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">liss_login</span>()</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># build the file inventory</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>bp <span class="ot">&lt;-</span> <span class="fu">liss_blueprint</span>()</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co"># pin the release used in this example</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>health_file <span class="ot">&lt;-</span> <span class="st">&quot;ch25r_EN_1.0p.sav&quot;</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>selected_health <span class="ot">&lt;-</span> bp <span class="sc">%&gt;%</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>    module <span class="sc">==</span> <span class="st">&quot;Health&quot;</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>    type <span class="sc">==</span> <span class="st">&quot;spss&quot;</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>    .data<span class="sc">$</span>file <span class="sc">==</span> .env<span class="sc">$</span>health_file</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>  )</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(selected_health) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" tabindex="-1"></a>selected_health</span>
+<span id="cb1-21"><a href="#cb1-21" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" tabindex="-1"></a><span class="co"># download just that one file</span></span>
+<span id="cb1-23"><a href="#cb1-23" tabindex="-1"></a><span class="fu">liss_download</span>(selected_health, <span class="at">.dir =</span> <span class="st">&quot;data/ch&quot;</span>)</span></code></pre></div>
+<p>The example is pinned to Health wave <code>ch25r</code>, release
+<code>ch25r_EN_1.0p.sav</code>; it does not promise that this is the
+latest wave. Keep the published filename unchanged. If you choose
+another wave, update the selected file and recipe wave together. Use a
+dedicated data folder and review release notes before merging competing
+versions.</p>
 </div>
 <div id="step-2-read-and-clean-the-data" class="section level2">
 <h2>Step 2 — read and clean the data</h2>
-<p>You can read the file directly with <code>haven</code>, or you can
-leverage the merge engine to apply the recipe’s sentinel-code recoding
-even for a single wave. The recipe knows which numeric codes are “don’t
-know” vs “prefer not to say” vs genuine missing — cleaning you would
-otherwise do by hand with a codebook open.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(haven)</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co"># option A: read raw and clean yourself</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>raw <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;data/ch/ch25r_1_0p_EN.sav&quot;</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">dim</span>(raw)</span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; [1] 4892  271</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># option B: use the merge engine for a single wave</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co"># (this applies prefix stripping, sentinel recoding, and labelled policy)</span></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co"># temporarily trim the recipe to just the wave you need</span></span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>recipe<span class="sc">$</span>wave_index <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">keep</span>(</span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>  recipe<span class="sc">$</span>wave_index,</span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>  <span class="sc">~</span> .x<span class="sc">$</span>id <span class="sc">==</span> <span class="st">&quot;ch25r&quot;</span></span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>)</span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">merge_liss_module</span>(recipe, <span class="at">data_dir =</span> <span class="st">&quot;data/ch&quot;</span>, <span class="at">output_dir =</span> <span class="st">&quot;output&quot;</span>)</span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a>health <span class="ot">&lt;-</span> result<span class="sc">$</span>data</span>
-<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="fu">dim</span>(health)</span>
-<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; [1] 4892  265</span></span></code></pre></div>
-<p>The merge engine’s output has cleaner column names (no
-<code>ch24q</code> prefix), sentinel values already recoded to
-<code>NA</code>, and a <code>wave_id</code> / <code>wave_year</code>
-column appended.</p>
+<p>You can read the file directly with <code>haven</code>, or use the
+merge engine for a single wave. The recipe applies its declared recodes,
+including specified missing-value codes; it does not replace checking
+the codebook or guarantee that every value is suitable for modelling.
+The model below uses the recipe result, not the unprocessed
+<code>raw</code> object.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># option A: read raw and clean yourself</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>raw <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="fu">file.path</span>(<span class="st">&quot;data/ch&quot;</span>, health_file))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">dim</span>(raw)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co"># option B: use the merge engine for a single wave</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>recipe <span class="ot">&lt;-</span> <span class="fu">liss_recipe</span>(<span class="st">&quot;ch&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co"># temporarily trim the recipe to just the wave you need</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>recipe<span class="sc">$</span>wave_index <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">keep</span>(</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  recipe<span class="sc">$</span>wave_index,</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="sc">~</span> .x<span class="sc">$</span>id <span class="sc">==</span> <span class="st">&quot;ch25r&quot;</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>)</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">merge_liss_module</span>(recipe, <span class="at">data_dir =</span> <span class="st">&quot;data/ch&quot;</span>, <span class="at">output_dir =</span> <span class="st">&quot;output&quot;</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>health <span class="ot">&lt;-</span> result<span class="sc">$</span>data</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="fu">dim</span>(health)</span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>result<span class="sc">$</span>valid_for_analysis</span></code></pre></div>
+<p>The Health recipe renames suffixes such as <code>ch25r004</code> to
+<code>s004</code>, applies its declared missing-code recodes, and
+records <code>wave_id</code>, <code>wave_year</code> and
+<code>fieldwork_ym</code>. Inspect
+<code>output/ch_merge_report.txt</code>, including warnings and
+documentary or unevaluated checks. A validation verdict is limited to
+the checks actually run, not a general endorsement of an analysis.</p>
 </div>
 <div id="step-3-attach-background-variables" class="section level2">
 <h2>Step 3 — attach background variables</h2>
-<p>Most cross-sectional analyses need demographics: age, sex, education,
-income. These live in the Background Variables file (<code>avars</code>,
-a separate monthly release), not in the survey module itself.</p>
+<p>The model below uses age, sex and education from Background Variables
+(<code>avars</code>), a separate monthly snapshot. Survey preloads and
+background covariates need not describe freshly answered items at the
+same time; choose their sources and timing for your research
+question.</p>
 <p>Use <code>nomem_encr</code> as the respondent identifier, never
 <code>nohouse_encr</code>: household assignments change over time.
 Select the month for the survey items being analysed. Join on both
-<code>nomem_encr</code> and <code>fieldwork_ym</code> when stacking
+<code>nomem_encr</code> and the caller-selected month when stacking
 monthly background files; reject duplicate background keys and never
 match missing keys.</p>
 <p><code>fieldwork_ym</code> follows the recorded date selected by the
@@ -437,61 +443,119 @@ fallback to another part. Part-1 timing is not automatically the
 appropriate background month for part-2, part-3 or particular CV items.
 Check their timing before choosing a snapshot, even if a merged column’s
 label no longer conveys its part-specific meaning.</p>
-<p>This example uses Health data. Select monthly Background Variables
-ZIP releases with <code>liss_blueprint(refresh = TRUE)</code> or
+<p><a href="https://www.dataarchive.lissdata.nl/study-units/view/1661">Health
+wave <code>ch25r</code></a> was collected in November and December 2025,
+including a repeat for November noncompleters. Its <code>_m</code> field
+describes the year and month of the fieldwork period; questionnaire
+start and end dates are separate fields. Start and completion can cross
+a month boundary. The recipe copies <code>_m</code> into
+<code>fieldwork_ym</code>, which is not automatically the appropriate
+month for every item or covariate.</p>
+<p>Inspect the recorded months before choosing an attachment month:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">table</span>(health<span class="sc">$</span>fieldwork_ym, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>)</span></code></pre></div>
+<p>The following illustration uses <code>fieldwork_ym</code> only after
+you have decided that this anchor fits the items and covariates being
+analysed. It retains the whole selected wave and shows two explicitly
+chosen months. If your analysis intentionally uses one month or another
+subsample, select and document those survey rows first; supplying one
+background month does not define that subsample. Do not infer a
+replacement month from a year, filename, another date column or the
+nearest available snapshot.</p>
+<p>Select monthly Background Variables ZIP releases with
+<code>liss_blueprint(refresh = TRUE)</code> or
 <code>liss_select()</code> (<code>module_id = 322</code>,
 <code>type = &quot;archive&quot;</code>, <code>wave = YYYYMM</code>). Inspect
-release descriptions and extracted contents; catalogue metadata does not
-verify the data format or observed period. This example requires a local
-SPSS file, acquired separately if the selected ZIP contains another
-format. The November 2025 month and file path below are illustrative.
-Inspect the actual Health fieldwork month and replace both together; the
-checks verify observed periods before the join.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>expected_month <span class="ot">&lt;-</span> <span class="dv">202511</span><span class="dt">L</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>survey_month <span class="ot">&lt;-</span> <span class="fu">unique</span>(health<span class="sc">$</span>fieldwork_ym[<span class="sc">!</span><span class="fu">is.na</span>(health<span class="sc">$</span>fieldwork_ym)])</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(survey_month) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span>, survey_month <span class="sc">==</span> expected_month)</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>bg_raw <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;data/avars/avars_202511_EN_1_0p.sav&quot;</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>bg_month <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">as.integer</span>(bg_raw<span class="sc">$</span>wave))</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(bg_month) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span>, <span class="sc">!</span><span class="fu">anyNA</span>(bg_month),</span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>          bg_month <span class="sc">==</span> expected_month)</span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>avars <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">zap_labels</span>(bg_raw) <span class="sc">%&gt;%</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">fieldwork_ym =</span> <span class="fu">as.integer</span>(wave)) <span class="sc">%&gt;%</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(</span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    nomem_encr, fieldwork_ym,</span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>    <span class="at">age       =</span> leeftijd,</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>    <span class="at">sex       =</span> geslacht,</span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>    <span class="at">edu_level =</span> oplcat,</span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>    <span class="at">hh_income =</span> nettohh_f,</span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>    <span class="at">urban     =</span> sted</span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>  )</span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a>bg_keys <span class="ot">&lt;-</span> avars[<span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>)]</span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyNA</span>(bg_keys), <span class="sc">!</span><span class="fu">anyDuplicated</span>(bg_keys))</span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a>analysis_df <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a>  health, avars,</span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>), <span class="at">na_matches =</span> <span class="st">&quot;never&quot;</span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a>)</span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(analysis_df) <span class="sc">==</span> <span class="fu">nrow</span>(health))</span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="fu">nrow</span>(analysis_df)</span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; [1] 4892</span></span></code></pre></div>
+release descriptions and extracted contents. The catalogue does not
+verify payload format or observed periods. The local SAV paths and
+expected months below are illustrative; replace them together with the
+files you explicitly selected. The helper does not download or extract
+archives.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># caller-confirmed month column for this illustration</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>month_col <span class="ot">&lt;-</span> <span class="st">&quot;fieldwork_ym&quot;</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>sources <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">sav_path =</span> <span class="fu">c</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>    <span class="st">&quot;data/avars/avars_202511_EN_1.0p.sav&quot;</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>    <span class="st">&quot;data/avars/avars_202512_EN_1.0p.sav&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  ),</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">expected_month =</span> <span class="fu">c</span>(<span class="dv">202511</span><span class="dt">L</span>, <span class="dv">202512</span><span class="dt">L</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>attachment <span class="ot">&lt;-</span> <span class="fu">liss_attach_background</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">data =</span> health,</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">sources =</span> sources,</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  <span class="at">month_col =</span> month_col,</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>  <span class="at">variables =</span> <span class="fu">c</span>(<span class="st">&quot;leeftijd&quot;</span>, <span class="st">&quot;geslacht&quot;</span>, <span class="st">&quot;oplcat&quot;</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>)</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>analysis_df <span class="ot">&lt;-</span> attachment<span class="sc">$</span>data</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(analysis_df) <span class="sc">==</span> <span class="fu">nrow</span>(health))</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>attachment<span class="sc">$</span>audit</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>attachment<span class="sc">$</span>provenance</span></code></pre></div>
+<p><a href="https://siardv.github.io/lissr/reference/liss_attach_background.html"><code>liss_attach_background()</code></a>
+validates supplied SAV signatures, observed months, complete unique
+background respondent-month keys, and compatible selected-variable
+storage and metadata. Differences in labels or SPSS missing definitions
+require an explicit harmonization decision before pooling sources. It
+preserves survey rows, original columns and metadata, including repeated
+observations. Missing survey keys never match.</p>
+<p>The audit distinguishes unmatched survey rows from matched rows whose
+covariates are missing; matching a key does not certify a usable model
+row. Review coverage and the meanings of <code>leeftijd</code>,
+<code>geslacht</code> and <code>oplcat</code> before modelling. The
+helper retains labels and missing definitions on
+<code>avars_leeftijd</code>, <code>avars_geslacht</code> and
+<code>avars_oplcat</code>. Provenance records file identities and
+metadata fingerprints, not raw respondent keys or value-label contents.
+These identities do not certify the release’s authenticity, item
+freshness or analytical timing. This illustration does not change the
+separate annual income attachment policy.</p>
 </div>
 <div id="step-4-run-an-analysis" class="section level2">
 <h2>Step 4 — run an analysis</h2>
-<p>With the merged, cleaned data you can proceed to standard modelling.
-For example, estimating the association between education and self-rated
-health (suffix <code>s001</code> in the harmonised output), adjusting
-for age and sex:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>analysis_df <span class="ot">&lt;-</span> analysis_df <span class="sc">|&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>    <span class="at">srh =</span> <span class="fu">factor</span>(s001, <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>,</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>                 <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;poor&quot;</span>, <span class="st">&quot;moderate&quot;</span>, <span class="st">&quot;good&quot;</span>, <span class="st">&quot;very good&quot;</span>, <span class="st">&quot;excellent&quot;</span>)),</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>    <span class="at">female =</span> <span class="fu">as.integer</span>(sex <span class="sc">==</span> <span class="dv">2</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  )</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(srh <span class="sc">~</span> edu_level <span class="sc">+</span> age <span class="sc">+</span> female, <span class="at">data =</span> analysis_df)</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code></pre></div>
+<p>Self-rated general health is <code>s004</code>, with categories 1
+poor, 2 moderate, 3 good, 4 very good and 5 excellent. <code>s001</code>
+is a gender preload, not the health outcome. Verify these definitions
+against the selected Health codebook and review the attached covariates’
+metadata.</p>
+<p>The example preserves an illustrative numeric education slope: a
+one-code increase in <code>oplcat</code> receives the same model step,
+which needs substantive justification. Its <code>female</code> indicator
+compares sex code 2 with every other observed nonmissing code, rather
+than assuming there are only two categories. Review coding, sample
+restrictions, missing-data treatment and the proportional-odds
+assumption for your actual analysis.</p>
+<p>This model-only frame converts declared SPSS missing values to
+<code>NA</code> before numeric conversion; the attached source columns
+remain unchanged. Inspect missingness and choose your analysis sample
+before fitting. The checks below deliberately stop on unexpected health
+codes or unresolved missing model values instead of silently choosing a
+sample.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>model_df <span class="ot">&lt;-</span> analysis_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="at">health_code =</span> <span class="fu">as.numeric</span>(haven<span class="sc">::</span><span class="fu">zap_missing</span>(s004)),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="at">age =</span> <span class="fu">as.numeric</span>(haven<span class="sc">::</span><span class="fu">zap_missing</span>(avars_leeftijd)),</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">sex =</span> <span class="fu">as.numeric</span>(haven<span class="sc">::</span><span class="fu">zap_missing</span>(avars_geslacht)),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>    <span class="at">edu_level =</span> <span class="fu">as.numeric</span>(haven<span class="sc">::</span><span class="fu">zap_missing</span>(avars_oplcat))</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  )</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">all</span>(<span class="fu">is.na</span>(model_df<span class="sc">$</span>health_code) <span class="sc">|</span> model_df<span class="sc">$</span>health_code <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>))</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>model_df <span class="ot">&lt;-</span> model_df <span class="sc">%&gt;%</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>    <span class="at">srh =</span> <span class="fu">factor</span>(health_code, <span class="at">levels =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">ordered =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>                 <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;poor&quot;</span>, <span class="st">&quot;moderate&quot;</span>, <span class="st">&quot;good&quot;</span>, <span class="st">&quot;very good&quot;</span>, <span class="st">&quot;excellent&quot;</span>)),</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>    <span class="at">female =</span> <span class="fu">as.integer</span>(sex <span class="sc">==</span> <span class="dv">2</span>)</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  )</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(model_df[<span class="fu">c</span>(<span class="st">&quot;srh&quot;</span>, <span class="st">&quot;edu_level&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;female&quot;</span>)]))</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">all</span>(stats<span class="sc">::</span><span class="fu">complete.cases</span>(model_df[<span class="fu">c</span>(<span class="st">&quot;srh&quot;</span>, <span class="st">&quot;edu_level&quot;</span>, <span class="st">&quot;age&quot;</span>, <span class="st">&quot;female&quot;</span>)])))</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>fit <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">polr</span>(srh <span class="sc">~</span> edu_level <span class="sc">+</span> age <span class="sc">+</span> female, <span class="at">data =</span> model_df,</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>                 <span class="at">na.action =</span> stats<span class="sc">::</span>na.fail)</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code></pre></div>
+<p>All examples in this guide are illustrative and are not executed
+while rendering. Printed selections, dimensions, coverage and fitted
+estimates must come from your own chosen inputs and checks; no
+panel-data model fit or analytical month policy is established by this
+vignette.</p>
 </div>
 <div id="when-not-to-use-this-approach" class="section level2">
 <h2>When <em>not</em> to use this approach</h2>
@@ -512,12 +576,18 @@ verify:</p>
 <ul class="task-list">
 <li><label><input type="checkbox"></input>You joined background variables on
 <code>nomem_encr</code> (not <code>nohouse_encr</code>).</label></li>
-<li><label><input type="checkbox"></input>The background variables file
-matches the fieldwork month, not the calendar year.</label></li>
-<li><label><input type="checkbox"></input>Sentinel codes (-9 = don’t know, -8
-= prefer not to say, 999, etc.) have been recoded to <code>NA</code> —
-the merge engine does this automatically, but check if you loaded raw
-SPSS directly.</label></li>
+<li><label><input type="checkbox"></input>Your month column fits the chosen
+items and covariates, and each explicit snapshot has the expected
+observed period.</label></li>
+<li><label><input type="checkbox"></input>Whole-wave or intentional subsample
+scope is documented; unmatched rows, missing covariates and model sample
+exclusions were reviewed.</label></li>
+<li><label><input type="checkbox"></input>Outcome <code>s004</code>,
+background coding, selected metadata and missing-value definitions were
+checked against the exact releases and codebooks.</label></li>
+<li><label><input type="checkbox"></input>Recipe recodes and model-only
+missing-value conversions were reviewed; no undeclared sentinel or
+automatic recode policy is assumed.</label></li>
 <li><label><input type="checkbox"></input>You report the wave identifier
 (e.g. ch25r) and the LISS data version number in your methods section so
 results are reproducible.</label></li>

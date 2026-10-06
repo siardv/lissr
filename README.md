@@ -159,8 +159,17 @@ both the respondent and the selected month, reject duplicate background keys,
 and never match missing keys. The survey month must be appropriate for the
 items being analysed. In particular, three-part CV waves record part-1
 `fieldwork_ym`, which is not an automatic month anchor for other parts.
-The merge-workflow and cross-sectional-analysis guides show guarded joins
-with verified local SPSS files; their file paths are illustrative.
+`liss_attach_background(data, sources, month_col, variables)` explicitly
+attaches selected local monthly SAV snapshots to a survey. Supply their
+expected months, the exact covariates to copy and a survey month column
+chosen for your analysis. The helper validates observed periods, complete
+unique background keys and compatible selected-variable metadata. It
+preserves survey rows, order and original columns, returning `data`,
+coverage `audit` and file `provenance`; review unmatched rows and missing
+covariates before modelling. It does not choose a release or analytical
+month. See the [helper reference](https://siardv.github.io/lissr/reference/liss_attach_background.html).
+The merge-workflow and cross-sectional-analysis guides show explicit
+manifests for this helper; their file paths are illustrative.
 
 `liss_clean_income()` can attach a background frame itself (its `P01`
 rule aligns monthly `avars` waves to the annual scale and reports the

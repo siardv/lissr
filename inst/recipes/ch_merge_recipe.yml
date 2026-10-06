@@ -164,7 +164,7 @@ wave_index:
   notes: >-
     29 new suffixes 278-306 (two-week symptom-frequency battery plus a
     stress-domain block); no removals vs ch24q; reference-year label updates
-    on 239/260/263 (2024 -> 2025); fieldwork 2025-11
+    on 239/260/263 (2024 -> 2025); fieldwork 2025-11 and 2025-12
   role_map:
     wave_has_work_capacity: wave_has_work_capacity
     wave_has_insurance: wave_has_insurance
