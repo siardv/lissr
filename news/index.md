@@ -2,6 +2,18 @@
 
 ## lissr 1.4.1.9000
 
+- [`liss_attach_background()`](https://siardv.github.io/lissr/reference/liss_attach_background.md)
+  attaches explicitly selected local SAV snapshots by respondent and
+  caller-selected survey month. It returns `data`, `audit` and
+  `provenance`, preserving survey rows, order and original columns. The
+  helper validates file signatures, observed months, complete unique
+  background keys and compatible selected-variable metadata, and rejects
+  competing sources for one month. It reports unmatched rows and SHA256
+  file identities; optional local ZIP/member lineage is verified against
+  the SAV bytes. Sources, variables and item/part month remain explicit
+  choices, without automatic release ranking, format fallback, covariate
+  harmonization or changes to annual income attachment.
+
 - The file catalogue now includes monthly Background Variables ZIP
   releases from study 322, with filename-derived YYYYMM `wave` codes,
   `type: archive`, exact published filenames alongside their release

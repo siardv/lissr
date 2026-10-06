@@ -53,6 +53,11 @@
 - [`merge_liss_panel()`](https://siardv.github.io/lissr/reference/merge_liss_panel.md)
   : merge multiple LISS modules into a single panel dataset
 
+## Background variables
+
+- [`liss_attach_background()`](https://siardv.github.io/lissr/reference/liss_attach_background.md)
+  : Attach explicitly selected local Background Variables snapshots
+
 ## Income cleaning
 
 - [`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)

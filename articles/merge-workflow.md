@@ -142,41 +142,78 @@ part-2, part-3 or particular survey items. Check the relevant item or
 part timing before choosing a monthly snapshot; the caveat must not
 depend on a column label surviving a multi-wave merge.
 
-The example below remains a Health join. Use
+The example below remains a Health attachment. Use
 `liss_blueprint(refresh = TRUE)` or
 [`liss_select()`](https://siardv.github.io/lissr/reference/liss_select.md)
 to select monthly Background Variables ZIP releases (`module_id = 322`,
 `type = "archive"`, `wave = YYYYMM`). Choose the required months and
 inspect the published release descriptions and extracted contents. The
-catalogue does not verify their data format or observed periods. This
-join requires locally available SPSS files; acquire those separately if
-the selected ZIP contains another format. The paths are illustrative.
-Each monthly SPSS file records its period in `wave`; inspect the
-observed survey months and verify the background periods before joining,
-rather than inferring them from filenames:
+catalogue does not verify their data format or observed periods.
+
+[`liss_attach_background()`](https://siardv.github.io/lissr/reference/liss_attach_background.md)
+requires explicitly selected local `.sav` files, their expected months
+and the exact variables to copy. It checks standard SAV signatures
+before reading, validates each observed `wave` against the expected
+month, and permits one source per month. It rejects missing or duplicate
+background keys and incompatible storage or metadata for selected
+variables across files. Differences in variable labels, value labels or
+SPSS missing definitions need an explicit harmonization decision before
+using such files together.
+
+The paths and two months below are illustrative. Inspect the survey
+months and choose the snapshots appropriate for the Health items being
+analysed; do not derive that choice from a filename alone:
 
 ``` r
 
-# example: merge Health survey with background variables
+# example: attach age to a Health survey using selected monthly snapshots
 survey <- haven::read_sav("output/ch_merged.sav")
 table(survey$fieldwork_ym, useNA = "ifany")
 
-# read local monthly SPSS files; verify each observed period
-bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
-stopifnot(length(bg_files) > 0L)
-bg_data <- purrr::map_dfr(bg_files, function(f) {
-  bg <- haven::read_sav(f)
-  bg_month <- unique(as.integer(bg$wave))
-  stopifnot(length(bg_month) == 1L, !anyNA(bg_month),
-            bg_month %in% survey$fieldwork_ym)
-  dplyr::mutate(bg, fieldwork_ym = as.integer(wave))
-})
-
-bg_keys <- bg_data[c("nomem_encr", "fieldwork_ym")]
-stopifnot(!anyNA(bg_keys), !anyDuplicated(bg_keys))
-merged <- dplyr::left_join(
-  survey, bg_data,
-  by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
+sources <- data.frame(
+  sav_path = c(
+    "data/avars/avars_202411_EN_1.0p.sav",
+    "data/avars/avars_202412_EN_1.0p.sav"
+  ),
+  expected_month = c(202411L, 202412L)
 )
+
+attachment <- liss_attach_background(
+  data = survey,
+  sources = sources,
+  month_col = "fieldwork_ym",
+  variables = "leeftijd"
+)
+
+merged <- attachment$data
 stopifnot(nrow(merged) == nrow(survey))
+attachment$audit
+attachment$provenance
 ```
+
+The default prefix creates `avars_leeftijd`; original survey columns and
+their metadata remain unchanged. The returned plain list contains
+attached `data`, coverage and validation `audit`, and file `provenance`.
+Repeated survey respondent-month rows are preserved. Missing survey keys
+never match, and partial coverage produces one aggregate warning while
+retaining all survey rows. Review the audit before using the result: a
+matched row can still have a source-missing covariate. A nonempty survey
+with no eligible keys or no matches fails, rather than returning a
+usable-looking attachment.
+
+The manifest may also provide paired `archive_path` and `archive_member`
+columns for local ZIP provenance. The helper verifies that the exact
+member bytes match the selected SAV and records their separate hashes;
+omitted archive lineage is reported as standalone. File hashes establish
+byte identity, not an authoritative release or correct item timing.
+Selected metadata is recorded as type, class and a fingerprint in
+provenance; full labels and missing definitions remain on the attached
+data columns.
+
+Initial payload characterization covered seven releases, not every
+historical snapshot. Runtime checks validate the supplied files but do
+not establish long-term respondent identity or covariate comparability.
+A snapshot month does not prove when each item was freshly answered. The
+helper does not download or extract files, choose a format or release,
+infer another month, recode covariates, or change the annual
+income-cleaning attachment policy.

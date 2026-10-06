@@ -220,41 +220,74 @@ automatically appropriate background month for part-2, part-3 or
 particular survey items. Check the relevant item or part timing before
 choosing a monthly snapshot; the caveat must not depend on a column
 label surviving a multi-wave merge.</p>
-<p>The example below remains a Health join. Use
+<p>The example below remains a Health attachment. Use
 <code>liss_blueprint(refresh = TRUE)</code> or
 <code><a href="../reference/liss_select.html">liss_select()</a></code> to select monthly Background Variables ZIP
 releases (<code>module_id = 322</code>, <code>type = "archive"</code>,
 <code>wave = YYYYMM</code>). Choose the required months and inspect the
 published release descriptions and extracted contents. The catalogue
-does not verify their data format or observed periods. This join
-requires locally available SPSS files; acquire those separately if the
-selected ZIP contains another format. The paths are illustrative. Each
-monthly SPSS file records its period in <code>wave</code>; inspect the
-observed survey months and verify the background periods before joining,
-rather than inferring them from filenames:</p>
+does not verify their data format or observed periods.</p>
+<p><code><a href="../reference/liss_attach_background.html">liss_attach_background()</a></code> requires explicitly selected
+local <code>.sav</code> files, their expected months and the exact
+variables to copy. It checks standard SAV signatures before reading,
+validates each observed <code>wave</code> against the expected month,
+and permits one source per month. It rejects missing or duplicate
+background keys and incompatible storage or metadata for selected
+variables across files. Differences in variable labels, value labels or
+SPSS missing definitions need an explicit harmonization decision before
+using such files together.</p>
+<p>The paths and two months below are illustrative. Inspect the survey
+months and choose the snapshots appropriate for the Health items being
+analysed; do not derive that choice from a filename alone:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># example: merge Health survey with background variables</span></span>
+<code class="sourceCode R"><span><span class="co"># example: attach age to a Health survey using selected monthly snapshots</span></span>
 <span><span class="va">survey</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"output/ch_merged.sav"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">survey</span><span class="op">$</span><span class="va">fieldwork_ym</span>, useNA <span class="op">=</span> <span class="st">"ifany"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># read local monthly SPSS files; verify each observed period</span></span>
-<span><span class="va">bg_files</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="st">"data/avars/"</span>, pattern <span class="op">=</span> <span class="st">"\\.sav$"</span>, full.names <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">bg_files</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">0L</span><span class="op">)</span></span>
-<span><span class="va">bg_data</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map_dfr.html" class="external-link">map_dfr</a></span><span class="op">(</span><span class="va">bg_files</span>, <span class="kw">function</span><span class="op">(</span><span class="va">f</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">bg</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="va">f</span><span class="op">)</span></span>
-<span>  <span class="va">bg_month</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">bg</span><span class="op">$</span><span class="va">wave</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">bg_month</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1L</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">anyNA</a></span><span class="op">(</span><span class="va">bg_month</span><span class="op">)</span>,</span>
-<span>            <span class="va">bg_month</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">survey</span><span class="op">$</span><span class="va">fieldwork_ym</span><span class="op">)</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="va">bg</span>, fieldwork_ym <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">wave</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">bg_keys</span> <span class="op">&lt;-</span> <span class="va">bg_data</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nomem_encr"</span>, <span class="st">"fieldwork_ym"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">anyNA</a></span><span class="op">(</span><span class="va">bg_keys</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">anyDuplicated</a></span><span class="op">(</span><span class="va">bg_keys</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">merged</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
-<span>  <span class="va">survey</span>, <span class="va">bg_data</span>,</span>
-<span>  by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nomem_encr"</span>, <span class="st">"fieldwork_ym"</span><span class="op">)</span>, na_matches <span class="op">=</span> <span class="st">"never"</span></span>
+<span><span class="va">sources</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  sav_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>    <span class="st">"data/avars/avars_202411_EN_1.0p.sav"</span>,</span>
+<span>    <span class="st">"data/avars/avars_202412_EN_1.0p.sav"</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  expected_month <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">202411L</span>, <span class="fl">202412L</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">merged</span><span class="op">)</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">survey</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span></span>
+<span><span class="va">attachment</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_attach_background.html">liss_attach_background</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">survey</span>,</span>
+<span>  sources <span class="op">=</span> <span class="va">sources</span>,</span>
+<span>  month_col <span class="op">=</span> <span class="st">"fieldwork_ym"</span>,</span>
+<span>  variables <span class="op">=</span> <span class="st">"leeftijd"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">merged</span> <span class="op">&lt;-</span> <span class="va">attachment</span><span class="op">$</span><span class="va">data</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">merged</span><span class="op">)</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">survey</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">attachment</span><span class="op">$</span><span class="va">audit</span></span>
+<span><span class="va">attachment</span><span class="op">$</span><span class="va">provenance</span></span></code></pre></div>
+<p>The default prefix creates <code>avars_leeftijd</code>; original
+survey columns and their metadata remain unchanged. The returned plain
+list contains attached <code>data</code>, coverage and validation
+<code>audit</code>, and file <code>provenance</code>. Repeated survey
+respondent-month rows are preserved. Missing survey keys never match,
+and partial coverage produces one aggregate warning while retaining all
+survey rows. Review the audit before using the result: a matched row can
+still have a source-missing covariate. A nonempty survey with no
+eligible keys or no matches fails, rather than returning a
+usable-looking attachment.</p>
+<p>The manifest may also provide paired <code>archive_path</code> and
+<code>archive_member</code> columns for local ZIP provenance. The helper
+verifies that the exact member bytes match the selected SAV and records
+their separate hashes; omitted archive lineage is reported as
+standalone. File hashes establish byte identity, not an authoritative
+release or correct item timing. Selected metadata is recorded as type,
+class and a fingerprint in provenance; full labels and missing
+definitions remain on the attached data columns.</p>
+<p>Initial payload characterization covered seven releases, not every
+historical snapshot. Runtime checks validate the supplied files but do
+not establish long-term respondent identity or covariate comparability.
+A snapshot month does not prove when each item was freshly answered. The
+helper does not download or extract files, choose a format or release,
+infer another month, recode covariates, or change the annual
+income-cleaning attachment policy.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
