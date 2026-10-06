@@ -83,35 +83,35 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } 
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.at { color: #7d9029; } 
-code span.bn { color: #40a070; } 
-code span.bu { color: #008000; } 
-code span.cf { color: #007020; font-weight: bold; } 
-code span.ch { color: #4070a0; } 
-code span.cn { color: #880000; } 
-code span.co { color: #60a0b0; font-style: italic; } 
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.do { color: #ba2121; font-style: italic; } 
-code span.dt { color: #902000; } 
-code span.dv { color: #40a070; } 
-code span.er { color: #ff0000; font-weight: bold; } 
-code span.ex { } 
-code span.fl { color: #40a070; } 
-code span.fu { color: #06287e; } 
-code span.im { color: #008000; font-weight: bold; } 
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.kw { color: #007020; font-weight: bold; } 
-code span.op { color: #666666; } 
-code span.ot { color: #007020; } 
-code span.pp { color: #bc7a00; } 
-code span.sc { color: #4070a0; } 
-code span.ss { color: #bb6688; } 
-code span.st { color: #4070a0; } 
-code span.va { color: #19177c; } 
-code span.vs { color: #4070a0; } 
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.al { color: #ff0000; font-weight: bold; }
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.at { color: #7d9029; }
+code span.bn { color: #40a070; }
+code span.bu { color: #008000; }
+code span.cf { color: #007020; font-weight: bold; }
+code span.ch { color: #4070a0; }
+code span.cn { color: #880000; }
+code span.co { color: #60a0b0; font-style: italic; }
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.do { color: #ba2121; font-style: italic; }
+code span.dt { color: #902000; }
+code span.dv { color: #40a070; }
+code span.er { color: #ff0000; font-weight: bold; }
+code span.ex { }
+code span.fl { color: #40a070; }
+code span.fu { color: #06287e; }
+code span.im { color: #008000; font-weight: bold; }
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.kw { color: #007020; font-weight: bold; }
+code span.op { color: #666666; }
+code span.ot { color: #007020; }
+code span.pp { color: #bc7a00; }
+code span.sc { color: #4070a0; }
+code span.ss { color: #bb6688; }
+code span.st { color: #4070a0; }
+code span.va { color: #19177c; }
+code span.vs { color: #4070a0; }
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </style>
 <script>
 // apply pandoc div.sourceCode style to pre.sourceCode instead
@@ -245,7 +245,7 @@ pre, code {
 background-color: #f7f7f7;
 border-radius: 3px;
 color: #333;
-white-space: pre-wrap; 
+white-space: pre-wrap;
 }
 pre {
 border-radius: 3px;
@@ -313,18 +313,18 @@ text-decoration: underline; }
 a[href^="https:"] {
 text-decoration: underline; }
 
-code > span.kw { color: #555; font-weight: bold; } 
-code > span.dt { color: #902000; } 
-code > span.dv { color: #40a070; } 
-code > span.bn { color: #d14; } 
-code > span.fl { color: #d14; } 
-code > span.ch { color: #d14; } 
-code > span.st { color: #d14; } 
-code > span.co { color: #888888; font-style: italic; } 
-code > span.ot { color: #007020; } 
-code > span.al { color: #ff0000; font-weight: bold; } 
-code > span.fu { color: #900; font-weight: bold; } 
-code > span.er { color: #a61717; background-color: #e3d2d2; } 
+code > span.kw { color: #555; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #d14; }
+code > span.fl { color: #d14; }
+code > span.ch { color: #d14; }
+code > span.st { color: #d14; }
+code > span.co { color: #888888; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #900; font-weight: bold; }
+code > span.er { color: #a61717; background-color: #e3d2d2; }
 </style>
 
 
@@ -442,33 +442,55 @@ expected-presence checks, and boundary alerts.</p>
 </div>
 <div id="background-variables" class="section level2">
 <h2>Background variables</h2>
-<p>The Background Variables file (<code>avars</code>) is a monthly
-snapshot used as the linkage backbone for all other modules. It is a
-separate release, not one of the ten core modules. When merging
-background variables with survey data:</p>
-<ol style="list-style-type: decimal">
-<li>Use only <code>nomem_encr</code> as the join key (never
-<code>nohouse_encr</code>).</li>
-<li>Match the fieldwork month of the survey, not the calendar year.</li>
-</ol>
-<p>The merged output includes a <code>fieldwork_ym</code> column (YYYYMM
-integer) derived automatically from the LISS <code>_m</code> suffix.
-Each <code>avars</code> file carries its fieldwork period as a
-<code>wave</code> column (YYYYMM), so stacking monthly files needs no
-filename parsing:</p>
+<p>The Background Variables file (<code>avars</code>) is a separate
+monthly snapshot, not one of the ten core modules. Select the background
+month for the survey items being analysed. Use <code>nomem_encr</code>
+as the respondent identifier, never <code>nohouse_encr</code>: household
+assignments can change over time. When stacking monthly snapshots, join
+on both <code>nomem_encr</code> and the selected
+<code>fieldwork_ym</code> (YYYYMM), rather than on the respondent or
+calendar year alone. Reject duplicate background keys and never match
+missing keys.</p>
+<p>The source of <code>fieldwork_ym</code> is recipe-specific. The
+Politics and Values (<code>cv</code>) recipe uses <code>_m</code> in
+eight single-part waves; in <code>cv16h</code>, group 0 uses
+<code>maandnr</code> and groups 1/2 use <code>maandnr_lang</code>; nine
+three-part waves use <code>_m1</code> only. A missing designated date
+remains <code>NA</code>, without year inference or fallback to another
+source. For three-part CV waves this is part-1 timing, not an
+automatically appropriate background month for part-2, part-3 or
+particular survey items. Check the relevant item or part timing before
+choosing a monthly snapshot; the caveat must not depend on a column
+label surviving a multi-wave merge.</p>
+<p>The example below remains a Health join. Obtain the monthly
+Background Variables releases separately from the LISS Data Archive and
+extract their SPSS files locally; the current blueprint file inventory
+does not provide these background downloads. The paths are illustrative.
+Each monthly file records its period in <code>wave</code>; inspect the
+observed survey months and verify the background periods before joining,
+rather than inferring them from filenames:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># example: merge Health survey with background variables</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>survey <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(<span class="st">&quot;output/ch_merged.sav&quot;</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co"># read avars files; the period is the `wave` column in each file</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">&quot;data/avars/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.sav$&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>bg_data  <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(bg_files, <span class="cf">function</span>(f) {</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  haven<span class="sc">::</span><span class="fu">read_sav</span>(f) <span class="sc">|&gt;</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">fieldwork_ym =</span> <span class="fu">as.integer</span>(wave))</span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>})</span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>merged <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  survey, bg_data,</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>)</span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>)</span></code></pre></div>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">table</span>(survey<span class="sc">$</span>fieldwork_ym, <span class="at">useNA =</span> <span class="st">&quot;ifany&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co"># read separately acquired monthly files; verify each observed period</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>bg_files <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="st">&quot;data/avars/&quot;</span>, <span class="at">pattern =</span> <span class="st">&quot;</span><span class="sc">\\</span><span class="st">.sav$&quot;</span>, <span class="at">full.names =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(bg_files) <span class="sc">&gt;</span> <span class="dv">0</span><span class="dt">L</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>bg_data <span class="ot">&lt;-</span> purrr<span class="sc">::</span><span class="fu">map_dfr</span>(bg_files, <span class="cf">function</span>(f) {</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>  bg <span class="ot">&lt;-</span> haven<span class="sc">::</span><span class="fu">read_sav</span>(f)</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>  bg_month <span class="ot">&lt;-</span> <span class="fu">unique</span>(<span class="fu">as.integer</span>(bg<span class="sc">$</span>wave))</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>  <span class="fu">stopifnot</span>(<span class="fu">length</span>(bg_month) <span class="sc">==</span> <span class="dv">1</span><span class="dt">L</span>, <span class="sc">!</span><span class="fu">anyNA</span>(bg_month),</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>            bg_month <span class="sc">%in%</span> survey<span class="sc">$</span>fieldwork_ym)</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(bg, <span class="at">fieldwork_ym =</span> <span class="fu">as.integer</span>(wave))</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>})</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>bg_keys <span class="ot">&lt;-</span> bg_data[<span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>)]</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">anyNA</span>(bg_keys), <span class="sc">!</span><span class="fu">anyDuplicated</span>(bg_keys))</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>merged <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">left_join</span>(</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>  survey, bg_data,</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;nomem_encr&quot;</span>, <span class="st">&quot;fieldwork_ym&quot;</span>), <span class="at">na_matches =</span> <span class="st">&quot;never&quot;</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>)</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">nrow</span>(merged) <span class="sc">==</span> <span class="fu">nrow</span>(survey))</span></code></pre></div>
 </div>
 
 

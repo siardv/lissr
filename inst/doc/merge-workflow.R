@@ -7,7 +7,7 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 # library(lissr)
-# 
+#
 # results <- merge_liss_modules(
 #   data_dir   = "liss",
 #   output_dir = "./output"
@@ -30,7 +30,7 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 # panel <- merge_liss_panel(results, write_to = "./output/liss_panel.sav")
-# 
+#
 # # only respondent-years present in all modules
 # panel_inner <- merge_liss_panel(results, join_type = "inner")
 
@@ -48,15 +48,24 @@ knitr::opts_chunk$set(
 ## -----------------------------------------------------------------------------
 # # example: merge Health survey with background variables
 # survey <- haven::read_sav("output/ch_merged.sav")
-# 
-# # read avars files; the period is the `wave` column in each file
+# table(survey$fieldwork_ym, useNA = "ifany")
+#
+# # read separately acquired monthly files; verify each observed period
 # bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
-# bg_data  <- purrr::map_dfr(bg_files, function(f) {
-#   haven::read_sav(f) |> dplyr::mutate(fieldwork_ym = as.integer(wave))
+# stopifnot(length(bg_files) > 0L)
+# bg_data <- purrr::map_dfr(bg_files, function(f) {
+#   bg <- haven::read_sav(f)
+#   bg_month <- unique(as.integer(bg$wave))
+#   stopifnot(length(bg_month) == 1L, !anyNA(bg_month),
+#             bg_month %in% survey$fieldwork_ym)
+#   dplyr::mutate(bg, fieldwork_ym = as.integer(wave))
 # })
-# 
+#
+# bg_keys <- bg_data[c("nomem_encr", "fieldwork_ym")]
+# stopifnot(!anyNA(bg_keys), !anyDuplicated(bg_keys))
 # merged <- dplyr::left_join(
 #   survey, bg_data,
-#   by = c("nomem_encr", "fieldwork_ym")
+#   by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
 # )
+# stopifnot(nrow(merged) == nrow(survey))
 

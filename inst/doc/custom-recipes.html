@@ -83,35 +83,35 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } 
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.at { color: #7d9029; } 
-code span.bn { color: #40a070; } 
-code span.bu { color: #008000; } 
-code span.cf { color: #007020; font-weight: bold; } 
-code span.ch { color: #4070a0; } 
-code span.cn { color: #880000; } 
-code span.co { color: #60a0b0; font-style: italic; } 
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.do { color: #ba2121; font-style: italic; } 
-code span.dt { color: #902000; } 
-code span.dv { color: #40a070; } 
-code span.er { color: #ff0000; font-weight: bold; } 
-code span.ex { } 
-code span.fl { color: #40a070; } 
-code span.fu { color: #06287e; } 
-code span.im { color: #008000; font-weight: bold; } 
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.kw { color: #007020; font-weight: bold; } 
-code span.op { color: #666666; } 
-code span.ot { color: #007020; } 
-code span.pp { color: #bc7a00; } 
-code span.sc { color: #4070a0; } 
-code span.ss { color: #bb6688; } 
-code span.st { color: #4070a0; } 
-code span.va { color: #19177c; } 
-code span.vs { color: #4070a0; } 
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.al { color: #ff0000; font-weight: bold; }
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.at { color: #7d9029; }
+code span.bn { color: #40a070; }
+code span.bu { color: #008000; }
+code span.cf { color: #007020; font-weight: bold; }
+code span.ch { color: #4070a0; }
+code span.cn { color: #880000; }
+code span.co { color: #60a0b0; font-style: italic; }
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.do { color: #ba2121; font-style: italic; }
+code span.dt { color: #902000; }
+code span.dv { color: #40a070; }
+code span.er { color: #ff0000; font-weight: bold; }
+code span.ex { }
+code span.fl { color: #40a070; }
+code span.fu { color: #06287e; }
+code span.im { color: #008000; font-weight: bold; }
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.kw { color: #007020; font-weight: bold; }
+code span.op { color: #666666; }
+code span.ot { color: #007020; }
+code span.pp { color: #bc7a00; }
+code span.sc { color: #4070a0; }
+code span.ss { color: #bb6688; }
+code span.st { color: #4070a0; }
+code span.va { color: #19177c; }
+code span.vs { color: #4070a0; }
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </style>
 <script>
 // apply pandoc div.sourceCode style to pre.sourceCode instead
@@ -245,7 +245,7 @@ pre, code {
 background-color: #f7f7f7;
 border-radius: 3px;
 color: #333;
-white-space: pre-wrap; 
+white-space: pre-wrap;
 }
 pre {
 border-radius: 3px;
@@ -313,18 +313,18 @@ text-decoration: underline; }
 a[href^="https:"] {
 text-decoration: underline; }
 
-code > span.kw { color: #555; font-weight: bold; } 
-code > span.dt { color: #902000; } 
-code > span.dv { color: #40a070; } 
-code > span.bn { color: #d14; } 
-code > span.fl { color: #d14; } 
-code > span.ch { color: #d14; } 
-code > span.st { color: #d14; } 
-code > span.co { color: #888888; font-style: italic; } 
-code > span.ot { color: #007020; } 
-code > span.al { color: #ff0000; font-weight: bold; } 
-code > span.fu { color: #900; font-weight: bold; } 
-code > span.er { color: #a61717; background-color: #e3d2d2; } 
+code > span.kw { color: #555; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #d14; }
+code > span.fl { color: #d14; }
+code > span.ch { color: #d14; }
+code > span.st { color: #d14; }
+code > span.co { color: #888888; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #900; font-weight: bold; }
+code > span.er { color: #a61717; background-color: #e3d2d2; }
 </style>
 
 
@@ -343,11 +343,11 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <div id="when-to-write-a-custom-recipe" class="section level2">
 <h2>When to write a custom recipe</h2>
-<p>The built-in recipes cover the eight core LISS modules as distributed
+<p>The built-in recipes cover the ten core LISS modules as distributed
 by the archive. You might need a custom recipe when:</p>
 <ul>
 <li>You are working with a <strong>special-purpose LISS study</strong>
-(not one of the eight core modules) that has no built-in recipe.</li>
+(not one of the ten core modules) that has no built-in recipe.</li>
 <li>You want to <strong>subset waves</strong> or <strong>add
 project-specific harmonization</strong> on top of the standard
 recipe.</li>
@@ -444,15 +444,15 @@ it.</p>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">str</span>(recipe, <span class="at">max.level =</span> <span class="dv">1</span>)</span>
 <span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; List of 10</span></span>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt;  $ meta               :List of 8</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;  $ global             :List of 6</span></span>
-<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;  $ wave_index         :List of 17</span></span>
-<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt;  $ variable_rules     :List of 5</span></span>
-<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt;  $ harmonization_rules:List of 8</span></span>
-<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt;  $ boundary_rules     :List of 4</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt;  $ global             :List of 7</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt;  $ wave_index         :List of 18</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt;  $ variable_rules     :List of 17</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt;  $ harmonization_rules:List of 4</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt;  $ boundary_rules     :List of 12</span></span>
 <span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co">#&gt;  $ drop_retain_rules  :List of 3</span></span>
-<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt;  $ derived_variables  :List of 2</span></span>
-<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt;  $ validation_checks  :List of 4</span></span>
-<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt;  $ logging            :List of 3</span></span></code></pre></div>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a><span class="co">#&gt;  $ derived_variables  :List of 6</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="co">#&gt;  $ validation_checks  :List of 10</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="co">#&gt;  $ logging            :List of 5</span></span></code></pre></div>
 <div id="subset-to-specific-waves" class="section level3">
 <h3>Subset to specific waves</h3>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># keep only post-2015 waves for an analysis of recent trends</span></span>
@@ -617,22 +617,23 @@ know about, annotate it with a comparability contract:</p>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    <span class="at">waves_early =</span> <span class="fu">list</span>(<span class="st">&quot;cs08a&quot;</span>, <span class="st">&quot;cs09b&quot;</span>, <span class="st">&quot;cs10c&quot;</span>, <span class="st">&quot;cs11d&quot;</span>, <span class="st">&quot;cs12e&quot;</span>,</span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>                       <span class="st">&quot;cs13f&quot;</span>, <span class="st">&quot;cs14g&quot;</span>, <span class="st">&quot;cs15h&quot;</span>, <span class="st">&quot;cs16i&quot;</span>, <span class="st">&quot;cs17j&quot;</span>,</span>
 <span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>                       <span class="st">&quot;cs18k&quot;</span>, <span class="st">&quot;cs19l&quot;</span>),</span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>    <span class="at">waves_late  =</span> <span class="fu">list</span>(<span class="st">&quot;cs20m&quot;</span>, <span class="st">&quot;cs21n&quot;</span>, <span class="st">&quot;cs22o&quot;</span>, <span class="st">&quot;cs23p&quot;</span>, <span class="st">&quot;cs24q&quot;</span>),</span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>    <span class="at">early_label =</span> <span class="st">&quot;open_numeric&quot;</span>,</span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>    <span class="at">late_label  =</span> <span class="st">&quot;categorical&quot;</span>,</span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>    <span class="at">comparability =</span> <span class="fu">list</span>(</span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>      <span class="at">status    =</span> <span class="st">&quot;non_comparable&quot;</span>,</span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>      <span class="at">method    =</span> <span class="st">&quot;no_pool&quot;</span>,</span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>      <span class="at">rationale =</span> <span class="fu">paste</span>(</span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>        <span class="st">&quot;pre-cs20m used open numeric entry conditional on participation;&quot;</span>,</span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>        <span class="st">&quot;post-cs20m uses categorical scale asked unconditionally.&quot;</span>,</span>
-<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>        <span class="st">&quot;do not pool without explicit period interaction.&quot;</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>      )</span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>    )</span>
-<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>  ))</span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>)</span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a></span>
-<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="fu">validate_recipe</span>(recipe, <span class="st">&quot;cs_with_custom_boundary&quot;</span>)</span></code></pre></div>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>    <span class="at">waves_late  =</span> <span class="fu">list</span>(<span class="st">&quot;cs20m&quot;</span>, <span class="st">&quot;cs21n&quot;</span>, <span class="st">&quot;cs22o&quot;</span>, <span class="st">&quot;cs23p&quot;</span>, <span class="st">&quot;cs24q&quot;</span>,</span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>                       <span class="st">&quot;cs25r&quot;</span>),</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>    <span class="at">early_label =</span> <span class="st">&quot;open_numeric&quot;</span>,</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>    <span class="at">late_label  =</span> <span class="st">&quot;categorical&quot;</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>    <span class="at">comparability =</span> <span class="fu">list</span>(</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>      <span class="at">status    =</span> <span class="st">&quot;non_comparable&quot;</span>,</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>      <span class="at">method    =</span> <span class="st">&quot;no_pool&quot;</span>,</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>      <span class="at">rationale =</span> <span class="fu">paste</span>(</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>        <span class="st">&quot;pre-cs20m used open numeric entry conditional on participation;&quot;</span>,</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>        <span class="st">&quot;post-cs20m uses categorical scale asked unconditionally.&quot;</span>,</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>        <span class="st">&quot;do not pool without explicit period interaction.&quot;</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>      )</span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>    )</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>  ))</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>)</span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="fu">validate_recipe</span>(recipe, <span class="st">&quot;cs_with_custom_boundary&quot;</span>)</span></code></pre></div>
 </div>
 <div id="controlled-action-vocabulary-reference" class="section level2">
 <h2>Controlled action vocabulary reference</h2>
@@ -641,24 +642,45 @@ The validator rejects any action not in this vocabulary:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># inspect the vocabulary programmatically</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>lissr<span class="sc">:::</span>VALID_ACTIONS</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; $variable_rules</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;strip_prefix&quot;         &quot;type_coerce&quot;          &quot;rename&quot;</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; [4] &quot;set_label&quot;            &quot;apply_labelled_policy&quot; &quot;strip_value_labels&quot;</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; [7] &quot;note_only&quot;</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; $harmonization_rules</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;recode_to_na&quot;        &quot;value_recode&quot;        &quot;fix_label&quot;</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; [4] &quot;crosswalk&quot;           &quot;strip_question_stem&quot; &quot;lowercase_labels&quot;</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; [7] &quot;flag_only&quot;           &quot;note_only&quot;</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; $boundary_rules</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; [1] &quot;add_era_flag&quot;     &quot;add_flag&quot;         &quot;add_period_flag&quot;</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; [4] &quot;split_variable&quot;   &quot;structural_na&quot;    &quot;filter_rows&quot;</span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; [7] &quot;crosswalk_rename&quot; &quot;stack_aux_files&quot;  &quot;note_only&quot;</span></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;</span></span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; $drop_retain_rules</span></span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; [1] &quot;drop&quot;                    &quot;retain&quot;</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [3] &quot;retain_if_present&quot;       &quot;retain_as_metadata_only&quot;</span></span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; [5] &quot;note_only&quot;</span></span></code></pre></div>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;strip_prefix&quot;                &quot;type_coerce&quot;</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt;  [3] &quot;coerce_type&quot;                 &quot;coerce_numeric&quot;</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;rename&quot;                      &quot;rename_to_suffix&quot;</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;set_label&quot;                   &quot;apply_labelled_policy&quot;</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;strip_value_labels&quot;          &quot;strip_labels_coerce_numeric&quot;</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; [11] &quot;ensure_column&quot;               &quot;use_global_policy&quot;</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; [13] &quot;identity&quot;                    &quot;safe_integer_cast&quot;</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; [15] &quot;derive_fieldwork_month&quot;      &quot;parse_time&quot;</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; [17] &quot;note_only&quot;</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; $harmonization_rules</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;type_coerce&quot;            &quot;derive_fieldwork_month&quot; &quot;parse_time&quot;</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;recode_to_na&quot;           &quot;recode_sentinels_to_na&quot; &quot;na_recode&quot;</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;recode&quot;                 &quot;value_recode&quot;           &quot;fix_label&quot;</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; [10] &quot;strip_question_stem&quot;    &quot;lowercase_labels&quot;       &quot;normalize_labels&quot;</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; [13] &quot;flag_only&quot;              &quot;flag_absence&quot;           &quot;subtract&quot;</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [16] &quot;crosswalk&quot;              &quot;conditional_label_swap&quot; &quot;label_to_string&quot;</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; [19] &quot;derive_combined_party&quot;  &quot;extend_categories&quot;      &quot;transform&quot;</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; [22] &quot;note_only&quot;</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; $boundary_rules</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;safe_integer_cast&quot;     &quot;fix_label&quot;             &quot;derive_combined_party&quot;</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt;  [4] &quot;add_era_flag&quot;          &quot;add_flag&quot;              &quot;add_period_flag&quot;</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;split_variable&quot;        &quot;structural_na&quot;         &quot;filter_rows&quot;</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; [10] &quot;drop_outside&quot;          &quot;crosswalk_rename&quot;      &quot;structural_note&quot;</span></span>
+<span id="cb10-29"><a href="#cb10-29" tabindex="-1"></a><span class="co">#&gt; [13] &quot;stack_aux_files&quot;       &quot;retain_where_present&quot;  &quot;retain_but_flag&quot;</span></span>
+<span id="cb10-30"><a href="#cb10-30" tabindex="-1"></a><span class="co">#&gt; [16] &quot;note_only&quot;</span></span>
+<span id="cb10-31"><a href="#cb10-31" tabindex="-1"></a><span class="co">#&gt;</span></span>
+<span id="cb10-32"><a href="#cb10-32" tabindex="-1"></a><span class="co">#&gt; $drop_retain_rules</span></span>
+<span id="cb10-33"><a href="#cb10-33" tabindex="-1"></a><span class="co">#&gt; [1] &quot;flag_only&quot;               &quot;flag_absence&quot;</span></span>
+<span id="cb10-34"><a href="#cb10-34" tabindex="-1"></a><span class="co">#&gt; [3] &quot;drop_outside&quot;            &quot;retain_but_flag&quot;</span></span>
+<span id="cb10-35"><a href="#cb10-35" tabindex="-1"></a><span class="co">#&gt; [5] &quot;drop&quot;                    &quot;retain&quot;</span></span>
+<span id="cb10-36"><a href="#cb10-36" tabindex="-1"></a><span class="co">#&gt; [7] &quot;retain_if_present&quot;       &quot;retain_as_metadata_only&quot;</span></span>
+<span id="cb10-37"><a href="#cb10-37" tabindex="-1"></a><span class="co">#&gt; [9] &quot;note_only&quot;</span></span></code></pre></div>
+<p>The per-action payload contract (which keys each action reads, and
+which it sanctions as documentation) lives in
+<code>inst/extdata/action_vocabulary.yml</code>;
+<code>audit_liss_recipes()</code> checks a whole recipe corpus against
+it.</p>
 </div>
 <div id="sharing-recipes-with-collaborators" class="section level2">
 <h2>Sharing recipes with collaborators</h2>

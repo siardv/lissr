@@ -130,3 +130,141 @@ transform_apply <- function(x, op = "identity", value = NULL) {
     "identity"   = x,
     stop("unknown transform op: ", op))
 }
+
+# ---- calendar year-month (yyyymm) --------------------------------
+
+# strict parser behind the derive_fieldwork_month action. this is a date
+# parser, not arithmetic: transform_apply() stays generic, and a value becomes
+# a year-month only here, never by modulo or integer division alone.
+#
+# supported input: a numeric (double or integer), character or logical
+# vector; a factor is read by its labels and a haven labelled vector by its
+# values. anything else (a list, complex, raw, a date or other classed
+# object, a matrix) is unsupported: nothing is coerced and every cell is NA.
+# the parser sees a column as the caller holds it: text that an earlier step
+# has already turned into numbers is judged as numbers (the
+# derive_fieldwork_month action refuses such a source, see there).
+#
+# accepted forms: an integer-valued number, or text of exactly six digits
+# (surrounding whitespace ignored). nothing is rounded, truncated, repaired
+# or inferred from another column.
+#
+# each cell gets one class, first match wins:
+#   source_missing    NA or NaN (blank text counts as missing)
+#   declared_missing  a declared spss user-missing code (na_values) or a value
+#                     inside a declared na_range
+#   invalid           not a six-digit yyyymm with month 01-12
+#   outside_window    a calendar yyyymm whose year lies outside `year_range`
+#   valid             a calendar yyyymm inside the window
+# calendar form and the year window are separate tests. the window is a
+# plausibility policy, not part of calendar validity: it keeps code-like
+# values that happen to carry a valid month (999912, 100001) out of a date
+# column. it is fixed, deliberately wide, and not derived from any wave,
+# wave_year or release.
+#
+# `na_range` is one c(low, high) pair or a list of such pairs. returns the
+# parsed double vector (NA unless valid), the per-cell class and the class
+# counts, which sum to length(x).
+parse_yyyymm <- function(x, na_values = NULL, na_range = NULL,
+                         year_range = c(1900, 2100)) {
+  stopifnot(is.numeric(year_range), length(year_range) == 2L,
+            !anyNA(year_range), all(is.finite(year_range)),
+            all(year_range == floor(year_range)), year_range[[1]] <= year_range[[2]])
+  classes <- c("valid", "source_missing", "declared_missing", "invalid",
+               "outside_window", "unsupported")
+  result <- function(value, class) {
+    counts <- as.integer(table(factor(class, levels = classes)))
+    names(counts) <- classes
+    list(value = value, class = class, counts = counts)
+  }
+  if (is.factor(x)) x <- as.character(x)
+  if (inherits(x, "haven_labelled")) x <- unclass(x)
+  n <- length(x)
+  supported <- is.atomic(x) && !is.object(x) && is.null(dim(x)) &&
+    (is.numeric(x) || is.character(x) || is.logical(x))
+  if (!supported) return(result(rep(NA_real_, n), rep("unsupported", n)))
+
+  if (is.character(x)) {
+    txt <- trimws(x)
+    missing <- is.na(txt) | !nzchar(txt)
+    integral <- !missing & grepl("^[0-9]{6}$", txt)
+    num <- suppressWarnings(as.numeric(txt))
+  } else {
+    txt <- NULL
+    num <- as.numeric(x)
+    missing <- is.na(num)
+    integral <- !missing & is.finite(num) & num == floor(num)
+  }
+
+  declared <- rep(FALSE, n)
+  nav <- suppressWarnings(as.numeric(na_values))
+  nav <- nav[!is.na(nav)]
+  if (length(nav) > 0) declared <- declared | (!is.na(num) & num %in% nav)
+  if (!is.null(txt) && length(na_values) > 0)
+    declared <- declared | (txt %in% trimws(as.character(na_values)))
+  for (r in (if (is.list(na_range)) na_range else list(na_range))) {
+    r <- suppressWarnings(as.numeric(r))
+    if (length(r) == 2L && !anyNA(r))
+      declared <- declared | (!is.na(num) & num >= r[[1]] & num <= r[[2]])
+  }
+
+  # month and year are taken only from six-digit values, so no arithmetic is
+  # done on huge or infinite numbers
+  six <- integral & !is.na(num) & num >= 100001 & num <= 999912
+  ym <- ifelse(six, num, 0)
+  calendar <- six & ym %% 100 >= 1 & ym %% 100 <= 12
+  in_window <- calendar & ym %/% 100 >= year_range[[1]] &
+    ym %/% 100 <= year_range[[2]]
+  class <- rep("invalid", n)
+  class[calendar & !in_window] <- "outside_window"
+  class[calendar & in_window] <- "valid"
+  class[declared] <- "declared_missing"
+  class[missing] <- "source_missing"
+  value <- rep(NA_real_, n)
+  ok <- class == "valid"
+  value[ok] <- num[ok]
+  result(value, class)
+}
+
+# spss user-missing declarations of a column: the live haven attributes and
+# the stash that the to_numeric labelled policy leaves behind. both stores
+# are read and their union applies; neither takes precedence, so a value
+# declared missing in either one is missing.
+yyyymm_declarations <- function(x) {
+  list(
+    na_values = c(attr(x, "_original_na_values", exact = TRUE),
+                  attr(x, "na_values", exact = TRUE)),
+    na_range = Filter(Negate(is.null),
+                      list(attr(x, "_original_na_range", exact = TRUE),
+                           attr(x, "na_range", exact = TRUE))))
+}
+
+# audit counts for a rule that replaces a target column by parsed
+# year-months. the old column is read as it is, with its own declarations
+# and without coercion: a cell is missing when it is NA or declared missing.
+# a row is unchanged when old and new are both missing, or when the old cell
+# is the same year-month in an accepted form; every other row is a change.
+yyyymm_replacement_counts <- function(old, new) {
+  n <- length(new)
+  decl <- yyyymm_declarations(old)
+  p <- parse_yyyymm(old, decl$na_values, decl$na_range)
+  if (length(p$value) != n || p$counts[["unsupported"]] > 0L) {
+    # an unsupported old column: only its own NA test is trusted
+    old_missing <- tryCatch(is.na(old), error = function(e) NULL)
+    if (!is.logical(old_missing) || length(old_missing) != n)
+      old_missing <- rep(FALSE, n)
+    old_value <- rep(NA_real_, n)
+  } else {
+    old_missing <- p$class %in% c("source_missing", "declared_missing")
+    old_value <- p$value
+  }
+  same <- (old_missing & is.na(new)) |
+    (!is.na(old_value) & !is.na(new) & old_value == new)
+  kept <- if (is.list(old)) old[!old_missing] else as.character(old)[!old_missing]
+  list(values_changed = sum(!same),
+       values_lost = sum(!old_missing & is.na(new)),
+       na_before = sum(old_missing),
+       na_after = sum(is.na(new)),
+       distinct_before = length(unique(kept)),
+       distinct_after = length(unique(new[!is.na(new)])))
+}

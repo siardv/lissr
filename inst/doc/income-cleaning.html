@@ -48,8 +48,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -82,35 +83,35 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-code span.al { color: #ff0000; font-weight: bold; } 
-code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.at { color: #7d9029; } 
-code span.bn { color: #40a070; } 
-code span.bu { color: #008000; } 
-code span.cf { color: #007020; font-weight: bold; } 
-code span.ch { color: #4070a0; } 
-code span.cn { color: #880000; } 
-code span.co { color: #60a0b0; font-style: italic; } 
-code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.do { color: #ba2121; font-style: italic; } 
-code span.dt { color: #902000; } 
-code span.dv { color: #40a070; } 
-code span.er { color: #ff0000; font-weight: bold; } 
-code span.ex { } 
-code span.fl { color: #40a070; } 
-code span.fu { color: #06287e; } 
-code span.im { color: #008000; font-weight: bold; } 
-code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
-code span.kw { color: #007020; font-weight: bold; } 
-code span.op { color: #666666; } 
-code span.ot { color: #007020; } 
-code span.pp { color: #bc7a00; } 
-code span.sc { color: #4070a0; } 
-code span.ss { color: #bb6688; } 
-code span.st { color: #4070a0; } 
-code span.va { color: #19177c; } 
-code span.vs { color: #4070a0; } 
-code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.al { color: #ff0000; font-weight: bold; }
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.at { color: #7d9029; }
+code span.bn { color: #40a070; }
+code span.bu { color: #008000; }
+code span.cf { color: #007020; font-weight: bold; }
+code span.ch { color: #4070a0; }
+code span.cn { color: #880000; }
+code span.co { color: #60a0b0; font-style: italic; }
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.do { color: #ba2121; font-style: italic; }
+code span.dt { color: #902000; }
+code span.dv { color: #40a070; }
+code span.er { color: #ff0000; font-weight: bold; }
+code span.ex { }
+code span.fl { color: #40a070; }
+code span.fu { color: #06287e; }
+code span.im { color: #008000; font-weight: bold; }
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; }
+code span.kw { color: #007020; font-weight: bold; }
+code span.op { color: #666666; }
+code span.ot { color: #007020; }
+code span.pp { color: #bc7a00; }
+code span.sc { color: #4070a0; }
+code span.ss { color: #bb6688; }
+code span.st { color: #4070a0; }
+code span.va { color: #19177c; }
+code span.vs { color: #4070a0; }
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; }
 </style>
 <script>
 // apply pandoc div.sourceCode style to pre.sourceCode instead
@@ -244,7 +245,7 @@ pre, code {
 background-color: #f7f7f7;
 border-radius: 3px;
 color: #333;
-white-space: pre-wrap; 
+white-space: pre-wrap;
 }
 pre {
 border-radius: 3px;
@@ -312,18 +313,18 @@ text-decoration: underline; }
 a[href^="https:"] {
 text-decoration: underline; }
 
-code > span.kw { color: #555; font-weight: bold; } 
-code > span.dt { color: #902000; } 
-code > span.dv { color: #40a070; } 
-code > span.bn { color: #d14; } 
-code > span.fl { color: #d14; } 
-code > span.ch { color: #d14; } 
-code > span.st { color: #d14; } 
-code > span.co { color: #888888; font-style: italic; } 
-code > span.ot { color: #007020; } 
-code > span.al { color: #ff0000; font-weight: bold; } 
-code > span.fu { color: #900; font-weight: bold; } 
-code > span.er { color: #a61717; background-color: #e3d2d2; } 
+code > span.kw { color: #555; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #d14; }
+code > span.fl { color: #d14; }
+code > span.ch { color: #d14; }
+code > span.st { color: #d14; }
+code > span.co { color: #888888; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #900; font-weight: bold; }
+code > span.er { color: #a61717; background-color: #e3d2d2; }
 </style>
 
 
@@ -373,9 +374,12 @@ rules (D01 to D11) identify implausible cells, from unrecoverable
 placeholder values through household-level scale errors and robust
 statistical outliers to dataset-level extremes. Correction rules (C01 to
 C06) generate candidate replacement values. The finalization rule (F01)
-voids anything still outside the plausible range. Each rule carries an
-id, a description, a rationale, optional literature references,
-parameters, and an <code>enabled</code> switch.</p>
+handles anything still outside the plausible range according to its
+<code>disposition</code>: <code>void</code> (the default) sets such
+values to NA, <code>winsorise</code> clamps over-cap values to the cap,
+and <code>flag</code> only ledgers them. Each rule carries an id, a
+description, a rationale, optional literature references, parameters,
+and an <code>enabled</code> switch.</p>
 </div>
 <div id="quick-start-dry-run-first-then-correct" class="section level2">
 <h2>Quick start: dry run first, then correct</h2>
@@ -468,15 +472,20 @@ OECD-modified and square-root alternatives:</p>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="at">stand_inc =</span> <span class="fu">liss_equivalise_income</span>(nethh, aantalhh, aantalki)</span>
 <span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  )</span></code></pre></div>
+<p>One definitional caveat for the OECD-modified scale: it defines
+children as household members under 14, while <code>aantalki</code>
+counts children living at home of any age, so passing
+<code>aantalki</code> approximates that scale; see
+<code>?liss_equivalise_income</code>.</p>
 </div>
 <div id="where-the-rules-came-from" class="section level2">
 <h2>Where the rules came from</h2>
 <p>The ruleset consolidates the income-cleaning procedures of two
 production analysis projects and corrects several latent defects found
 while porting them. The declarative rules are maintained in
-<code>inst/cleaning/income_cleaning_rules.yml</code>, with regression coverage in
-<code>tests/testthat/test-clean-income.R</code>. Proposed rules and parameter changes
-can be reviewed through pull requests.</p>
+<code>inst/cleaning/income_cleaning_rules.yml</code>, with regression
+coverage in <code>tests/testthat/test-clean-income.R</code>. Proposed
+rules and parameter changes can be reviewed through pull requests.</p>
 </div>
 
 

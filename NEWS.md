@@ -1,5 +1,46 @@
 # lissr 1.4.1.9000
 
+* The Politics and Values (`cv`) recipe now derives recorded fieldwork
+  year-months in all 18 waves. Recipe version 1.3.0 uses `_m` in eight
+  single-part waves, `maandnr` for group 0 and `maandnr_lang` for groups 1/2
+  in `cv16h`, and `_m1` in nine three-part waves. Multipart dates describe
+  part 1 only; missing designated dates remain `NA`, without year inference
+  or fallback. This date is not automatically the appropriate Background
+  Variables month for part-2, part-3 or particular survey items.
+  `fieldwork_month` derives from this date and now appears at the end of the
+  CV output. Source columns, non-date values and their relative order, and
+  the positive-duration validation correction are preserved.
+
+* In `variable_rules`, `derive_fieldwork_month` now parses numeric integral
+  or six-digit text `YYYYMM` values instead of copying arbitrary text.
+  Calendar months must be 01-12 and years 1900-2100; this broad parsing
+  envelope is not a wave-specific plausibility check. Missing values remain
+  `NA`; invalid values become `NA` with counted diagnostics. Text whose
+  grammar was lost through numeric coercion causes conservative rejection
+  of the entire date source column, including mixed-origin rename targets.
+  The explicit `source_column` / `source_suffix` and `group_column` /
+  `source_by_group` controls are strictly validated, and incompatible or
+  malformed declarations fail recipe validation. `parse_time` retains its
+  character-copy behavior; the harmonization-phase date handler remains
+  skipped.
+
+* Derived variables can opt into `harvested_metadata: drop` to withdraw the
+  recomputed target's previously harvested label and user-missing metadata.
+  Omission, `NULL` and `keep` preserve existing restoration behavior; other
+  values, misplaced properties and close policy misspellings fail recipe
+  validation. CV's `fieldwork_month` uses `drop`, preventing stale target
+  declarations from altering its derived values. Other columns retain their
+  metadata.
+
+* Recorded-date logs now include counted `SOURCE`, `SOURCE_MISSING`,
+  `DECLARED_MISSING`, `INVALID`, `OUTSIDE_WINDOW`, `UNSUPPORTED_TYPE` and
+  source/group absence or mapping diagnostics. Group selection also audits
+  `CONFLICT` and `NONDESIGNATED_VALID` without changing the designated source.
+  Date source/group counts and the writer's `rows_affected` describe the
+  variable-rule stage, before boundary filtering; in `cv16h` they include
+  experimental groups removed later by BR04. `TARGET_METADATA_DROPPED`
+  counts harvested metadata sets actually withdrawn, rather than survey rows.
+
 * The Politics and Values (`cv`) recipe now permits retained 99, 999 and 998
   on `s301`, `s302` and `s303`, which record duration in seconds for parts 1-3.
   CV recipe version 1.2.1 uses value-specific validation blocks: residual -9

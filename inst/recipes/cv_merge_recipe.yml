@@ -8,7 +8,7 @@
 meta:
   module: cv
   module_label: Politics and Values
-  recipe_version: "1.2.1"
+  recipe_version: "1.3.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -44,8 +44,8 @@ meta:
     209 -> 244; VR02 mapping extended. (5) VR05 waves_present now includes
     cv11d. (6) HR06 set_to_dk list refreshed (drop 005, add 166, 167); remains
     note_only pending drop_after executor. (7) BR05 pools native merged label
-    GroenLinks (green party)-PvdA (labor party). (8) VR06 experimental source
-    documented as coalesce(maandnr, maandnr_lang). (9) DV03 var_name filled
+    GroenLinks (green party)-PvdA (labor party). (8) VR06 experimental date
+    sources documented. (9) DV03 var_name filled
     (completed_parts); _mN == -9 counts as not completed. (10) DV05
     description documents vote_hypo codes 1/2 as would-not-vote /
     not-eligible. (11) 1.2.0: DV06-DV08 deleted (all-NA duplicates of the
@@ -54,6 +54,12 @@ meta:
     (12) 1.2.1: VC01/VC02 admit retained positive duration seconds
     99/999/998 on suffixes 301-303 through value-specific blocks, while
     continuing to reject residual -9/-8 on these columns.
+    (13) 1.3.0: fieldwork_ym strictly parses recorded YYYYMM from _m in
+    single-part waves, _m1 in three-part waves, and group-specific maandnr
+    or maandnr_lang in cv16h. Multipart timing denotes part 1 only, with
+    no fallback to other parts. Missing and invalid dates remain NA;
+    fieldwork_month is the derived calendar month without stale target
+    value labels or user-missing declarations.
   schema_version: 1.1.0
 global:
   id_variable: nomem_encr
@@ -428,18 +434,46 @@ variable_rules:
   log: true
 - rule_id: VR06_fieldwork_month
   anomaly_ref: A-11
-  description: harmonise fieldwork month variable across admin structures
+  description: >-
+    derive fieldwork_ym from the recorded _m year and month in single-part
+    waves; strict calendar YYYYMM parsing, without year inference
   action: derive_fieldwork_month
-  sources:
-    single_part: _m
-    # cv16h splits fieldwork month across maandnr and maandnr_lang by
-    # questionnaire arm; correct source is coalesce of the two. executable
-    # coalesce support in derive_fieldwork_month is pending engine-side; the
-    # current implementation copies the named source as character only.
-    experimental: coalesce(maandnr, maandnr_lang)
-    three_part: _m1
-  target: fieldwork_month
-  if_absent: warn_and_skip
+  waves: [cv08a, cv09b, cv10c, cv11d, cv12e, cv13f, cv14g, cv17i]
+  source_column: _m
+  source_suffix: true
+  target_column: fieldwork_ym
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR06b_fieldwork_ym_part1
+  anomaly_ref: A-11
+  description: >-
+    derive fieldwork_ym from the recorded part-1 date _m1 in three-part
+    waves. This represents part 1, not all questionnaire parts or all
+    items; missing part-1 dates never borrow dates from _m2 or _m3
+  action: derive_fieldwork_month
+  waves: [cv18j, cv19k, cv20l, cv21m, cv22n, cv23o, cv24p, cv25q, cv26r]
+  source_column: _m1
+  source_suffix: true
+  target_column: fieldwork_ym
+  if_absent: warn_and_create_na
+  log: true
+- rule_id: VR06c_fieldwork_ym_cv16h
+  anomaly_ref: A-11
+  description: >-
+    derive fieldwork_ym from the recorded date for the normal cv16h
+    questionnaire group: group 0 uses maandnr; groups 1 and 2 use
+    maandnr_lang. Missing designated dates remain NA, even if another
+    group source is present; conflicting recorded sources are audited
+  action: derive_fieldwork_month
+  waves: [cv16h]
+  group_column: groep
+  source_by_group:
+    '0': maandnr
+    '1': maandnr_lang
+    '2': maandnr_lang
+  source_suffix: true
+  target_column: fieldwork_ym
+  if_absent: warn_and_create_na
   log: true
 - rule_id: VR07_cv09b_types
   anomaly_ref: A-14
@@ -985,18 +1019,20 @@ derived_variables:
 - name: fieldwork_month
   rule_id: DV09_fieldwork_month
   anomaly_ref: A-11
-  description: calendar month of fieldwork, derived as fieldwork_ym mod 100.
-    fieldwork_ym auto-derives from the per-wave _m variable (engine phase 1,
-    since 1.3.2.9000 stage 1); recent cv waves carry no _m, so the month is
-    NA there pending archive-metadata backfill. the
-    DV06/DV07/DV08 entries that duplicated the BR01/BR02/BR03 flag columns
-    as all-NA shadows are deleted in the same pass.
+  description: >-
+    calendar month of the designated recorded date, derived as
+    fieldwork_ym mod 100. Multipart waves use part-1 timing only;
+    cv16h uses its normal questionnaire group's recorded date.
+    Unknown dates remain NA. The derived target owns its metadata,
+    so labels and user-missing declarations harvested from a pre-existing
+    fieldwork_month column cannot be restored to the derived values
   method: direct
   sources: [fieldwork_ym]
   transform:
     op: modulo
     value: 100
   output_type: integer
+  harvested_metadata: drop
   log: true
 validation_checks:
 - check_id: VC01_no_raw_dk

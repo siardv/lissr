@@ -32,7 +32,7 @@ actions:
   - {name: use_global_policy,         sections: [variable_rules], status: implemented}
   - {name: identity,                  sections: [variable_rules], status: implemented}
   - {name: safe_integer_cast,         sections: [variable_rules, boundary_rules], status: implemented}
-  - {name: derive_fieldwork_month,    sections: [variable_rules, harmonization_rules], status: copy_only, notes: "canonical fieldwork_ym = integer yyyymm derived after rules"}
+  - {name: derive_fieldwork_month,    sections: [variable_rules, harmonization_rules], status: implemented, notes: "variable_rules strictly parse recorded YYYYMM; harmonization_rules handler remains unimplemented and skipped"}
   - {name: parse_time,                sections: [variable_rules, harmonization_rules], status: copy_only}
 
   # ---- harmonization_rules ----
@@ -108,7 +108,7 @@ payloads:
   use_global_policy:         {reads: [], annotations: [apply_to]}
   identity:                  {reads: [], annotations: []}
   safe_integer_cast:         {reads: [suffixes, variables], annotations: []}
-  derive_fieldwork_month:    {reads: [target_column, target, source_column, sources], annotations: []}
+  derive_fieldwork_month:    {reads: [target_column, target, source_column, sources, source_suffix, group_column, source_by_group], annotations: []}
   parse_time:                {reads: [target_column, target, source_column, sources, variables, suffixes], annotations: [target_format]}
   recode_to_na:              {reads: [mapping, recode, scope, suffixes, variables, codes, sentinel_values, recodes, exclude], annotations: [applies_to]}
   recode_sentinels_to_na:    {reads: [mapping, recode, scope, suffixes, variables, codes, sentinel_values, recodes, exclude], annotations: []}

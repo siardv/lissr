@@ -307,6 +307,64 @@ comparability:
 The engine generates comparability flag columns and emits warnings when
 `method` is `no_pool`.
 
+### `derive_fieldwork_month`: recorded dates in variable rules
+
+In `variable_rules`, `derive_fieldwork_month` parses a designated recorded
+year-month into a numeric `YYYYMM` target. `source_column` selects one column;
+`source_suffix: true` resolves its post-prefix suffix. Alternatively, a
+`group_column` and `source_by_group` map select the designated source for each
+row's group. A group map cannot also declare `source_column` or `sources`.
+
+```yaml
+- rule_id: VR06c_fieldwork_ym_cv16h
+  description: recorded date for the normal questionnaire group
+  anomaly_ref: A-11
+  action: derive_fieldwork_month
+  waves: [cv16h]
+  group_column: groep
+  source_by_group:
+    '0': maandnr
+    '1': maandnr_lang
+    '2': maandnr_lang
+  source_suffix: true
+  target_column: fieldwork_ym
+  if_absent: warn_and_create_na
+```
+
+This map combines parallel questionnaire administrations. It uses only the
+source designated for that group; a missing designated date never falls back
+to another source. Conflicting valid alternate-source dates are audited while
+the designated source wins. Missing or unmapped groups produce unknown dates.
+For an ordinary `sources` list, first-existing column selection is retained;
+it is not rowwise coalescing. An explicit single source is preferable when
+the date has a specific meaning.
+
+Supported recorded values are numeric integers or six-digit numeric text,
+with calendar months 01–12 and years 1900–2100. These year bounds are a broad
+parsing envelope, not a wave-specific plausibility check. Ordinary, blank,
+tagged and declared SPSS missing values remain `NA`. Fractions, invalid
+calendar values, dates outside the envelope and unsupported source types
+produce `NA` with counted diagnostics. No year is inferred from `wave_year`.
+When the global labelled policy converts a labelled text source to numeric,
+the executor rejects that coerced source because the converted numbers cannot
+verify the original six-digit text grammar. Plain text sources remain
+parseable. Original source type and subsequent name/coercion lineage are
+carried internally for this check, without adding attributes to output source
+columns. When a rename fills a target from mixed origins, any contamination
+by text whose grammar was lost causes conservative rejection of the entire
+date source column.
+Source columns and their metadata remain unchanged. A written target owns its
+date metadata, so previously harvested target value labels and user-missing
+declarations cannot be reapplied to it.
+
+The CV recipe designates `_m` for eight single-part waves, group-specific
+`maandnr`/`maandnr_lang` for `cv16h`, and `_m1` for nine three-part waves.
+Multipart `fieldwork_ym` represents part 1 only. It does not describe every
+part or item, and never substitutes `_m2` or `_m3`. Unknown dates do not
+establish a complete temporal record merely because other validation checks
+pass. The `parse_time` action retains its existing character-copy behavior;
+the harmonization-phase `derive_fieldwork_month` handler remains skipped.
+
 ### `derived_variables`: aggregation and transforms
 
 Derived columns run after all rule phases. Each entry has a `rule_id` and a name
@@ -337,6 +395,19 @@ Transform vs reference: a numeric offset is applied only from an exact
 only `transform_ref` (the ci ladder, anomaly A-02) therefore passes through
 unshifted; this is correct because ci15h is observed on 0-10 with no off-by-one,
 so the source already uses the target coding.
+
+`harvested_metadata` is an optional derived-variable policy: `keep` (default)
+preserves the existing restoration behavior, while `drop` withdraws the
+recomputed target's previously harvested label and user-missing metadata.
+Only the recomputed target's metadata is withdrawn; other columns retain
+theirs. Omission or `NULL` defaults to `keep`. Every non-`NULL` value must be
+a plain scalar string, exactly `keep` or `drop`, and the policy belongs only
+on a `derived_variables` entry.
+CV's DV09 uses `drop` because `fieldwork_month` is owned by its derivation;
+an old target declaration such as "11 is missing" must not erase a newly
+derived November value. This withdrawal is logged as
+`TARGET_METADATA_DROPPED` only when harvested target metadata exists and is
+actually withdrawn.
 
 ### `logging` (v1.0.0)
 

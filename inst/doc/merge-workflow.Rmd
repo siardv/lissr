@@ -132,31 +132,53 @@ onboard_new_wave(
 
 ## Background variables
 
-The Background Variables file (`avars`) is a monthly snapshot used as
-the linkage backbone for all other modules. It is a separate release,
-not one of the ten core modules. When merging background variables with
-survey data:
+The Background Variables file (`avars`) is a separate monthly snapshot,
+not one of the ten core modules. Select the background month for the
+survey items being analysed. Use `nomem_encr` as the respondent identifier,
+never `nohouse_encr`: household assignments can change over time. When
+stacking monthly snapshots, join on both `nomem_encr` and the selected
+`fieldwork_ym` (YYYYMM), rather than on the respondent or calendar year
+alone. Reject duplicate background keys and never match missing keys.
 
-1. Use only `nomem_encr` as the join key (never `nohouse_encr`).
-2. Match the fieldwork month of the survey, not the calendar year.
+The source of `fieldwork_ym` is recipe-specific. The Politics and Values
+(`cv`) recipe uses `_m` in eight single-part waves; in `cv16h`, group 0
+uses `maandnr` and groups 1/2 use `maandnr_lang`; nine three-part waves
+use `_m1` only. A missing designated date remains `NA`, without year
+inference or fallback to another source. For three-part CV waves this is
+part-1 timing, not an automatically appropriate background month for
+part-2, part-3 or particular survey items. Check the relevant item or part
+timing before choosing a monthly snapshot; the caveat must not depend on
+a column label surviving a multi-wave merge.
 
-The merged output includes a `fieldwork_ym` column (YYYYMM integer)
-derived automatically from the LISS `_m` suffix. Each `avars` file
-carries its fieldwork period as a `wave` column (YYYYMM), so stacking
-monthly files needs no filename parsing:
+The example below remains a Health join. Obtain the monthly Background
+Variables releases separately from the LISS Data Archive and extract their
+SPSS files locally; the current blueprint file inventory does not provide
+these background downloads. The paths are illustrative. Each monthly file
+records its period in `wave`; inspect the observed survey months and verify
+the background periods before joining, rather than inferring them from
+filenames:
 
 ```{r}
 # example: merge Health survey with background variables
 survey <- haven::read_sav("output/ch_merged.sav")
+table(survey$fieldwork_ym, useNA = "ifany")
 
-# read avars files; the period is the `wave` column in each file
+# read separately acquired monthly files; verify each observed period
 bg_files <- list.files("data/avars/", pattern = "\\.sav$", full.names = TRUE)
-bg_data  <- purrr::map_dfr(bg_files, function(f) {
-  haven::read_sav(f) |> dplyr::mutate(fieldwork_ym = as.integer(wave))
+stopifnot(length(bg_files) > 0L)
+bg_data <- purrr::map_dfr(bg_files, function(f) {
+  bg <- haven::read_sav(f)
+  bg_month <- unique(as.integer(bg$wave))
+  stopifnot(length(bg_month) == 1L, !anyNA(bg_month),
+            bg_month %in% survey$fieldwork_ym)
+  dplyr::mutate(bg, fieldwork_ym = as.integer(wave))
 })
 
+bg_keys <- bg_data[c("nomem_encr", "fieldwork_ym")]
+stopifnot(!anyNA(bg_keys), !anyDuplicated(bg_keys))
 merged <- dplyr::left_join(
   survey, bg_data,
-  by = c("nomem_encr", "fieldwork_ym")
+  by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
 )
+stopifnot(nrow(merged) == nrow(survey))
 ```

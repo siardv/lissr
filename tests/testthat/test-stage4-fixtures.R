@@ -217,6 +217,19 @@
       df$nohouse_encr <- if (wid %in% absent$nohouse_encr) rep(NA_real_, n) else
         as.numeric(seq_len(n))
     df[[paste0(wid, "_m")]] <- rep(as.numeric(paste0(w$year, "03")), n)
+    if (identical(recipe$meta$module, "cv") && identical(wid, "cv16h")) {
+      # parallel normal questionnaire groups have their own recorded dates
+      df[[paste0(wid, "_m")]] <- NULL
+      df[[paste0(wid, "groep")]] <- c(0, 1, 2)
+      df[[paste0(wid, "maandnr")]] <- c(201512, NA, NA)
+      df[[paste0(wid, "maandnr_lang")]] <- c(NA, 201512, 201601)
+    } else if (identical(recipe$meta$module, "cv") &&
+               identical(w$admin_structure, "three_part")) {
+      # multipart waves have separate part dates, without a generic _m
+      df[[paste0(wid, "_m")]] <- NULL
+      for (part in 1:3)
+        df[[paste0(wid, "_m", part)]] <- rep(w$year * 100 + part + 2, n)
+    }
     for (s in sfx) {
       col <- paste0(wid, s)
       if (wid %in% (absent[[s]] %||% character(0))) {
@@ -1371,7 +1384,8 @@ test_that("cv fieldwork_month executes as fieldwork_ym mod 100", {
   d <- .merge_bundled("cv")$data
   expect_true("fieldwork_month" %in% names(d))
   ok <- !is.na(d$fieldwork_ym)
-  expect_gt(sum(ok), 0)
+  expect_true(all(ok))
+  expect_equal(length(unique(d$wave_id)), 18L)
   expect_equal(as.numeric(d$fieldwork_month[ok]),
                as.numeric(d$fieldwork_ym[ok]) %% 100)
 })

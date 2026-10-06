@@ -121,7 +121,8 @@ RECOGNIZED_RULE_KEYS <- c(
   "party_names_to_pool", "pattern", "phases", "post_recode", "prefix",
   "present_in_waves", "recode", "recodes", "retain", "retain_in", "rule_id",
   "scheme_column", "scope", "sentinel_values", "set_label", "source",
-  "source_column", "source_variable", "sources", "stem", "stems", "suffixes",
+  "source_column", "source_variable", "sources", "source_suffix",
+  "group_column", "source_by_group", "stem", "stems", "suffixes",
   "suffixes_range", "swap", "target", "target_column", "target_type",
   "target_variable", "target_variables", "to_value", "transforms", "value",
   "variable", "variable_pattern", "variables", "variables_pattern", "wave",
@@ -213,6 +214,131 @@ load_recipe <- function(path) {
   setdiff(rk[nzchar(rk)], c(RECOGNIZED_RULE_KEYS, SANCTIONED_RULE_KEYS))
 }
 
+# plain scalar payload values avoid class-specific comparison or coercion.
+.plain_scalar_character <- function(x) {
+  is.character(x) && length(x) == 1L && is.null(attributes(x)) &&
+    !is.na(x) && nzchar(x)
+}
+
+.fieldwork_rule_errors <- function(rule) {
+  errors <- character(0)
+  for (key in c("source_column", "group_column", "target_column", "target")) {
+    if (!is.null(rule[[key]]) && !.plain_scalar_character(rule[[key]]))
+      errors <- c(errors, paste0(key, " must be a plain nonempty scalar character"))
+  }
+  suffix <- rule[["source_suffix"]]
+  if (!is.null(suffix) && !(is.logical(suffix) && length(suffix) == 1L &&
+                          is.null(attributes(suffix)) && !is.na(suffix)))
+    errors <- c(errors, "source_suffix must be a plain scalar logical")
+  mapping <- rule[["source_by_group"]]
+  if (!is.null(mapping)) {
+    keys <- names(mapping)
+    if (!(is.list(mapping) && length(mapping) > 0L &&
+          !is.null(keys) && !anyNA(keys) && all(nzchar(keys)) &&
+          !anyDuplicated(keys) && all(trimws(keys) == keys) &&
+          identical(names(attributes(mapping)), "names") &&
+          all(vapply(mapping, .plain_scalar_character, logical(1)))))
+      errors <- c(errors, "source_by_group must be a named list of plain source names with unique nonempty group keys")
+    if (is.null(rule[["group_column"]]))
+      errors <- c(errors, "source_by_group requires group_column")
+    if (!is.null(rule[["source_column"]]) || !is.null(rule[["sources"]]))
+      errors <- c(errors, "source_by_group cannot be combined with source_column or sources")
+  } else if (!is.null(rule[["group_column"]])) {
+    errors <- c(errors, "group_column requires source_by_group")
+  }
+  if (!is.null(rule[["source_column"]]) && !is.null(rule[["sources"]]))
+    errors <- c(errors, "source_column cannot be combined with sources")
+  sources <- rule[["sources"]]
+  if (!is.null(sources) && !(is.list(sources) &&
+                            all(vapply(sources, .plain_scalar_character, logical(1)))))
+    errors <- c(errors, "sources must be a list of plain source names")
+  errors
+}
+
+# harvested metadata ownership is available only on a derived-variable node.
+.harvested_metadata_errors <- function(recipe) {
+  errors <- character(0)
+  literal_payload <- function(node, key, path, value) {
+    section <- if (length(path)) path[[1]] else ""
+    rule_record <- length(path) == 2L && section %in%
+      c("variable_rules", "harmonization_rules", "boundary_rules", "drop_retain_rules")
+    dv_record <- length(path) == 2L && identical(section, "derived_variables")
+    named_map <- is.list(value) && !is.null(names(value)) && any(nzchar(names(value)))
+    if (length(path) == 2L && identical(section, "wave_index") && key == "role_map")
+      return(TRUE)
+    if (dv_record && key %in% c("value_crosswalk", "wave_values", "waves_override"))
+      return(TRUE)
+    if (dv_record && key == "sources" && named_map) return(TRUE)
+    if (length(path) == 4L && identical(section, "derived_variables") &&
+        identical(path[[3]], "sources") && key %in% c("value_crosswalk", "recode"))
+      return(TRUE)
+    if (rule_record) {
+      action <- paste0(node[["action"]] %||% "", collapse = "")
+      if (key == "mapping" && action %in% c("rename", "recode_to_na", "recode_sentinels_to_na",
+                                            "na_recode", "recode", "value_recode")) return(TRUE)
+      if (key == "recode" && action %in% c("recode_to_na", "recode_sentinels_to_na")) return(TRUE)
+      if (key %in% c("label_map", "swap") && action == "conditional_label_swap") return(TRUE)
+      if (key == "crosswalk" && action %in% c("crosswalk", "label_to_string")) return(TRUE)
+      if (key %in% c("eras", "assignments") && action %in% c("add_era_flag", "add_flag")) return(TRUE)
+      if (key == "source_by_group" && action == "derive_fieldwork_month") return(TRUE)
+      if (key == "sources" && action %in% c("derive_fieldwork_month", "parse_time") && named_map) return(TRUE)
+    }
+    if (length(path) == 3L && identical(section, "boundary_rules") &&
+        identical(path[[3]], "post_recode") && key == "recode") return(TRUE)
+    # flat target, wave and value vectors may carry literal element names.
+    flat <- is.list(value) && !any(vapply(value, is.list, logical(1)))
+    if (flat && (rule_record || dv_record || identical(section, "validation_checks")) &&
+        key %in% c("suffixes", "suffixes_range", "variables", "columns", "items", "waves",
+                   "codes", "sentinel_values", "keep_values", "allowed_values", "allowed",
+                   "values", "forbidden_values", "forbidden", "reject_values")) return(TRUE)
+    FALSE
+  }
+  collection_item_names <- function(path) {
+    section <- if (length(path)) path[[1]] else ""
+    if (length(path) == 1L && section %in% c("variable_rules", "harmonization_rules",
+        "boundary_rules", "drop_retain_rules", "derived_variables", "wave_index", "validation_checks"))
+      return(TRUE)
+    if (length(path) == 2L && section %in% c("global", "meta") &&
+        identical(path[[2]], "taxonomy_refs")) return(TRUE)
+    if (length(path) == 3L && identical(section, "global") &&
+        identical(path[[2]], "expected_presence") && identical(path[[3]], "critical")) return(TRUE)
+    if (length(path) == 3L && section %in% c("variable_rules", "harmonization_rules",
+        "boundary_rules", "drop_retain_rules") &&
+        path[[3]] %in% c("recodes", "exclude", "phases", "output_vars", "crosswalk")) return(TRUE)
+    if (length(path) == 3L && identical(section, "derived_variables") &&
+        identical(path[[3]], "sources")) return(TRUE)
+    if (length(path) == 3L && identical(section, "validation_checks") &&
+        path[[3]] %in% c("targets", "checks", "variables")) return(TRUE)
+    FALSE
+  }
+  walk <- function(node, path = character(0)) {
+    if (!is.list(node)) return(invisible(NULL))
+    keys <- names(node)
+    for (i in seq_along(node)) {
+      key <- if (is.null(keys)) "" else keys[[i]]
+      at <- c(path, if (nzchar(key)) key else as.character(i))
+      near <- nzchar(key) && utils::adist(key, "harvested_metadata")[[1]] <= 2L
+      if (near && !collection_item_names(path)) {
+        allowed <- identical(key, "harvested_metadata") && length(path) == 2L &&
+          identical(path[[1]], "derived_variables")
+        if (!allowed) {
+          errors <<- c(errors, paste0(paste(at, collapse = "$"),
+                         ": harvested_metadata is permitted only on a derived variable"))
+        } else {
+          value <- node[[i]]
+          if (!is.null(value) && !(.plain_scalar_character(value) && value %in% c("keep", "drop")))
+            errors <<- c(errors, paste0(paste(at, collapse = "$"),
+                            " must be plain scalar character 'keep' or 'drop'"))
+        }
+      }
+      if (!literal_payload(node, key, path, node[[i]])) walk(node[[i]], at)
+    }
+    invisible(NULL)
+  }
+  walk(recipe)
+  errors
+}
+
 #' validate a merge recipe against the canonical schema
 #'
 #' checks required sections, field presence, action vocabulary,
@@ -223,7 +349,7 @@ load_recipe <- function(path) {
 #' @return invisible `TRUE` on success (aborts otherwise).
 #' @export
 validate_recipe <- function(recipe, path = "<unknown>") {
-  errors <- character(0)
+  errors <- .harvested_metadata_errors(recipe)
 
   # required top-level sections
   required_sections <- c("meta", "global", "wave_index", "logging")
@@ -318,6 +444,17 @@ validate_recipe <- function(recipe, path = "<unknown>") {
         if (rid %in% seen_ids)
           errors <- c(errors, paste0(section, " has duplicate rule_id: '", rid, "'"))
         seen_ids <- c(seen_ids, rid)
+      }
+
+      date_keys <- intersect(names(rule), c("source_suffix", "group_column", "source_by_group"))
+      if (length(date_keys) > 0L &&
+          !(identical(section, "variable_rules") && identical(act, "derive_fieldwork_month")))
+        errors <- c(errors, paste0(section, "[", j,
+                      "] recorded-date source keys require variable_rules derive_fieldwork_month"))
+      if (identical(section, "variable_rules") && identical(act, "derive_fieldwork_month")) {
+        date_errors <- .fieldwork_rule_errors(rule)
+        if (length(date_errors) > 0L)
+          errors <- c(errors, paste0(section, "[", j, "]: ", date_errors))
       }
 
       # flag rule-level keys the executor for THIS action does not consult
@@ -1111,13 +1248,51 @@ handle_absent <- function(rule, suffix, wave_id) {
   )
 }
 
+# a private sidecar follows source names without adding output-column attributes.
+.combine_source_types <- function(types) {
+  types <- unique(types[!is.na(types)])
+  if ("coerced_character" %in% types) return("coerced_character")
+  if ("character" %in% types) return("character")
+  if (length(types) > 0L) types[[1]] else NA_character_
+}
+
+.rekey_source_types <- function(types, before_names, after_names) {
+  if (is.null(types)) return(NULL)
+  result <- character(0)
+  for (i in seq_along(before_names)) {
+    from <- before_names[[i]]
+    to <- after_names[[i]]
+    origin <- if (from %in% names(types)) types[[from]] else NA_character_
+    previous <- if (to %in% names(result)) result[[to]] else NA_character_
+    result[[to]] <- .combine_source_types(c(previous, origin))
+  }
+  result
+}
+
+.record_character_coercion <- function(types, df) {
+  if (is.null(types)) return(NULL)
+  for (col in setdiff(names(df), names(types))) types[[col]] <- typeof(df[[col]])
+  for (col in intersect(names(types), names(df))) {
+    if (identical(types[[col]], "character") && is.numeric(df[[col]]))
+      types[[col]] <- "coerced_character"
+  }
+  types
+}
+
 #' execute a single variable rule on a wave data frame (internal)
 #' @noRd
 exec_variable_rule <- function(df, rule, wave_id, wave_meta,
-                               all_wave_ids, log_entries) {
+                               all_wave_ids, log_entries, label_registry = NULL, source_types = NULL) {
+  types_before <- source_types
+  source_types <- .record_character_coercion(source_types, df)
+  result_with_types <- function(data, entries, types = source_types) {
+    result <- list(df = data, log = entries)
+    if (!is.null(types)) result$source_types <- types
+    result
+  }
   target_waves <- resolve_waves(rule$waves, all_wave_ids)
   if (!(wave_id %in% target_waves))
-    return(list(df = df, log = log_entries))
+    return(result_with_types(df, log_entries))
 
   action <- rule$action
   rid    <- rule$rule_id
@@ -1127,7 +1302,7 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
   if (action == "note_only") {
     log_entries <- append(log_entries, list(
       make_log(rid, wave_id, "*", "note_only", 0L)))
-    return(list(df = df, log = log_entries))
+    return(result_with_types(df, log_entries))
   }
 
   # atomic execution: on any error inside the switch the rule rolls back to
@@ -1145,7 +1320,9 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
                    duration_ms = elapsed_ms(t0))))
       },
       "strip_prefix" = {
+        before_names <- names(df)
         df <- strip_wave_prefix(df, wave_id, c("nomem_encr", "nohouse_encr"))
+        source_types <- .rekey_source_types(source_types, before_names, names(df))
         log_entries <- append(log_entries, list(
           make_log(rid, wave_id, "*", action, ncol(df),
                    duration_ms = elapsed_ms(t0))))
@@ -1198,6 +1375,12 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
           # digit key like '054' matches the strip_wave_prefix form 's054'
           src_col <- if (old_name %in% names(df)) old_name else find_col(df, old_name)
           if (!is.null(src_col) && src_col %in% names(df)) {
+            if (!is.null(source_types) && new_name != src_col) {
+              from_type <- if (src_col %in% names(source_types)) source_types[[src_col]] else NA_character_
+              to_type <- if (new_name %in% names(source_types)) source_types[[new_name]] else NA_character_
+              source_types[[new_name]] <- .combine_source_types(c(to_type, from_type))
+              source_types <- source_types[names(source_types) != src_col]
+            }
             if (new_name != src_col && new_name %in% names(df)) {
               # target already present (e.g. an expected_presence NA placeholder):
               # fill its NAs from the source and drop the source rather than create
@@ -1218,7 +1401,9 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
       },
       "rename_to_suffix" = {
         # same as strip_prefix, normalise column names to suffix-only form
+        before_names <- names(df)
         df <- strip_wave_prefix(df, wave_id, c("nomem_encr", "nohouse_encr"))
+        source_types <- .rekey_source_types(source_types, before_names, names(df))
         log_entries <- append(log_entries, list(
           make_log(rid, wave_id, "*", action, ncol(df),
                    duration_ms = elapsed_ms(t0))))
@@ -1275,7 +1460,168 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
           make_log(rid, wave_id, "*", action, 0L,
                    duration_ms = elapsed_ms(t0))))
       },
-      "derive_fieldwork_month" = , "parse_time" = {
+      "derive_fieldwork_month" = {
+        violations <- .fieldwork_rule_errors(rule)
+        if (length(violations) > 0L) stop(paste(violations, collapse = "; "))
+        tgt <- rule[["target_column"]] %||% rule[["target"]] %||% "fieldwork_ym"
+        n <- nrow(df)
+        note <- function(variable, status, rows) {
+          make_log(rid, wave_id, variable, paste0(action, ":", status), rows,
+                   duration_ms = elapsed_ms(t0))
+        }
+        resolve_source <- function(name) {
+          if (isTRUE(rule[["source_suffix"]]) ||
+              (is.null(rule[["source_column"]]) && !is.null(rule[["sources"]]))) find_col(df, name) else
+            if (name %in% names(df)) name else NULL
+        }
+        mapping <- rule[["source_by_group"]]
+        group_col <- NULL
+        selected <- rep(NA_character_, n)
+        write_target <- TRUE
+        if (!is.null(mapping)) {
+          group_col <- find_col(df, rule[["group_column"]])
+          wanted <- unique(unlist(mapping, use.names = FALSE))
+          if (is.null(group_col)) {
+            handle_absent(rule, rule[["group_column"]], wave_id)
+            write_target <- identical(rule$if_absent %||% "warn_and_create_na", "warn_and_create_na")
+            log_entries <- append(log_entries, list(note(rule[["group_column"]], "GROUP_ABSENT", n)))
+          } else {
+            group <- df[[group_col]]
+            declarations <- yyyymm_declarations(group)
+            if (inherits(group, "haven_labelled")) group <- unclass(group)
+            if (is.factor(group)) group <- as.character(group)
+            supported <- is.atomic(group) && !is.object(group) && is.null(dim(group)) &&
+              (is.numeric(group) || is.character(group) || is.logical(group))
+            if (!supported) {
+              log_entries <- append(log_entries, list(note(group_col, "GROUP_UNSUPPORTED", n)))
+            } else {
+              text <- trimws(as.character(group))
+              missing <- is.na(group) | !nzchar(text)
+              number <- suppressWarnings(as.numeric(text))
+              missing <- missing | text %in% trimws(as.character(declarations$na_values))
+              for (range in declarations$na_range) {
+                range <- suppressWarnings(as.numeric(range))
+                if (length(range) == 2L && !anyNA(range))
+                  missing <- missing | (!is.na(number) & number >= range[[1]] & number <= range[[2]])
+              }
+              matched <- !missing & text %in% names(mapping)
+              selected[matched] <- vapply(mapping[text[matched]], identity, character(1))
+              for (status in c("GROUP_MISSING", "GROUP_UNMAPPED")) {
+                count <- if (status == "GROUP_MISSING") sum(missing) else sum(!missing & !matched)
+                if (count > 0L) log_entries <- append(log_entries, list(note(group_col, status, count)))
+              }
+            }
+          }
+        } else {
+          wanted <- rule[["source_column"]] %||% unlist(rule[["sources"]], use.names = FALSE)
+          # legacy candidate lists select the first existing column, never row-wise fallback.
+          if (length(wanted) > 0L) {
+            cols <- lapply(wanted, resolve_source)
+            found <- which(!vapply(cols, is.null, logical(1)))
+            selected[] <- if (length(found)) wanted[[found[[1]]]] else wanted[[1]]
+          }
+        }
+        resolved <- stats::setNames(lapply(wanted, resolve_source), wanted)
+        source_cols <- unique(unlist(resolved, use.names = FALSE))
+        if (tgt %in% c(source_cols, group_col)) stop("recorded-date target cannot replace a source or group column")
+        parsed_sources <- lapply(source_cols, function(col) {
+          x <- df[[col]]
+          declarations <- yyyymm_declarations(x)
+          parsed <- parse_yyyymm(x, declarations$na_values, declarations$na_range)
+          # labelled text coerced earlier cannot be verified as original six-digit text.
+          origin <- if (!is.null(source_types) && col %in% names(source_types))
+            source_types[[col]] else NA_character_
+          coerced_text <- identical(origin, "coerced_character") ||
+            (is.numeric(x) && (identical(origin, "character") || any(vapply(
+              c("_original_labels", "_original_na_values", "_original_na_range"),
+              function(a) is.character(attr(x, a, exact = TRUE)), logical(1)))))
+          if (coerced_text || length(parsed$value) != n) {
+            parsed$value <- rep(NA_real_, n)
+            parsed$class <- rep("unsupported", n)
+            parsed$counts[] <- 0L
+            parsed$counts[["unsupported"]] <- n
+          }
+          parsed
+        })
+        names(parsed_sources) <- source_cols
+        after <- rep(NA_real_, n)
+        selected_col <- rep(NA_character_, n)
+        absent <- FALSE
+        for (source in unique(selected[!is.na(selected)])) {
+          rows <- which(!is.na(selected) & selected == source)
+          col <- resolved[[source]]
+          if (is.null(col)) {
+            absent <- TRUE
+            handle_absent(rule, source, wave_id)
+            log_entries <- append(log_entries, list(note(source, "SOURCE_ABSENT", length(rows))))
+            next
+          }
+          parsed <- parsed_sources[[col]]
+          selected_col[rows] <- col
+          after[rows] <- parsed$value[rows]
+          classes <- table(factor(parsed$class[rows], levels = names(parsed$counts)))
+          statuses <- c(valid = "SOURCE", source_missing = "SOURCE_MISSING",
+                        declared_missing = "DECLARED_MISSING", invalid = "INVALID",
+                        outside_window = "OUTSIDE_WINDOW", unsupported = "UNSUPPORTED_TYPE")
+          for (class in names(statuses)) {
+            count <- as.integer(classes[[class]])
+            if (count > 0L || class == "valid")
+              log_entries <- append(log_entries, list(note(col, statuses[[class]], count)))
+            if (count > 0L && class %in% c("invalid", "outside_window", "unsupported"))
+              cli::cli_warn("rule {.val {rid}} wave {.val {wave_id}}: {count} {.val {statuses[[class]]}} value(s) in {.val {col}}; target {.val {tgt}} remains NA for these rows")
+          }
+        }
+        if (absent && identical(rule$if_absent, "warn_and_skip")) write_target <- FALSE
+        if (length(wanted) == 0L)
+          log_entries <- append(log_entries, list(note("<none>", "NO_SOURCE_DECLARED", n)))
+        if (!is.null(mapping)) {
+          conflict <- unselected <- rep(FALSE, n)
+          for (col in source_cols) {
+            alternate <- parsed_sources[[col]]$value
+            other <- is.na(selected_col) | selected_col != col
+            conflict <- conflict | (other & !is.na(after) & !is.na(alternate) & after != alternate)
+            unselected <- unselected | (other & is.na(after) & !is.na(alternate))
+          }
+          for (status in c("CONFLICT", "NONDESIGNATED_VALID")) {
+            count <- if (status == "CONFLICT") sum(conflict) else sum(unselected)
+            if (count > 0L) log_entries <- append(log_entries, list(note(tgt, status, count)))
+          }
+        }
+        if (write_target) {
+          audit <- yyyymm_replacement_counts(if (tgt %in% names(df)) df[[tgt]] else rep(NA, n), after)
+          out <- after
+          # only identical descriptive attributes can describe a grouped derived target.
+          keep <- if (length(source_cols) > 0L &&
+                      all(vapply(source_cols, function(col) is.numeric(df[[col]]), logical(1))))
+            c("label", "format.spss", "display_width") else "label"
+          for (a in keep) {
+            attrs <- lapply(source_cols, function(col) attr(df[[col]], a, exact = TRUE))
+            if (length(attrs) > 0L && all(vapply(attrs, identical, logical(1), attrs[[1]])))
+              attr(out, a) <- attrs[[1]]
+          }
+          df[[tgt]] <- out
+          if (!is.null(source_types)) source_types[[tgt]] <- "double"
+          source_types <- .record_character_coercion(source_types, df)
+          entry <- make_log(rid, wave_id, tgt, action, n,
+                            values_changed = audit$values_changed,
+                            distinct_before = audit$distinct_before, distinct_after = audit$distinct_after,
+                            na_before = audit$na_before, na_after = audit$na_after,
+                            duration_ms = elapsed_ms(t0))
+          entry$source_selection <- list(group_column = group_col, source_by_group = mapping,
+                                         source_columns = source_cols, year_range = c(1900L, 2100L))
+          log_entries <- append(log_entries, list(entry))
+          # last mutation: withdraw only the replaced target/wave metadata.
+          if (is.environment(label_registry) && !is.null(label_registry[[tgt]])) {
+            sets <- label_registry[[tgt]]
+            kept <- Filter(function(s) !identical(s$wave, wave_id), sets)
+            if (length(kept) < length(sets)) {
+              log_entries <- append(log_entries, list(note(tgt, "TARGET_METADATA_DROPPED", length(sets) - length(kept))))
+              if (length(kept) == 0L) rm(list = tgt, envir = label_registry) else label_registry[[tgt]] <- kept
+            }
+          }
+        }
+      },
+      "parse_time" = {
         # derive fieldwork month from source column(s)
         tgt <- rule[["target_column"]] %||% rule[["target"]] %||% "fieldwork_ym"
         src <- rule[["source_column"]] %||% NULL
@@ -1289,6 +1635,8 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
         }
         if (!is.null(src) && length(src) == 1 && src %in% names(df)) {
           df[[tgt]] <- tryCatch(as.character(df[[src]]), error = function(e) NA_character_)
+          if (!is.null(source_types) && src %in% names(source_types))
+            source_types[[tgt]] <- source_types[[src]]
         }
         log_entries <- append(log_entries, list(
           make_log(rid, wave_id, tgt, action, nrow(df),
@@ -1302,11 +1650,12 @@ exec_variable_rule <- function(df, rule, wave_id, wave_meta,
                    duration_ms = elapsed_ms(t0))))
       }
     )
-    list(df = df, log = log_entries)
+    source_types <- .record_character_coercion(source_types, df)
+    result_with_types(df, log_entries)
   }, error = function(e) {
     cli::cli_warn("rule {.val {rid}} failed on wave {.val {wave_id}}: {e$message}; rolled back, logged as a no-op")
-    list(df = df_before, log = append(log_before, list(
-      make_log(rid, wave_id, "*", paste0("ERROR:", action), 0L))))
+    result_with_types(df_before, append(log_before, list(
+      make_log(rid, wave_id, "*", paste0("ERROR:", action), 0L))), types_before)
   })
 }
 
@@ -3393,6 +3742,8 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
 
     if (strip_ws) df <- strip_label_whitespace(df)
     df <- strip_wave_prefix(df, wid, c(id_var, "nohouse_encr"))
+    # recorded-date parsing must know when the numeric policy erased string grammar.
+    source_types <- vapply(df, typeof, character(1))
     df <- apply_labelled_policy(df, lbl_policy)
     label_registry <- harvest_labels(df, label_registry, wid)
 
@@ -3411,6 +3762,7 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
       fm_col <- find_col(df, "_m")
       if (!is.null(fm_col) && fm_col %in% names(df)) {
         df[["fieldwork_ym"]] <- df[[fm_col]]
+        source_types[["fieldwork_ym"]] <- source_types[[fm_col]]
       }
     }
 
@@ -3419,8 +3771,9 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
 
     # apply variable rules
     for (rule in (recipe$variable_rules %||% list())) {
-      result <- exec_variable_rule(df, rule, wid, wm, all_wave_ids, log_entries)
+      result <- exec_variable_rule(df, rule, wid, wm, all_wave_ids, log_entries, label_registry, source_types)
       df <- result$df; log_entries <- result$log
+      source_types <- result$source_types %||% source_types
     }
 
     # apply harmonization rules
@@ -3633,6 +3986,14 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
           make_log(rid, "*", nm,
                    if (any_src) "derive" else "derive:NO_SOURCES_NA",
                    nrow(merged), values_changed = sum(!is.na(result)))))
+        # opt-in ownership prevents file metadata from labelling or sweeping a recomputed target.
+        if (identical(dv[["harvested_metadata"]], "drop") &&
+            length(label_registry[[nm]] %||% list()) > 0L) {
+          n_sets <- length(label_registry[[nm]])
+          rm(list = nm, envir = label_registry)
+          log_entries <- append(log_entries, list(
+            make_log(rid, "*", nm, "derive:TARGET_METADATA_DROPPED", n_sets)))
+        }
       }
     }
   } else {
