@@ -167,26 +167,41 @@ column appended.</p>
 <p>Most cross-sectional analyses need demographics: age, sex, education,
 income. These live in the Background Variables file (<code>avars</code>,
 a separate monthly release), not in the survey module itself.</p>
-<p><strong>Critical rule</strong>: join on <code>nomem_encr</code> only.
-Never use <code>nohouse_encr</code> — household assignments change over
-time. Match the fieldwork month, not the calendar year.</p>
+<p>Use <code>nomem_encr</code> as the respondent identifier, never
+<code>nohouse_encr</code>: household assignments change over time.
+Select the month for the survey items being analysed. Join on both
+<code>nomem_encr</code> and <code>fieldwork_ym</code> when stacking
+monthly background files; reject duplicate background keys and never
+match missing keys.</p>
+<p><code>fieldwork_ym</code> follows the recorded date selected by the
+module recipe. For Politics and Values (<code>cv</code>), eight
+single-part waves use <code>_m</code>; <code>cv16h</code> uses
+<code>maandnr</code> for group 0 and <code>maandnr_lang</code> for
+groups 1/2; nine three-part waves use part 1 (<code>_m1</code>) only. A
+missing designated date stays <code>NA</code>, without year inference or
+fallback to another part. Part-1 timing is not automatically the
+appropriate background month for part-2, part-3 or particular CV items.
+Check their timing before choosing a snapshot, even if a merged column’s
+label no longer conveys its part-specific meaning.</p>
+<p>This example uses Health data. Obtain the monthly Background
+Variables release separately from the LISS Data Archive and extract its
+SPSS file locally; the current blueprint file inventory does not provide
+these background downloads. The November 2025 month and file path below
+are illustrative. Inspect the actual Health fieldwork month and replace
+both together; the checks verify observed periods before the join.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># download the background variables file for the same fieldwork period</span></span>
-<span><span class="co"># (check fieldwork_ym in the merged output for the exact month)</span></span>
-<span><span class="va">bg_files</span> <span class="op">&lt;-</span> <span class="va">bp</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>    <span class="va">module</span> <span class="op">==</span> <span class="st">"Background Variables"</span>,</span>
-<span>    <span class="va">type</span>   <span class="op">==</span> <span class="st">"spss"</span>,</span>
-<span>    <span class="va">wave</span>   <span class="op">==</span> <span class="fl">202511</span>  <span class="co"># YYYYMM matching the fieldwork period</span></span>
-<span>  <span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">expected_month</span> <span class="op">&lt;-</span> <span class="fl">202511L</span></span>
+<span><span class="va">survey_month</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">health</span><span class="op">$</span><span class="va">fieldwork_ym</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">health</span><span class="op">$</span><span class="va">fieldwork_ym</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">survey_month</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1L</span>, <span class="va">survey_month</span> <span class="op">==</span> <span class="va">expected_month</span><span class="op">)</span></span>
+<span><span class="va">bg_raw</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars/avars_202511_EN_1_0p.sav"</span><span class="op">)</span></span>
+<span><span class="va">bg_month</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">bg_raw</span><span class="op">$</span><span class="va">wave</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">bg_month</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1L</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">anyNA</a></span><span class="op">(</span><span class="va">bg_month</span><span class="op">)</span>,</span>
+<span>          <span class="va">bg_month</span> <span class="op">==</span> <span class="va">expected_month</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/liss_download.html">liss_download</a></span><span class="op">(</span><span class="va">bg_files</span>, .dir <span class="op">=</span> <span class="st">"data/avars"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># each avars file also carries this period as its `wave` column</span></span>
-<span><span class="va">avars</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars/avars_202511_EN_1_0p.sav"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/zap_labels.html" class="external-link">zap_labels</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span><span class="va">avars</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/zap_labels.html" class="external-link">zap_labels</a></span><span class="op">(</span><span class="va">bg_raw</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>fieldwork_ym <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">wave</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span></span>
-<span>    <span class="va">nomem_encr</span>,</span>
+<span>    <span class="va">nomem_encr</span>, <span class="va">fieldwork_ym</span>,</span>
 <span>    age       <span class="op">=</span> <span class="va">leeftijd</span>,</span>
 <span>    sex       <span class="op">=</span> <span class="va">geslacht</span>,</span>
 <span>    edu_level <span class="op">=</span> <span class="va">oplcat</span>,</span>
@@ -194,8 +209,13 @@ time. Match the fieldwork month, not the calendar year.</p>
 <span>    urban     <span class="op">=</span> <span class="va">sted</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
-<span><span class="va">analysis_df</span> <span class="op">&lt;-</span> <span class="va">health</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">avars</span>, by <span class="op">=</span> <span class="st">"nomem_encr"</span><span class="op">)</span></span>
+<span><span class="va">bg_keys</span> <span class="op">&lt;-</span> <span class="va">avars</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nomem_encr"</span>, <span class="st">"fieldwork_ym"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">anyNA</a></span><span class="op">(</span><span class="va">bg_keys</span><span class="op">)</span>, <span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">anyDuplicated</a></span><span class="op">(</span><span class="va">bg_keys</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">analysis_df</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span></span>
+<span>  <span class="va">health</span>, <span class="va">avars</span>,</span>
+<span>  by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"nomem_encr"</span>, <span class="st">"fieldwork_ym"</span><span class="op">)</span>, na_matches <span class="op">=</span> <span class="st">"never"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">analysis_df</span><span class="op">)</span> <span class="op">==</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">health</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">analysis_df</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 4892</span></span></code></pre></div>

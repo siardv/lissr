@@ -87,28 +87,43 @@ Most cross-sectional analyses need demographics: age, sex, education,
 income. These live in the Background Variables file (`avars`, a separate
 monthly release), not in the survey module itself.
 
-**Critical rule**: join on `nomem_encr` only. Never use `nohouse_encr` —
-household assignments change over time. Match the fieldwork month, not
-the calendar year.
+Use `nomem_encr` as the respondent identifier, never `nohouse_encr`:
+household assignments change over time. Select the month for the survey
+items being analysed. Join on both `nomem_encr` and `fieldwork_ym` when
+stacking monthly background files; reject duplicate background keys and
+never match missing keys.
+
+`fieldwork_ym` follows the recorded date selected by the module recipe.
+For Politics and Values (`cv`), eight single-part waves use `_m`;
+`cv16h` uses `maandnr` for group 0 and `maandnr_lang` for groups 1/2;
+nine three-part waves use part 1 (`_m1`) only. A missing designated date
+stays `NA`, without year inference or fallback to another part. Part-1
+timing is not automatically the appropriate background month for part-2,
+part-3 or particular CV items. Check their timing before choosing a
+snapshot, even if a merged column’s label no longer conveys its
+part-specific meaning.
+
+This example uses Health data. Obtain the monthly Background Variables
+release separately from the LISS Data Archive and extract its SPSS file
+locally; the current blueprint file inventory does not provide these
+background downloads. The November 2025 month and file path below are
+illustrative. Inspect the actual Health fieldwork month and replace both
+together; the checks verify observed periods before the join.
 
 ``` r
 
-# download the background variables file for the same fieldwork period
-# (check fieldwork_ym in the merged output for the exact month)
-bg_files <- bp |>
-  dplyr::filter(
-    module == "Background Variables",
-    type   == "spss",
-    wave   == 202511  # YYYYMM matching the fieldwork period
-  )
+expected_month <- 202511L
+survey_month <- unique(health$fieldwork_ym[!is.na(health$fieldwork_ym)])
+stopifnot(length(survey_month) == 1L, survey_month == expected_month)
+bg_raw <- haven::read_sav("data/avars/avars_202511_EN_1_0p.sav")
+bg_month <- unique(as.integer(bg_raw$wave))
+stopifnot(length(bg_month) == 1L, !anyNA(bg_month),
+          bg_month == expected_month)
 
-liss_download(bg_files, .dir = "data/avars")
-
-# each avars file also carries this period as its `wave` column
-avars <- haven::read_sav("data/avars/avars_202511_EN_1_0p.sav") |>
-  haven::zap_labels() |>
+avars <- haven::zap_labels(bg_raw) %>%
+  dplyr::mutate(fieldwork_ym = as.integer(wave)) %>%
   dplyr::select(
-    nomem_encr,
+    nomem_encr, fieldwork_ym,
     age       = leeftijd,
     sex       = geslacht,
     edu_level = oplcat,
@@ -116,8 +131,13 @@ avars <- haven::read_sav("data/avars/avars_202511_EN_1_0p.sav") |>
     urban     = sted
   )
 
-analysis_df <- health |>
-  dplyr::left_join(avars, by = "nomem_encr")
+bg_keys <- avars[c("nomem_encr", "fieldwork_ym")]
+stopifnot(!anyNA(bg_keys), !anyDuplicated(bg_keys))
+analysis_df <- dplyr::left_join(
+  health, avars,
+  by = c("nomem_encr", "fieldwork_ym"), na_matches = "never"
+)
+stopifnot(nrow(analysis_df) == nrow(health))
 
 nrow(analysis_df)
 #> [1] 4892

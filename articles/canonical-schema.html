@@ -87,7 +87,7 @@
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"schema"</span>, <span class="st">"CANONICAL_SCHEMA.md"</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span></code></pre></div>
-<!-- schema-source-md5: 5871189298ac4cef83113c552f19ce2a -->
+<!-- schema-source-md5: b94d1717d0b26adc931380ac27074b92 -->
 <div class="section level2">
 <h2 id="liss-panel-merge-recipe-canonical-schema-v1-1-0">LISS Panel Merge Recipe: Canonical Schema v1.1.0<a class="anchor" aria-label="anchor" href="#liss-panel-merge-recipe-canonical-schema-v1-1-0"></a>
 </h2>
@@ -626,6 +626,69 @@ not change behavior; authors must scope with <code>waves</code>.</p>
 when <code>method</code> is <code>no_pool</code>.</p>
 </div>
 <div class="section level4">
+<h4 id="derive_fieldwork_month-recorded-dates-in-variable-rules">
+<code>derive_fieldwork_month</code>: recorded dates in variable
+rules<a class="anchor" aria-label="anchor" href="#derive_fieldwork_month-recorded-dates-in-variable-rules"></a>
+</h4>
+<p>In <code>variable_rules</code>, <code>derive_fieldwork_month</code>
+parses a designated recorded year-month into a numeric
+<code>YYYYMM</code> target. <code>source_column</code> selects one
+column; <code>source_suffix: true</code> resolves its post-prefix
+suffix. Alternatively, a <code>group_column</code> and
+<code>source_by_group</code> map select the designated source for each
+row’s group. A group map cannot also declare <code>source_column</code>
+or <code>sources</code>.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">rule_id</span><span class="kw">:</span><span class="at"> VR06c_fieldwork_ym_cv16h</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="at">  </span><span class="fu">description</span><span class="kw">:</span><span class="at"> recorded date for the normal questionnaire group</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="at">  </span><span class="fu">anomaly_ref</span><span class="kw">:</span><span class="at"> A-11</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="at">  </span><span class="fu">action</span><span class="kw">:</span><span class="at"> derive_fieldwork_month</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="at">  </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">cv16h</span><span class="kw">]</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="at">  </span><span class="fu">group_column</span><span class="kw">:</span><span class="at"> groep</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="at">  </span><span class="fu">source_by_group</span><span class="kw">:</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="at">    </span><span class="fu">'0'</span><span class="kw">:</span><span class="at"> maandnr</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="at">    </span><span class="fu">'1'</span><span class="kw">:</span><span class="at"> maandnr_lang</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="at">    </span><span class="fu">'2'</span><span class="kw">:</span><span class="at"> maandnr_lang</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="at">  </span><span class="fu">source_suffix</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="at">  </span><span class="fu">target_column</span><span class="kw">:</span><span class="at"> fieldwork_ym</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="at">  </span><span class="fu">if_absent</span><span class="kw">:</span><span class="at"> warn_and_create_na</span></span></code></pre></div>
+<p>This map combines parallel questionnaire administrations. It uses
+only the source designated for that group; a missing designated date
+never falls back to another source. Conflicting valid alternate-source
+dates are audited while the designated source wins. Missing or unmapped
+groups produce unknown dates. For an ordinary <code>sources</code> list,
+first-existing column selection is retained; it is not rowwise
+coalescing. An explicit single source is preferable when the date has a
+specific meaning.</p>
+<p>Supported recorded values are numeric integers or six-digit numeric
+text, with calendar months 01–12 and years 1900–2100. These year bounds
+are a broad parsing envelope, not a wave-specific plausibility check.
+Ordinary, blank, tagged and declared SPSS missing values remain
+<code>NA</code>. Fractions, invalid calendar values, dates outside the
+envelope and unsupported source types produce <code>NA</code> with
+counted diagnostics. No year is inferred from <code>wave_year</code>.
+When the global labelled policy converts a labelled text source to
+numeric, the executor rejects that coerced source because the converted
+numbers cannot verify the original six-digit text grammar. Plain text
+sources remain parseable. Original source type and subsequent
+name/coercion lineage are carried internally for this check, without
+adding attributes to output source columns. When a rename fills a target
+from mixed origins, any contamination by text whose grammar was lost
+causes conservative rejection of the entire date source column. Source
+columns and their metadata remain unchanged. A written target owns its
+date metadata, so previously harvested target value labels and
+user-missing declarations cannot be reapplied to it.</p>
+<p>The CV recipe designates <code>_m</code> for eight single-part waves,
+group-specific <code>maandnr</code>/<code>maandnr_lang</code> for
+<code>cv16h</code>, and <code>_m1</code> for nine three-part waves.
+Multipart <code>fieldwork_ym</code> represents part 1 only. It does not
+describe every part or item, and never substitutes <code>_m2</code> or
+<code>_m3</code>. Unknown dates do not establish a complete temporal
+record merely because other validation checks pass. The
+<code>parse_time</code> action retains its existing character-copy
+behavior; the harmonization-phase <code>derive_fieldwork_month</code>
+handler remains skipped.</p>
+</div>
+<div class="section level4">
 <h4 id="derived_variables-aggregation-and-transforms">
 <code>derived_variables</code>: aggregation and transforms<a class="anchor" aria-label="anchor" href="#derived_variables-aggregation-and-transforms"></a>
 </h4>
@@ -634,15 +697,15 @@ when <code>method</code> is <code>no_pool</code>.</p>
 <code>var_name</code>), and a <code>sources</code> list of blocks, each
 naming the <code>waves</code> it covers and the <code>variable</code>
 (or <code>variables</code>) to read in those waves:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">derived_variables</span><span class="kw">:</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">rule_id</span><span class="kw">:</span><span class="at"> DV-02</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> received_disability_benefit</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="at">    </span><span class="fu">method</span><span class="kw">:</span><span class="at"> max</span><span class="co">          # row-wise max over the resolved sources</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="at">    </span><span class="fu">sources</span><span class="kw">:</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ci08a</span><span class="kw">,</span><span class="at"> ci09b</span><span class="kw">,</span><span class="at"> ci10c</span><span class="kw">,</span><span class="at"> ci11d</span><span class="kw">,</span><span class="at"> ci12e</span><span class="kw">]</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="at">        </span><span class="fu">variables</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">Q096</span><span class="kw">,</span><span class="at"> Q097</span><span class="kw">]</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ci13f</span><span class="kw">,</span><span class="at"> ci14g</span><span class="kw">,</span><span class="at"> ci15h</span><span class="kw">]</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="at">        </span><span class="fu">variable</span><span class="kw">:</span><span class="at"> Q096</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">derived_variables</span><span class="kw">:</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">rule_id</span><span class="kw">:</span><span class="at"> DV-02</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> received_disability_benefit</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="at">    </span><span class="fu">method</span><span class="kw">:</span><span class="at"> max</span><span class="co">          # row-wise max over the resolved sources</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="at">    </span><span class="fu">sources</span><span class="kw">:</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ci08a</span><span class="kw">,</span><span class="at"> ci09b</span><span class="kw">,</span><span class="at"> ci10c</span><span class="kw">,</span><span class="at"> ci11d</span><span class="kw">,</span><span class="at"> ci12e</span><span class="kw">]</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="at">        </span><span class="fu">variables</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">Q096</span><span class="kw">,</span><span class="at"> Q097</span><span class="kw">]</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ci13f</span><span class="kw">,</span><span class="at"> ci14g</span><span class="kw">,</span><span class="at"> ci15h</span><span class="kw">]</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="at">        </span><span class="fu">variable</span><span class="kw">:</span><span class="at"> Q096</span></span></code></pre></div>
 <p>Aggregation (<code>method</code>): <code>sum</code> (default) sums
 across the resolved sources; <code>max</code> takes the row-wise
 maximum, which for 0/1 indicators reads as “received any”. The DV loop
@@ -657,37 +720,51 @@ partial-matches <code>transform</code>. A derived variable carrying only
 passes through unshifted; this is correct because ci15h is observed on
 0-10 with no off-by-one, so the source already uses the target
 coding.</p>
+<p><code>harvested_metadata</code> is an optional derived-variable
+policy: <code>keep</code> (default) preserves the existing restoration
+behavior, while <code>drop</code> withdraws the recomputed target’s
+previously harvested label and user-missing metadata. Only the
+recomputed target’s metadata is withdrawn; other columns retain theirs.
+Omission or <code>NULL</code> defaults to <code>keep</code>. Every
+non-<code>NULL</code> value must be a plain scalar string, exactly
+<code>keep</code> or <code>drop</code>, and the policy belongs only on a
+<code>derived_variables</code> entry. CV’s DV09 uses <code>drop</code>
+because <code>fieldwork_month</code> is owned by its derivation; an old
+target declaration such as “11 is missing” must not erase a newly
+derived November value. This withdrawal is logged as
+<code>TARGET_METADATA_DROPPED</code> only when harvested target metadata
+exists and is actually withdrawn.</p>
 </div>
 <div class="section level4">
 <h4 id="logging-v1-0-0">
 <code>logging</code> (v1.0.0)<a class="anchor" aria-label="anchor" href="#logging-v1-0-0"></a>
 </h4>
-<div class="sourceCode" id="cb10"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">logging</span><span class="kw">:</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="at">  </span><span class="fu">log_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"merge_log.jsonl"</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="at">  </span><span class="fu">report_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"merge_report.txt"</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="at">  </span><span class="fu">log_format</span><span class="kw">:</span><span class="at"> </span><span class="st">"jsonl"</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="at">  </span><span class="fu">per_rule_fields</span><span class="kw">:</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> rule_id</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> wave_id</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> variable</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> action</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> rows_affected</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> values_changed</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> distinct_before</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> distinct_after</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> na_count_before</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> na_count_after</span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> timestamp</span></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> duration_ms</span></span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="at">  </span><span class="fu">summary_artifact</span><span class="kw">:</span></span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="at">    </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="at">    </span><span class="fu">include</span><span class="kw">:</span></span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_na_created</span></span>
-<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_values_recoded</span></span>
-<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_rows_dropped</span></span>
-<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_vars_dropped</span></span>
-<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> wave_row_counts</span></span>
-<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> per_variable_na_rates</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">logging</span><span class="kw">:</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="at">  </span><span class="fu">log_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"merge_log.jsonl"</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="at">  </span><span class="fu">report_file</span><span class="kw">:</span><span class="at"> </span><span class="st">"merge_report.txt"</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="at">  </span><span class="fu">log_format</span><span class="kw">:</span><span class="at"> </span><span class="st">"jsonl"</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="at">  </span><span class="fu">per_rule_fields</span><span class="kw">:</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> rule_id</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> wave_id</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> variable</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> action</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> rows_affected</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> values_changed</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> distinct_before</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> distinct_after</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> na_count_before</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> na_count_after</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> timestamp</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> duration_ms</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="at">  </span><span class="fu">summary_artifact</span><span class="kw">:</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="at">    </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="at">    </span><span class="fu">include</span><span class="kw">:</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_na_created</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_values_recoded</span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_rows_dropped</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> total_vars_dropped</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> wave_row_counts</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> per_variable_na_rates</span></span></code></pre></div>
 <hr>
 </div>
 </div>
@@ -695,14 +772,14 @@ coding.</p>
 <h3 id="anomaly-registry-anomaly_registry-yml">Anomaly registry (<code>anomaly_registry.yml</code>)<a class="anchor" aria-label="anchor" href="#anomaly-registry-anomaly_registry-yml"></a>
 </h3>
 <p>Maps anomaly archetype codes to canonical handling templates:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">archetypes</span><span class="kw">:</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="at">  </span><span class="fu">WS-01</span><span class="kw">:</span></span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"label_whitespace"</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="at">    </span><span class="fu">template</span><span class="kw">:</span><span class="at"> </span><span class="st">"strip_value_labels"</span></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="at">  </span><span class="fu">SC-01</span><span class="kw">:</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"sentinel_positive_dk"</span></span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="at">    </span><span class="fu">template</span><span class="kw">:</span><span class="at"> </span><span class="st">"recode_to_na"</span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="at">    </span><span class="fu">parameters</span><span class="kw">:</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">codes</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">999</span><span class="kw">,</span><span class="at"> </span><span class="dv">9999999999</span><span class="kw">]</span><span class="at"> </span><span class="kw">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">archetypes</span><span class="kw">:</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="fu">WS-01</span><span class="kw">:</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"label_whitespace"</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="at">    </span><span class="fu">template</span><span class="kw">:</span><span class="at"> </span><span class="st">"strip_value_labels"</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="at">  </span><span class="fu">SC-01</span><span class="kw">:</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="at">    </span><span class="fu">name</span><span class="kw">:</span><span class="at"> </span><span class="st">"sentinel_positive_dk"</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="at">    </span><span class="fu">template</span><span class="kw">:</span><span class="at"> </span><span class="st">"recode_to_na"</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="at">    </span><span class="fu">parameters</span><span class="kw">:</span><span class="at"> </span><span class="kw">{</span><span class="at"> </span><span class="fu">codes</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="dv">999</span><span class="kw">,</span><span class="at"> </span><span class="dv">9999999999</span><span class="kw">]</span><span class="at"> </span><span class="kw">}</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level3">
@@ -1681,12 +1758,12 @@ requirements apply only to this executor.</p>
 <p>This phase-6 check is separate from
 <code>global.expected_presence</code>; it does not create columns or use
 <code>on_absence</code>.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">validation_checks</span><span class="kw">:</span></span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">check_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"required_measure"</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"expected_presence"</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="at">    </span><span class="fu">severity</span><span class="kw">:</span><span class="at"> </span><span class="st">"error"</span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="at">    </span><span class="fu">variable</span><span class="kw">:</span><span class="at"> </span><span class="st">"s005"</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="at">    </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ch07a</span><span class="kw">,</span><span class="at"> ch08b</span><span class="kw">]</span><span class="co">  # or the scalar "all"</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">validation_checks</span><span class="kw">:</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">check_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"required_measure"</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> </span><span class="st">"expected_presence"</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="at">    </span><span class="fu">severity</span><span class="kw">:</span><span class="at"> </span><span class="st">"error"</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="at">    </span><span class="fu">variable</span><span class="kw">:</span><span class="at"> </span><span class="st">"s005"</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="at">    </span><span class="fu">waves</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">ch07a</span><span class="kw">,</span><span class="at"> ch08b</span><span class="kw">]</span><span class="co">  # or the scalar "all"</span></span></code></pre></div>
 <ul>
 <li>
 <code>variable</code> must be one exact, nonblank character column
