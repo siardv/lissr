@@ -2,6 +2,14 @@
 
 ## lissr 1.4.1.9000
 
+- Correct the Health cross-sectional tutorial to use self-rated health
+  `s004`, exact release filenames and explicit multi-month Background
+  Variables sources. The guide removes unverified printed outputs and
+  explains covariate metadata, missing-data checks and model
+  assumptions. The Health collection note includes the December 2025
+  repeat; recipe transformations and analytical month/income policies
+  are unchanged.
+
 - [`liss_attach_background()`](https://siardv.github.io/lissr/reference/liss_attach_background.md)
   attaches explicitly selected local SAV snapshots by respondent and
   caller-selected survey month. It returns `data`, `audit` and
@@ -625,8 +633,7 @@ verified against that scan (v1.4/cf_scan_results.json, 2026-07-11).
 - `labelled_policy` switched from `to_factor` to `to_numeric`, aligning
   cf with the other nine modules. Under `to_factor`, partially labelled
   variables (18 to 49 per wave, including euro amounts and paradata)
-  became factors: numeric recodes skipped them and
-  [`write_sav()`](https://haven.tidyverse.org/reference/read_spss.html)
+  became factors: numeric recodes skipped them and `write_sav()`
   re-coded levels 1..k, detaching output codes from the codebook.
 - HARM-005 (999) re-keyed to its three verified DK items 166/180/181:
   the label holds in all 17 waves and NO other column is 999-labelled
