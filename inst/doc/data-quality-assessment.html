@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Data Quality Assessment Beyond Household Income</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap;
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #d14; }
+code > span.fl { color: #d14; }
+code > span.ch { color: #d14; }
+code > span.st { color: #d14; }
+code > span.co { color: #888888; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #900; font-weight: bold; }
+code > span.er { color: #a61717; background-color: #e3d2d2; }
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Data Quality Assessment Beyond Household
+Income</h1>
+
+
+
+<div id="completed-assessment-and-principal-findings" class="section level2">
+<h2>Completed assessment and principal findings</h2>
+<p>This assessment was carried out on 7 October 2026 against the locally
+available LISS releases and lissr source commit
+<code>76aaa6a6547b89d1fc8be5b730be94087e2eb60e</code> (development
+version 1.4.1.9000). It examined all ten core modules and the monthly
+Background Variables collection. It is a diagnosis of observed problems
+and a roadmap, not a new cleaner. The <a href="income-cleaning.html">Income Cleaning</a> framework continues to
+target household income; none of the additional interventions described
+here has been implemented as part of this assessment.</p>
+<p>The largest confirmed coding exposures were undeclared nonresponse in
+Income 2023 and Assets 2020. A diagnostic execution showed that the
+Income codes can reach the existing household-income cleaner as
+numerical values. Response-format changes and loss of a substantive
+outsourcing category create additional comparability problems. Health
+activity and Culture and Sports time entries contain impossible
+durations; the 2025 inflation probability battery has frequent internal
+contradictions. Health measurements and life-event chronologies contain
+smaller but analytically important groups of implausible or
+contradictory values. The evidence does <strong>not</strong> support
+describing every module as badly corrupted: respondent keys were
+complete and unique within every selected file, and several screened
+batteries showed no domain violations.</p>
+<div id="scope-sources-and-counting" class="section level3">
+<h3>Scope, sources and counting</h3>
+<p>The collection contained 169 core SAV files. The higher available
+release, <code>cd10c_EN_1.1p.sav</code>, was selected instead of
+<code>cd10c_EN_1.0p.sav</code>, giving 168 selected core releases. All
+221 monthly Background Variables SAV snapshots were included. The
+duplicate Housing release was compared separately and had identical
+values on all shared columns; the higher release omits one free-text
+dwelling-location column. A separate
+<code>WorkSchoolingW10_isco08.sav</code> occupation supplement was
+checked without counting it as another survey wave. The inventory
+therefore comprised 391 SAV files and 173 PDF references, with 389
+selected survey snapshots. ZIP, DTA and CSV copies were not counted as
+additional observations. These choices define this assessment’s corpus;
+they are not a proposed automatic release-selection policy for
+lissr.</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Collection</th>
+<th align="right">Selected files</th>
+<th align="right">Observed rows</th>
+<th align="left">Available span</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Assets (CA)</td>
+<td align="right">10</td>
+<td align="right">55,849</td>
+<td align="left">ca08a–ca25j</td>
+</tr>
+<tr class="even">
+<td align="left">Housing (CD)</td>
+<td align="right">18</td>
+<td align="right">66,207</td>
+<td align="left">cd08a–cd25r</td>
+</tr>
+<tr class="odd">
+<td align="left">Family and Household (CF)</td>
+<td align="right">17</td>
+<td align="right">100,219</td>
+<td align="left">cf08a–cf24q</td>
+</tr>
+<tr class="even">
+<td align="left">Health (CH)</td>
+<td align="right">18</td>
+<td align="right">101,691</td>
+<td align="left">ch07a–ch25r</td>
+</tr>
+<tr class="odd">
+<td align="left">Economic Integration: Income (CI)</td>
+<td align="right">18</td>
+<td align="right">97,557</td>
+<td align="left">ci08a–ci25r</td>
+</tr>
+<tr class="even">
+<td align="left">Personality (CP)</td>
+<td align="right">18</td>
+<td align="right">101,651</td>
+<td align="left">cp08a–cp26r</td>
+</tr>
+<tr class="odd">
+<td align="left">Religion and Ethnicity (CR)</td>
+<td align="right">18</td>
+<td align="right">105,792</td>
+<td align="left">cr08a–cr25r</td>
+</tr>
+<tr class="even">
+<td align="left">Culture and Sports (CS)</td>
+<td align="right">18</td>
+<td align="right">105,309</td>
+<td align="left">cs08a–cs25r</td>
+</tr>
+<tr class="odd">
+<td align="left">Politics and Values (CV)</td>
+<td align="right">18</td>
+<td align="right">108,013</td>
+<td align="left">cv08a–cv26r</td>
+</tr>
+<tr class="even">
+<td align="left">Work and Schooling (CW)</td>
+<td align="right">15</td>
+<td align="right">85,270</td>
+<td align="left">cw11d–cw25r</td>
+</tr>
+<tr class="odd">
+<td align="left">Background Variables</td>
+<td align="right">221</td>
+<td align="right">2,436,395</td>
+<td align="left">November 2007–March 2026</td>
+</tr>
+</tbody>
+</table>
+<p>There were 927,558 core respondent-wave rows and 2,436,395 background
+person-month rows, not that many different participants. The background
+collection contained 34,304 distinct respondents. The inventory recorded
+48,792 file-column instances, of which 46,817 were numeric. All selected
+files were read; metadata and respondent keys were checked throughout,
+and the semantic constraints reported below were applied to their
+relevant fields across the available waves. This was not an exhaustive
+validation of every possible cross-variable relationship or of every
+free-text response.</p>
+<p>The investigation combined observed distributions, SPSS labels and
+user-missing declarations, questionnaire bounds, routing and units,
+within-row logical constraints, and selected longitudinal checks. It
+also compared the findings with the current recipes and household-income
+rules. The initial assessment was extended by two separately frozen
+external assessments and independently checked against the raw SAVs with
+R/haven, the relevant questionnaires, and selected executions of
+existing package functions. Agreement between reports was not used as
+validation. The counts below incorporate corrected field inventories and
+eligibility definitions; source identities and aggregate verification
+records were retained privately. No respondent-level data are included
+in this article. Intentional nonresponse, structural absence, instrument
+redesigns and already handled sentinel regimes were not counted as new
+respondent errors. Endpoint labels were interpreted as scale endpoints,
+not as the only legal responses. Category-coded years were decoded
+before temporal comparisons.</p>
+<p>Counts are unweighted descriptions of these releases. Each
+denominator is the eligible set for that particular check, after the
+stated missing-code handling. A cell, a complete response set, a
+respondent-wave and an adjacent monthly transition are different
+counting units. Overlapping checks are not summed into an overall error
+rate. A screening flag estimates the workload for review; it is not
+automatically a confirmed erroneous observation.</p>
+</div>
+<div id="how-the-priorities-were-determined" class="section level3">
+<h3>How the priorities were determined</h3>
+<p>The order below combines six considerations: observed prevalence,
+severity of the inconsistency, strength of detection, confidence in
+correction, downstream analytical impact, and risk of changing a
+legitimate response. The ordering is a documented judgment, not a fitted
+score. High-prevalence encoding failures with defensible
+invalid-to-missing treatment come first; plausible but unverified
+remappings require confirmation. Frequent logical contradictions follow,
+even when only flagging is defensible. Rare open-ended extremes with no
+reliable replacement rank last.</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="right">Priority</th>
+<th align="left">Problem group</th>
+<th align="left">Main observed evidence</th>
+<th align="left">Defensible disposition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">1</td>
+<td align="left"><a href="#source-specific-nonresponse-encoding-a-prerequisite-for-numerical-cleaning">Nonresponse
+codes surviving as amounts or categories</a></td>
+<td align="left">CI23p: 2,293/4,353 household amounts; CA20g: 5,857
+cells in 2,849/5,849 rows; CH: 4,992 labelled undeclared cells</td>
+<td align="left">Source-scoped classification; typed missing amounts or
+explicit unknown categories, retaining raw codes</td>
+</tr>
+<tr class="even">
+<td align="right">2</td>
+<td align="left"><a href="#coding-and-construct-comparability-scale-changes-and-lost-categories">Coding,
+response-format and category-preservation gaps</a></td>
+<td align="left">CV: 17,391 exposed ratings; CS12e: 17,524 no answers at
+a different code; CF: 1,697 outsourcing cells swept</td>
+<td align="left">Verified semantic crosswalks or separate
+representations; abstain on unresolved mappings</td>
+</tr>
+<tr class="odd">
+<td align="right">3</td>
+<td align="left"><a href="#health-and-culture-and-sports-time-entry-failures-with-disproportionate-impact">CH
+and CS time-entry failures</a></td>
+<td align="left">CH: 2,355/165,334 daily-hour entries above 24; CS:
+142/811,036 daily pairs above 24 hours</td>
+<td align="left">Strong domain flags; invalid-to-missing where
+justified, no assumed unit repair</td>
+</tr>
+<tr class="even">
+<td align="right">4</td>
+<td align="left"><a href="#probabilities-and-expectation-intervals-internally-inconsistent-sets">Probability
+and ordered-expectation inconsistencies</a></td>
+<td align="left">CI25r: 1,403/4,511 complete probability grids
+(31.10%)</td>
+<td align="left">Flag/review; no unique automatic numerical repair</td>
+</tr>
+<tr class="odd">
+<td align="right">5</td>
+<td align="left"><a href="#health-implausible-anthropometry-and-unstable-derived-bmi">CH
+height and weight</a></td>
+<td align="left">176/101,574 height flags; 142/101,480 weight flags</td>
+<td align="left">Conservative plausibility flags; tightly supported unit
+candidates only</td>
+</tr>
+<tr class="even">
+<td align="right">6</td>
+<td align="left"><a href="#clinical-use-durations-and-life-event-chronology-inconsistent-combinations">Clinical
+use, durations and life-event chronology</a></td>
+<td align="left">Conflicting service-use answers and impossible
+age/event combinations in CH, CW and CF</td>
+<td align="left">Flag; auxiliary recovery only with validated
+independent evidence</td>
+</tr>
+<tr class="odd">
+<td align="right">7</td>
+<td align="left"><a href="#background-variables-demographic-and-roster-disagreements">Background
+demographic and roster disagreements</a></td>
+<td align="left">Partner/roster boundary: 7,340/352,566 person-months;
+11/2,436,395 roster-size disagreements; 102 adjacent-month birth-year
+changes</td>
+<td align="left">Review, respecting top-coding, snapshot completeness
+and uncertain source precedence</td>
+</tr>
+<tr class="even">
+<td align="right">8</td>
+<td align="left"><a href="#income-period-candidates-and-other-financial-housing-and-workload-tails">Income-period
+candidates and other monetary, housing and workload tails</a></td>
+<td align="left">Annual-income screens reveal small amounts; open tails
+and component conflicts remain ambiguous</td>
+<td align="left">Review with reference-period evidence; no automatic
+multiplication or clipping</td>
+</tr>
+</tbody>
+</table>
+<p>Follow a problem-group link for its measured diagnosis and correction
+limits. The <a href="#ordered-to-do-list-derived-from-the-assessment">ordered to-do
+list</a> uses the same priorities and specifies the safeguards and
+expected benefit.</p>
+</div>
+</div>
+<div id="diagnosed-problem-areas" class="section level2">
+<h2>Diagnosed problem areas</h2>
+<div id="source-specific-nonresponse-encoding-a-prerequisite-for-numerical-cleaning" class="section level3">
+<h3>1. Source-specific nonresponse encoding: a prerequisite for
+numerical cleaning</h3>
+<div id="income-2023-undeclared-codes-reach-the-existing-cleaner" class="section level4">
+<h4>Income 2023: undeclared codes reach the existing cleaner</h4>
+<p><code>ci23p_EN_1.0p.sav</code> contains negative ten-digit codes that
+neither its seven-digit value labels nor its missing declarations
+describe correctly:</p>
+<table>
+<colgroup>
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Field</th>
+<th align="right">Raw finite answers</th>
+<th align="right"><code>-9999999999</code></th>
+<th align="right"><code>-9999999998</code></th>
+<th align="right">Combined coded fraction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ci23p337, annual taxable income</td>
+<td align="right">4,828</td>
+<td align="right">1,998</td>
+<td align="right">682</td>
+<td align="right">55.51%</td>
+</tr>
+<tr class="even">
+<td align="left">ci23p338, estimated annual taxable income
+follow-up</td>
+<td align="right">1,416</td>
+<td align="right">934</td>
+<td align="right">455</td>
+<td align="right">98.09%</td>
+</tr>
+<tr class="odd">
+<td align="left">ci23p339, household net income</td>
+<td align="right">4,353</td>
+<td align="right">2,293</td>
+<td align="right">0</td>
+<td align="right">52.68%</td>
+</tr>
+</tbody>
+</table>
+<p>The questionnaire specifies bounded euro amounts and nonresponse
+options, not these enormous losses. For household income, 2,292 of the
+2,293 coded answers have the follow-up that is routed only after “don’t
+know”. That provides strong same-wave evidence for this subtype. The
+taxable-income follow-up does not distinguish the two options
+sufficiently to assign their subtypes with the same confidence.
+Adjacent-wave labels alone cannot resolve the conflicting label order in
+this release.</p>
+<p>A complete execution of the existing CI merge retained all 2,293
+household codes in <code>s339</code> and returned
+<code>valid_for_analysis = TRUE</code>. A subsequent diagnostic cleaner
+run, explicitly binding <code>variables = list(target = &quot;s339&quot;)</code>,
+with otherwise default settings and no background frame, found none
+through residual-missing rule P06 and sign-rectified all through P03. In
+<code>mode = &quot;flag&quot;</code>, it proposed finite replacements for 1,282
+and missing values for 1,011; all original values remained unchanged.
+This is a measured unsafe proposal path, not a claim that those
+proposals were applied. A default cleaner call on that merge instead
+stops because its default aliases do not include <code>s339</code>;
+supplied target names and panel context matter. Source-code inspection
+alone would not establish these configuration-specific outcomes.</p>
+<p>The immediate need is a source-aware nonresponse check before sign
+rectification, donor selection or scale correction. Numerical imputation
+does not resolve an encoding defect. The existing household-income
+framework is therefore not evidence that all CI missing regimes are
+already safe.</p>
+</div>
+<div id="assets-2020-two-undocumented-code-families" class="section level4">
+<h4>Assets 2020: two undocumented code families</h4>
+<p><code>ca20g_EN_1.0p.sav</code> has <strong>5,857 undocumented
+nonresponse cells in 27 fields</strong>, affecting <strong>2,849/5,849
+respondents (48.71%)</strong>. These comprise:</p>
+<ul>
+<li>3,072 amount cells at <code>-9999999999</code> or
+<code>-9999999998</code> in suffixes <code>012</code>, <code>016</code>,
+<code>035</code>, <code>083</code>, <code>085</code>, affecting 2,638
+respondents. The banking-balance field <code>012</code> contains 2,513
+of them.</li>
+<li>2,785 cells at <code>-9</code> or <code>-8</code> in 22 other
+amount, bracket and yes/no fields, affecting 1,624 respondents. The
+field list is <code>013</code>–<code>028</code>, <code>036</code>,
+<code>055</code>, <code>056</code>, <code>063</code>, <code>064</code>,
+<code>084</code>, <code>086</code>, excluding <code>016</code> from that
+interval. The two respondent sets overlap and must not be added.</li>
+</ul>
+<p>The source specifies signed amount bounds for <code>012</code>,
+<code>016</code>, <code>083</code>, <code>085</code>, positive bounds
+for other amounts, and nonnegative response categories. Its documented
+nonresponse forms differ from the observed codes. Small
+<code>-9</code>/<code>-8</code> values do not occur on the five
+large-code fields in this release; they are restricted to the other 22
+fields. All 5,857 codes fall outside the relevant documented
+amount/category domains. This is a release-level encoding failure, not
+evidence that half the respondents supplied wrong substantive wealth
+values.</p>
+<p>Amount-to-bracket routing supports the nonresponse interpretation:
+2,375/2,378 amount cells in the apparent don’t-know family have the
+bracket follow-up, versus none of 2,520 in the apparent refusal family.
+These denominators cover amount codes, not every bracket or binary code.
+Exact DK/refusal assignments on the remaining fields remain inferential.
+Later-wave metadata provide supporting comparisons but are not uniform
+across every amount and bracket field.</p>
+<p>Current rule <code>B03_ca20g_largeneg_review</code> adds a review
+flag to <strong>all 5,849 rows of the wave</strong>, rather than
+detecting just the code-bearing cells. It does not remove either code
+family. Consequently the existing flag is useful awareness of the
+release problem, but is not a value-level safeguard for wealth
+calculations.</p>
+</div>
+<div id="health-labelled-unknown-answers-without-missing-declarations" class="section level4">
+<h4>Health: labelled unknown answers without missing declarations</h4>
+<p>An independently verified subset contains 1,358 zero-euro “don’t
+know” cells: 813 in <code>ch13g249</code> and 250/122/173 in
+<code>ch13g264</code>, <code>ch15h264</code>, <code>ch16i264</code>.
+Both labels and the same-wave questionnaires establish the meaning, but
+zero is undeclared missing and the current CH recipe has no
+corresponding recode. An execution of the existing user-missing sweep
+retained all 1,358; a declared-zero control in <code>ch17j264</code> was
+removed. This count is the labelled subset, not a census of every
+questionnaire-only unknown code. Zero in an unrelated amount field may
+be a genuine amount.</p>
+<p>Including categorical unknown answers gives <strong>4,992 labelled
+undeclared cells</strong> under the following explicit source
+contracts:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Source scope</th>
+<th align="left">Code meaning</th>
+<th align="right">Cells</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">ch08b–ch13g, suffix 124</td>
+<td align="left">3, don’t know expected health-problem duration</td>
+<td align="right">1,472</td>
+</tr>
+<tr class="even">
+<td align="left">The four amount fields above</td>
+<td align="left">0, don’t know premium/allowance amount</td>
+<td align="right">1,358</td>
+</tr>
+<tr class="odd">
+<td align="left">ch13g263</td>
+<td align="left">5, don’t know allowance application status</td>
+<td align="right">484</td>
+</tr>
+<tr class="even">
+<td align="left">ch19l260 and ch20m260</td>
+<td align="left">99, don’t know voluntary deductible</td>
+<td align="right">1,453</td>
+</tr>
+<tr class="odd">
+<td align="left">ch24q272 and ch25r272</td>
+<td align="left">4, don’t know menopause status</td>
+<td align="right">225</td>
+</tr>
+</tbody>
+</table>
+<p>Labels and questionnaire categories identify these as nonresponse,
+but the existing source-declaration sweep retained all 4,992 in an
+isolated execution. That probe tests the sweep, not a complete CH merge.
+Many later occurrences of the same numeric codes are already declared
+missing and handled; a global code-3/4/5/99 recode would damage
+substantive categories. Preserve unknown as a typed reason alongside the
+source response, with an explicit analysis policy rather than treating
+it as a quantity or scale point. The 3,634 categorical DK choices are
+legitimate responses if analysed as explicit unknown categories; they
+are not 3,634 respondent errors requiring deletion. The 1,358 amount
+codes must not be interpreted as known zero euros.</p>
+<p><strong>Detection and correction limits.</strong> Match exact codes
+only under a verified release, field, label/routing and unit contract.
+Conversion of confirmed nonresponse to missing is high-confidence
+normalization; preserve the raw code and its reason separately. Retain
+an unknown subtype where the evidence cannot distinguish DK from
+refusal. An invalid-to-missing policy is preferable to inventing an
+amount. Never infer that every negative balance or every zero is
+missing: ordinary negative equity occurs in <code>ca20g035</code>
+despite its printed positive bound and requires separate source review,
+not a blanket sign sweep.</p>
+<p><strong>Priority rationale.</strong> CI23p and CA20g have very large
+within-wave exposures, direct effects on income/wealth estimates, and
+exact code-level detection. CI23p additionally exposes a tested path
+into the current cleaner’s numerical proposals. Typed missing
+normalization is more defensible and less risky than reconstructing an
+intended amount. These checks must precede broader numerical-cleaning
+extensions.</p>
+</div>
+</div>
+<div id="coding-and-construct-comparability-scale-changes-and-lost-categories" class="section level3">
+<h3>2. Coding and construct comparability: scale changes and lost
+categories</h3>
+<div id="politics-and-values-a-systematic-party-rating-scale-discrepancy" class="section level4">
+<h4>Politics and Values: a systematic party-rating scale
+discrepancy</h4>
+<p>Four fields have no observed zero and occupy the range 1–11, although
+both the questionnaire and their endpoint labels specify a 0–10 sympathy
+scale:</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Source file</th>
+<th align="left">Field</th>
+<th align="right">Nonmissing substantive ratings</th>
+<th align="right">Ratings equal to 11</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">cv17i_EN_1.0p.sav</td>
+<td align="left">cv17i264 (DENK)</td>
+<td align="right">4,249</td>
+<td align="right">10</td>
+</tr>
+<tr class="even">
+<td align="left">cv17i_EN_1.0p.sav</td>
+<td align="left">cv17i265 (VNL)</td>
+<td align="right">3,653</td>
+<td align="right">8</td>
+</tr>
+<tr class="odd">
+<td align="left">cv18j_EN_1.0p.sav</td>
+<td align="left">cv18j264 (DENK)</td>
+<td align="right">4,961</td>
+<td align="right">22</td>
+</tr>
+<tr class="even">
+<td align="left">cv18j_EN_1.0p.sav</td>
+<td align="left">cv18j305 (Forum voor Democratie)</td>
+<td align="right">4,528</td>
+<td align="right">47</td>
+</tr>
+</tbody>
+</table>
+<p>The 87 values equal to 11 are definite violations of the published
+scale. All 17,391 substantive ratings are exposed to a possible
+one-point offset; they are <strong>not</strong> 17,391 individually
+proven mistakes. The published codebook summary tables also report 1–11
+for these fields. Other party ratings in the same files, and these party
+series in subsequent waves, use 0–10. The current CV recipe does not
+resolve this particular discrepancy.</p>
+<p><strong>Detection and correction limits.</strong> A release-and-field
+whitelist, the questionnaire endpoints, the complete observed support
+and the published summary tables make detection strong. Subtracting one
+from every substantive value is a plausible coding repair and would
+restore the full scale, but the direction of the coding error still
+needs confirmation from the archive or original questionnaire export.
+Until that mapping is confirmed, flag the affected fields and prevent
+unqualified pooling. Neither clipping 11 to 10 nor shifting only the 87
+visible violations repairs a possible whole-field offset. The
+<code>999</code> nonresponse code must retain its own meaning and must
+not enter an arithmetic remapping.</p>
+</div>
+<div id="culture-and-sports-loneliness-and-holiday-categories-change-meaning" class="section level4">
+<h4>Culture and Sports: loneliness and holiday categories change
+meaning</h4>
+<p>CS loneliness suffixes <code>284</code>–<code>289</code> use
+<code>1 = yes</code>, <code>2 = no</code>,
+<code>3 = don&#39;t know/don&#39;t want to say</code> in <code>cs12e</code>,
+whereas the other 17 available waves use <code>1 = yes</code>,
+<code>2 = more or less</code>, <code>3 = no</code>. The questionnaire
+confirms this response-format break. CS12e contains 35,742 cells from
+5,957 respondents: 16,535 yes, 17,524 no and 1,683 nonresponse. The
+generic missing sweep already removes the 1,683 declared code-3 cells;
+that part is not an unhandled missing-code leak. The unresolved problem
+is that naive pooling would interpret the 17,524 no answers as the other
+waves’ middle category.</p>
+<p>A semantic representation of no is identifiable, but the missing
+middle response cannot be recovered and a crosswalk does not establish
+measurement equivalence. Preserve an instrument-period flag; qualified
+binary scoring or a measurement model requires an explicit analytical
+decision. Do not map source code 2 to 3 in place while leaving the
+original “3 is missing” declaration active, because the later sweep
+could then delete the newly mapped substantive no answers. A separately
+derived representation with appropriate metadata is safer.</p>
+<p>Holiday counts <code>102</code>/<code>103</code> use
+<code>1 = not once</code> through <code>6 = five times or more</code>
+before <code>cs23p</code>, then <code>0 = not once</code> through
+<code>5 = five times or more</code> in
+<code>cs23p</code>–<code>cs25r</code>. Both questionnaire versions
+confirm the change. The last three waves contain 16,056 domestic and
+16,055 abroad responses, involving 6,815 people. These responses are
+correctly coded within their wave, but the current recipe has no
+semantic crosswalk. A release-specific category mapping can remove an
+artificial one-code change exactly; retain the top category as
+<strong>five or more</strong>, not an exact count of five.</p>
+</div>
+<div id="family-and-household-outsourcing-is-lost-from-merged-categorical-fields" class="section level4">
+<h4>Family and Household: outsourcing is lost from merged categorical
+fields</h4>
+<p>In CF task-division items <code>483</code>–<code>488</code>, code 9
+means that all work is outsourced. It is observed in 1,948 cells across
+<code>cf15h</code>–<code>cf24q</code>, affecting 1,525 respondent-waves
+and 870 people. The first wave retains it, whereas the other nine
+declare it user-missing. A full execution of the current CF merge
+converted exactly 1,697 cells in those nine waves to NA and retained the
+251 in <code>cf15h</code>, while reporting
+<code>valid_for_analysis = TRUE</code>. The existing sweep log discloses
+affected-cell counts; source answers and files remain intact. The
+problem is inconsistent preservation of a real category in the merged
+representation.</p>
+<p>Code 9 is outside the ordered 1–5 division-of-work scale. Treating
+complete outsourcing as not applicable to that ordinal score is
+defensible; the source declaration alone does not prove a publisher
+mistake. A future solution should preserve the categorical response and
+an outsourcing indicator, with a separately named 1–5 score using typed
+not-applicable missingness. Simply vetoing the sweep would allow 9 into
+numerical means and ordinal models. Exported missing metadata must also
+preserve the categorical representation consistently.</p>
+</div>
+<div id="income-labels-and-education-taxonomy-preserve-semantics-before-arithmetic" class="section level4">
+<h4>Income labels and education taxonomy: preserve semantics before
+arithmetic</h4>
+<p><code>ci15h005</code> has 5,893 correctly stored 0–10 ladder ratings,
+including six zeros, but its value labels describe a shifted 1–11
+coding. The same-wave questionnaire and published statistics confirm the
+data’s 0–10 scale. Current A-02 is <code>note_only</code>: executing it
+changes no values, and its documentary <code>transform_ref</code> is not
+applied as arithmetic. A future subtract-one action based on that
+premise would damage all ratings and create six negatives. The needed
+repair is verified metadata alignment, not numerical rescaling.
+Conversely, some CI22o nonresponse labels reverse the questionnaire’s
+DK/refusal meanings; preserve uncertainty rather than guessing from the
+label alone.</p>
+<p>CW highest education attended (<code>008</code>, merged
+<code>s008</code>, recipe alias <code>q008</code>) has genuine taxonomy
+changes. Of 32,467 answers after the 2020 redesign, 447 use changed
+primary education codes; 1,608 answers in
+<code>cw24q</code>/<code>cw25r</code> use revised MBO categories. The
+older BOL/BBL tracks and newer MBO qualification levels are different
+dimensions, so no one-to-one replacement is justified. These are
+exposure counts, not erroneous respondents. A documented coarser
+taxonomy may permit some comparisons, with explicit lost-detail and
+unmapped-category flags. The existing education rule does work for
+recipe target <code>q005</code> (merged <code>s005</code>): all 80,055
+observed values were mapped in a complete CW merge, while the item is
+structurally absent in <code>cw19l</code>. The gap is education
+attended, not a failed <code>q005</code> executor.</p>
+<p><strong>Priority rationale.</strong> These problems expose whole
+response blocks to wrong meanings or inconsistent category loss.
+Verified holiday crosswalks, label alignment and category-preserving
+representations are comparatively low-risk; CV remapping and
+education/measurement equivalence require more evidence. Their breadth
+and influence on longitudinal analyses place them above isolated
+outliers, but source-specific uncertainty prevents a single blanket
+correction rule.</p>
+</div>
+</div>
+<div id="health-and-culture-and-sports-time-entry-failures-with-disproportionate-impact" class="section level3">
+<h3>3. Health and Culture and Sports: time-entry failures with
+disproportionate impact</h3>
+<div id="health-activity-impossible-daily-hours-and-ambiguous-unit-representations" class="section level4">
+<h4>Health activity: impossible daily hours and ambiguous unit
+representations</h4>
+<p>Across <code>ch07a</code>–<code>ch18k</code>, activity/sitting hour
+fields <code>186</code>, <code>189</code>, <code>192</code>,
+<code>194</code> contain 2,355/165,334 observed entries above 24 hours
+per day (1.42%), affecting 2,200 respondent-waves and 1,806 people. Of
+those entries, 1,903 lie between 25 and 60; 2,020 have empty or zero
+minute companions. These patterns suggest minutes entered into an hour
+field, but they do not uniquely establish that explanation or an
+intended number. The activity items were <strong>deleted</strong> from
+<code>ch19l</code>; later-wave duration bounds do not retrospectively
+constrain them.</p>
+<p>The CH minute companions are unbounded integer/empty inputs and may
+express a whole duration rather than a residual component. They do not
+have the source-bounded CS 0–59 contract. Therefore a minute value above
+59 is not automatically invalid. Exact hour/minute patterns need
+separate review against the question’s representation. In 5,256/84,323
+complete pairs (6.23%, involving 2,190 people), positive hours and
+minutes satisfy <code>minutes = 60 * hours</code>. This is a
+repeated-entry pattern, not a count of confirmed duplicate-duration
+errors. Equality can reflect two expressions of the same duration, but
+is not proof that an additive answer should be halved. Empty minutes are
+not known zero. Daily hours above 24 are a strong source-unit
+contradiction; division by 60, conversion from a supposed weekly period
+or deletion of a duplicate component would require independent
+evidence.</p>
+</div>
+<div id="culture-and-sports-bounded-components-and-propagated-totals" class="section level4">
+<h4>Culture and Sports: bounded components and propagated totals</h4>
+<p>The complete CS hour-and-minute inventory found 142/811,036 evaluable
+daily pairs (0.018%) above 24 hours. Two minute components exceed the
+explicitly specified 0–59 range: <code>cs15h200</code> and
+<code>cs16i232</code>. Six nonmissing smartphone weekly-hour values
+exceed 168 hours, and <code>cs16i125</code> contains one TV-hours entry
+beyond its specified range. The union of daily/weekly time-budget
+failures affects 96/104,772 evaluable respondent-wave rows (0.092%). The
+pair and row counts differ because several time fields can fail in the
+same response.</p>
+<p>All 811,036 complete hour/minute/derived-total triples checked in the
+collection satisfy <code>total_minutes = 60 * hours + minutes</code>.
+The calculated helpers therefore reproduce the bad inputs faithfully;
+they are not independent confirmation of the reported duration. In
+<code>cs15h387</code>, excluding the observation with the invalid minute
+input changes the raw mean from 6,041.72 to 69.10 minutes. This is a
+descriptive sensitivity calculation, not a cleaned estimate or a
+justification for excluding other high values.</p>
+<p><strong>Detection and correction limits.</strong> Validate each
+question’s daily or weekly period, integer minute bounds and the
+corresponding single-activity time budget. Minute bounds must come from
+the particular source; the CS 0–59 rule must not be transferred to CH.
+Activities may overlap, so summing unrelated activities and demanding a
+total below 24 hours is not defensible. Invalid components can be
+flagged and, under an explicit policy, set to missing together with the
+dependent derived total. A helper calculated from the same component
+cannot recover its intended value. Do not convert a large entry to
+hours, divide by ten, or carry excess minutes into hours without
+independent source evidence.</p>
+<p><strong>Priority rationale.</strong> Impossible CH daily hours are
+appreciably more frequent than the rare CS failures, while a CS error
+can change a mean by orders of magnitude. Explicit units and the bounded
+CS structure make safe detection and invalid-to-missing treatment
+practical. Numerical reconstruction is much less certain.</p>
+</div>
+</div>
+<div id="probabilities-and-expectation-intervals-internally-inconsistent-sets" class="section level3">
+<h3>4. Probabilities and expectation intervals: internally inconsistent
+sets</h3>
+<p>In <code>ci25r_EN_1.0p.sav</code>, 1,403 of 4,511 complete, in-domain
+inflation probability grids (31.10%) violate at least one necessary
+probability constraint. The four fields are
+<code>ci25r431</code>–<code>ci25r434</code>; <code>ci25r430</code>
+determines their displayed inflation thresholds. All 4,511 conditioning
+codes were valid. The first two probabilities concern being below
+increasing thresholds, and the last two concern being above increasing
+thresholds. Consequently, <code>431 &lt;= 432</code> and
+<code>433 &gt;= 434</code>; each of the four low-tail / high-tail pairs
+concerns disjoint events and must sum to at most 100. The count is the
+union of these checks, not their sum. Even allowing five percentage
+points of tolerance, 1,117 grids (24.76%) fail.</p>
+<p>Two additional ordered intervals fail in the same release: expected
+income minimum <code>ci25r425</code> exceeds maximum
+<code>ci25r426</code> in 122/4,147 complete pairs (2.94%), and expected
+inflation minimum <code>ci25r428</code> exceeds maximum
+<code>ci25r429</code> in 216/4,514 pairs (4.79%). These counts can
+overlap with the probability-grid failures. A six-level
+income-evaluation sequence in the earlier CI collection
+(<code>230</code>–<code>235</code>) has 813/53,261 complete sets with an
+order inversion (1.53%).</p>
+<p>CH survival expectations (<code>006</code>–<code>010</code>, recorded
+on a 0–10 probability scale) provide a second application: 1,063/90,259
+evaluable respondent-wave sets (1.18%) contain an increase in the stated
+probability of reaching a higher target age. Detection uses the nested
+events represented by the age-specific questions, not a requirement that
+optimism or health beliefs remain stable over time.</p>
+<p><strong>Detection and correction limits.</strong> Reconstruct the
+exact displayed thresholds, routing and reference horizon for the
+particular wave; check bounds, nested-event order, disjoint-event sums
+and minimum–maximum order. A negative expected inflation rate is
+legitimate and is not a missing code merely because it is negative.
+These checks establish internal incoherence, not that a particular
+economic forecast or health belief is wrong. Swapping interval
+endpoints, sorting probabilities or projecting them onto a coherent
+distribution would impose an unverified error model. Default to flagging
+the response set; any analysis that excludes it or treats it as missing
+should preserve the original answers and report a sensitivity analysis.
+Automated numerical replacement is not justified.</p>
+<p><strong>Priority rationale.</strong> CI25r has high block-level
+prevalence and strong logical detection. The problems can distort
+estimates of expectations and uncertainty, but the absence of a unique
+repair keeps this below source-specific nonresponse normalization,
+comparability safeguards and bounded time failures. Correctability is
+one criterion, not a reason to dismiss strong joint constraints. The
+household-income cleaner does not validate these belief batteries.</p>
+</div>
+<div id="health-implausible-anthropometry-and-unstable-derived-bmi" class="section level3">
+<h3>5. Health: implausible anthropometry and unstable derived BMI</h3>
+<p>Across the 18 CH releases, height suffix <code>016</code> has
+176/101,574 nonmissing values outside a deliberately broad screening
+interval of 100–230 cm (0.17%); weight suffix <code>017</code> has
+142/101,480 outside 20–300 kg (0.14%). There are 26 heights below 50 cm
+and 96 weights below 10 kg. The union of the height and weight screens
+is 314/101,574 respondent-wave rows (173 different people), with four
+rows flagged on both measures. The broad intervals are review
+thresholds, not universal biological limits or questionnaire bounds. No
+observed height or weight violates the permissive instrument ranges of
+1–300 cm and 1–1,000 kg.</p>
+<p>Wrong units, misplaced decimals and incomplete entries are plausible
+explanations for some of these values. BMI depends on squared height, so
+a single scale error can dominate a derived health measure even when the
+overall flagged fraction is small. Distributional extremes alone do not
+prove which component is wrong. A conservative temporal screen found
+only one height observation whose factor-of-ten candidate agreed within
+2 cm with both the preceding and following adult height records. Height
+answers are already preloaded from the previous wave in
+<code>ch08b</code>, so repeated neighbouring values are not
+automatically independent measurements. The candidate remains
+unverified.</p>
+<p><strong>Detection and correction limits.</strong> Check units and
+questionnaire bounds first, then examine broad plausibility, derived BMI
+and within-person changes together. Keep hard instrument violations
+separate from soft anthropometric flags. A factor-of-ten or
+unit-conversion candidate needs independent agreement, compatible
+timing, a unique admissible candidate and preserved competing
+explanations. Two neighbouring observations are supporting evidence, not
+proof; illness, amputation, pregnancy and genuine weight change preclude
+indiscriminate smoothing. Unresolved values should remain flagged or be
+treated as missing under an explicit analytical policy, with no
+automatic clipping to a population percentile.</p>
+<p><strong>Priority rationale.</strong> The observed prevalence is
+modest, but height errors have disproportionate effects on BMI and
+health models. Detectability is useful, while conservative correction is
+possible only for a small, well-supported subset. That combination
+places this above general open-ended monetary outlier handling.</p>
+</div>
+<div id="clinical-use-durations-and-life-event-chronology-inconsistent-combinations" class="section level3">
+<h3>6. Clinical use, durations and life-event chronology: inconsistent
+combinations</h3>
+<p>CH suffix <code>228</code> reports no specialist visit while suffix
+<code>208</code> records a positive number of hospital-specialist visits
+in 1,123/96,851 evaluable respondent-wave rows (1.16%). Both questions
+refer to the preceding twelve months. The mismatch affects 1,003 people
+and is more common than a rare single numerical typo. It can change
+estimated healthcare use, but the answers do not identify which field is
+mistaken. Do not infer a zero count from the binary response, or reverse
+the binary response from the count, without independent evidence. The
+eligible set includes four observed counts at 999: this is the allowed
+upper endpoint and has no nonresponse label/declaration on these source
+fields. Restricting counts to below 999 gives 1,120/96,847 instead, but
+that is a different screen, not a failed reproduction of the larger
+set.</p>
+<p>CH illness-duration components (<code>107</code>–<code>110</code>)
+exceed the respondent’s age plus one year in 83/8,961 evaluable sets
+(0.93%); nonworking-duration components do so in 33/5,040 (0.65%;
+nonworking fields <code>101</code>–<code>103</code>, plus
+<code>268</code> where present). Their union is 109/9,295 evaluable
+respondent-wave rows. The check compares each component separately,
+expressing months, weeks or days in years, rather than assuming that
+early-wave duration entries are additive. Before ch19l the components
+may be alternative units for a total duration; modern residual-component
+limits must not be applied retrospectively. Fourteen of 7,683 reported
+illness-year components resemble a calendar year rather than an elapsed
+duration. That resemblance is a flag, not evidence that subtracting it
+from the interview year reconstructs the answer.</p>
+<p>CW has 70 pre-birth employment-event field/wave inconsistencies in
+85,886 eligible checks after decoding category-coded years: employer
+start (<code>134</code>) 24/45,232, stopping work 30/33,361, starting
+job search 12/6,446 and starting a care-related work reduction
+(<code>454</code>) 4/847. The other event fields are work stop
+<code>319</code> and job-search start <code>340</code>; respondent birth
+year is <code>002</code>. Actual retirement age (<code>119</code> in
+early waves, <code>535</code> from 2015) exceeds current age plus one in
+9/1,987 eligible pairs. In CF, the conservative chronology screens found
+48/14,920 parent death-before-birth pairs, 78/106,913 biological parent
+birth-year comparisons, 108/133,486 relationship-date comparisons and
+43/141,657 biological child-before-parent birth-year comparisons. These
+denominators count eligible field/wave comparisons, not unique people;
+the checks can overlap. Their calendar-year eligibility screen is 1800
+through survey year plus one; other years need separate domain and
+provenance review rather than being counted as additional ordering
+evidence.</p>
+<p>The CF parent pairs are father <code>005</code>/<code>008</code> and
+mother <code>009</code>/<code>012</code>; relationship dates are
+<code>028</code>, <code>029</code> and <code>031</code>. Child
+birth-year fields are <code>037</code>–<code>051</code> through 2014 and
+<code>456</code>–<code>470</code> from 2015, qualified by
+biological-parent status in <code>098</code>–<code>112</code>.</p>
+<p><strong>Detection and correction limits.</strong> Decode year
+categories using the wave’s labels, distinguish actual from planned
+retirement, and identify biological versus step/adoptive relationships.
+Where respondent birth year is inferred from preloaded age, use a
+conservative year interval that allows birthday timing; do not compare
+against a falsely precise point estimate. The CF screen used
+<code>survey_year - age - 1</code> through
+<code>survey_year - age + 1</code>, with preloaded age <code>004</code>.
+Events trigger only below the lower bound, and biological-parent birth
+years only at or above the upper bound. Selected-child roster slots
+cannot be assumed to refer to the same child over time. Nine of 9,958
+valid selected-child/roster comparisons disagree in the unambiguous
+2015–2024 roster scheme (<code>001</code> selects the slot;
+<code>002</code> is the derived birth year), offering a potential
+auxiliary-source repair only after the index and roster are
+independently validated.</p>
+<p>Impossible ordering identifies an inconsistent combination, not
+necessarily the erroneous field. Correct a date or duration only when an
+independent, correctly identified source uniquely resolves it. Otherwise
+flag the set and preserve the original; arithmetic onset-year
+conversions, endpoint swaps and interpolation would require unjustified
+assumptions.</p>
+<p><strong>Priority rationale.</strong> Conflicting service-use answers
+and chronology can affect employment histories, retirement timing,
+family-event analyses and duration models. Strong constraints reveal
+real inconsistencies, but prevalence is generally low and error
+localization is difficult. This ranks below the more prevalent or more
+directly bounded groups above.</p>
+</div>
+<div id="background-variables-demographic-and-roster-disagreements" class="section level3">
+<h3>7. Background Variables: demographic and roster disagreements</h3>
+<p>The monthly collection has no duplicate respondent-month keys and no
+observed age-versus-birth-year discrepancy greater than one year.
+However, 102/2,401,631 eligible adjacent-month transitions change birth
+year; 50 decrease age and 35 increase it by more than one year.
+Birth-year changes affect 102 people. These are discrepancies for
+review, not proof that the later value is wrong: administrative
+corrections can improve a previously mistaken record. Eighty-one monthly
+age records exceed a soft 120-year review threshold, representing four
+people rather than 81 separate cases; age must not be capped
+automatically. Urbanization field <code>sted</code> contains an
+unlabelled <code>-99</code> in 108 observations across 27 snapshots
+(November 2022–January 2025), a possible missing-code omission whose
+meaning also requires confirmation.</p>
+<p>Across the whole monthly history, 131 people have more than one valid
+birth year and 42 have a span above 20 years, excluding the placeholder
+year 1. Ninety-two people have both recorded <code>geslacht</code> codes
+1 and 2; 18 also have the large birth-year discontinuity. These patterns
+merit identity/provenance review, but do not establish identifier reuse
+or which record should be replaced. Changes in recorded sex/gender are
+not inherently errors and must not be smoothed automatically.</p>
+<p>After respecting the codebook’s top-coding of <code>aantalhh</code>
+and <code>aantalki</code> at 9 (nine or more), while also accepting
+exact counts above 9 in older releases, 11/2,436,395 person-month rows
+disagree between reported household size and the observed household
+roster (four people, three households). In 23 rows (13 people), the
+child count is at least the household size while household size is below
+9. A roster disagreement alone does not establish a wrong household-size
+value unless completeness of the monthly roster is known. The comparison
+is household-and-month specific; changes in household membership are
+expected.</p>
+<p>A larger release-period discrepancy affects the partner indicator:
+7,340/352,566 person-months in September 2014–May 2017 (361 people) have
+<code>partner = 0</code> while the same household-month roster lists a
+partner position; four additional rows occur in February 2008. In June
+2017, all 100 members listed as partners in the 100 affected May
+households remain in the same household; 87 positions become unknown,
+six become child/housemate and seven remain partner-coded. Many
+household heads are widowed, but widowhood does not exclude a later
+unwedded partner. These observations confirm a
+recording/reclassification boundary, not that the listed members were
+dead, had departed, or that either source is certainly stale. A
+roster-derived overwrite of <code>partner</code> or household size is
+therefore unsupported.</p>
+<p><strong>Detection and correction limits.</strong> Check
+respondent-month identity, birth-year and age agreement with birthday
+tolerance, household membership, top-coding and the codebook’s
+definition of a child. A child living at home is not necessarily younger
+than 14, which also matters for equivalised income. Exact monthly
+linkage is already a separate lissr capability and must not be replaced
+with nearest-month matching. Do not overwrite a reported count with the
+observed roster count when the roster may be incomplete, or choose a
+modal birth year without a source-precedence rule. Preserve review flags
+and allow a verified administrative correction to remain a genuine
+change in the recorded data.</p>
+<p><strong>Priority rationale.</strong> These fields are ubiquitous
+covariates and income denominators, so discrepancies deserve an
+auditable check. The partner boundary adds a larger review group, but
+uncertainty over source precedence and the small fractions for the hard
+demographic checks put this below the more severe groups. The findings
+do not support wholesale demographic smoothing or reconstruction.</p>
+</div>
+<div id="income-period-candidates-and-other-financial-housing-and-workload-tails" class="section level3">
+<h3>8. Income-period candidates and other financial, housing and
+workload tails</h3>
+<div id="small-annual-components-a-period-confusion-hypothesis-not-a-measured-error-rate" class="section level4">
+<h4>Small annual components: a period-confusion hypothesis, not a
+measured error rate</h4>
+<p>Several annual CI component fields contain many small positive
+amounts. The same-wave questionnaires establish annual units, but the
+following thresholds and candidate windows are analyst-chosen
+screens:</p>
+<table style="width:100%;">
+<colgroup>
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+<col width="16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Component and source suffix</th>
+<th align="right">Positive answers</th>
+<th align="right">Below screening threshold</th>
+<th align="right">Threshold in EUR</th>
+<th align="left">Annual candidate window in EUR</th>
+<th align="right">Flags whose value times 12 enters that window</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Health-care allowance, 143</td>
+<td align="right">13,338</td>
+<td align="right">2,278 (17.08%)</td>
+<td align="right">200</td>
+<td align="left">300–2,500</td>
+<td align="right">2,178</td>
+</tr>
+<tr class="even">
+<td align="left">Net AOW, 078</td>
+<td align="right">4,102</td>
+<td align="right">426 (10.39%)</td>
+<td align="right">2,000</td>
+<td align="left">6,000–25,000</td>
+<td align="right">412</td>
+</tr>
+<tr class="odd">
+<td align="left">Gross AOW, 076</td>
+<td align="right">15,782</td>
+<td align="right">985 (6.24%)</td>
+<td align="right">2,000</td>
+<td align="left">6,000–30,000</td>
+<td align="right">911</td>
+</tr>
+<tr class="even">
+<td align="left">Child benefit, 140</td>
+<td align="right">6,199</td>
+<td align="right">223 (3.60%)</td>
+<td align="right">300</td>
+<td align="left">500–12,000</td>
+<td align="right">217</td>
+</tr>
+<tr class="odd">
+<td align="left">Net employer-1 wage, 012</td>
+<td align="right">17,195</td>
+<td align="right">976 (5.68%)</td>
+<td align="right">1,500</td>
+<td align="left">5,000–150,000</td>
+<td align="right">798</td>
+</tr>
+<tr class="even">
+<td align="left">Gross employer-1 wage, 010</td>
+<td align="right">21,592</td>
+<td align="right">944 (4.37%)</td>
+<td align="right">1,500</td>
+<td align="left">5,000–250,000</td>
+<td align="right">735</td>
+</tr>
+<tr class="odd">
+<td align="left">Other net pension, 082</td>
+<td align="right">2,455</td>
+<td align="right">214 (8.72%)</td>
+<td align="right">1,000</td>
+<td align="left">2,000–150,000</td>
+<td align="right">175</td>
+</tr>
+</tbody>
+</table>
+<p>The first, third and fourth screens span all available releases where
+the source fields retain these meanings; the older net AOW, wage and
+other pension fields cover <code>ci08a</code>–<code>ci18k</code>.
+Pension branches also change: <code>ci13f082</code> can include AOW plus
+other pensions, while <code>ci17j082</code> concerns other pensions.
+Declared or label-identified nonresponse and zero were excluded. The
+screens are not statutory payment limits, full-year entitlement tests or
+questionnaire-invalid values.</p>
+<p>The high candidate-window hit rates do not identify monthly entry.
+For example, the allowance screen and its times-12 window mainly select
+amounts between EUR 25 and 200 by construction. All 911 gross-AOW
+times-12 hits also fit times 13; all 217 child-benefit hits fit times 10
+and 13, and 197 fit times four. Many paired low wages already have
+ordinary net/gross ratios: 697/833 comparable low-net-wage pairs need no
+rescaling to fit a broad 0.5–1.1 ratio screen. Some low amounts have
+plausible neighbouring annual values, but those observations do not
+distinguish multipliers or exclude a genuine short receipt period.</p>
+<p><strong>Detection and correction limits for periods.</strong> First
+establish reference year, receipt months, job/benefit start and end,
+gross/net definition and any independently comparable annual total or
+bracket. Partial-year AOW, short employment, refunds and small
+entitlements can be legitimate. Flag unexplained period/scale patterns;
+treat multiplication as a candidate only if independent evidence
+uniquely establishes the original period. Neither a broad window nor
+repeated cross-wave values permits automatic times-12/times-13
+correction or invalid-to-missing treatment. Possible understatement can
+materially affect benefit and wage analyses, but its prevalence is not
+established by these screens.</p>
+</div>
+<div id="monetary-tails-and-stronger-component-constraints" class="section level4">
+<h4>Monetary tails and stronger component constraints</h4>
+<p>Other CI personal/component incomes and CD monetary amounts have
+extreme tails, but rarity, legitimate high values, period differences
+and sparse auxiliary evidence limit correction confidence. For example,
+the 2025 Housing screen finds five monthly-equivalent rents above EUR
+5,000 among 982 eligible reports, and two purchase values above EUR 5
+million among 2,162 after conversion only where the source explicitly
+identifies guilders. These thresholds are review screens, not validity
+bounds. Across all 18 CD waves, monthly-equivalent rent exceeds EUR
+5,000 in 94/18,724 eligible reports (0.50%), and converted purchase
+value exceeds EUR 5 million in 36/37,551 (0.10%). Included
+energy/service costs exceed the stated rent in 33/3,973 eligible
+positive pairs where the inclusion indicator is yes (0.83%). That
+component/total conflict is a stronger flag than a high rent, but it
+still does not identify the intended amount or reporting period.</p>
+<p>Across CI, net annual wage exceeds 1.5 times the matching gross
+annual wage in 344/18,083 paired employer/wage observations (1.90%). The
+wage fields change with the employer-reporting scheme; for example,
+<code>ci25r372</code> is annual gross wage and <code>ci25r439</code> its
+net counterpart. Annual taxable income amounts are
+<code>337</code>/<code>338</code> rather than bracket field
+<code>226</code>. Annual gross wages above EUR 1 million occur in
+13/36,540 reports; annual taxable income above EUR 1 million occurs in
+32/36,526 after excluding the 2,680 CI23p nonresponse codes from the
+earlier denominator. Reimbursements and differing gross/net
+interpretations can complicate the paired screen, so none of these
+counts is a demonstrated numerical error rate.</p>
+<p>CI rent-arrears durations exceed 120 months in 60/302 eligible
+reports; utilities-arrears durations do so in 85/291. The source permits
+3–999 months, so these are suspicious but <strong>not</strong>
+violations of a twelve-month maximum. In CD25r, only 3/249 complete
+eight-field mortgage sets differ from their stated total by more than
+EUR 1. Requiring complete comparable components and allowing rounding
+avoids a false claim of widespread mortgage-accounting errors. There are
+259/65,874 floor counts above ten. The questionnaire asks about the
+respondent’s own dwelling, so reporting the whole apartment building is
+one possible explanation; a high count alone does not prove this
+interpretation.</p>
+<p>Across the 15 CW waves, none of 208,100 nonmissing weekly-hour field
+observations exceeds 168 hours; 29 exceed a soft screen of 100 hours.
+Hours above 100 are not proved wrong, and multiple job/activity fields
+cannot be summed without checking overlap and reference periods.</p>
+<p><strong>Detection and correction limits.</strong> Preserve currency,
+period, gross/net, personal/household, stock/flow and reference-year
+distinctions. Assets may have genuine negative balances; income
+components may include losses; deflation forecasts may be negative.
+Build flags from explicit units, brackets and independently comparable
+components, not global sign rules or a universal upper cap. A reported
+bracket constrains a range but does not establish the exact amount or
+justify its midpoint as a repair. Do not extend household-income donor
+or scale rules to other concepts by analogy.</p>
+<p><strong>Priority rationale.</strong> Monetary extremes can have large
+analytical effects, but the assessed examples lack the
+prevalence-plus-identification advantage of the higher-ranked
+candidates. A flag-only extension is useful; generic rescaling,
+winsorisation or donor correction would carry substantial risk.</p>
+</div>
+</div>
+</div>
+<div id="source-recovery-negative-findings-and-evidence-limits" class="section level2">
+<h2>Source recovery, negative findings and evidence limits</h2>
+<div id="an-instrument-omission-requires-release-recovery-not-respondent-correction" class="section level3">
+<h3>An instrument omission requires release recovery, not respondent
+correction</h3>
+<p><code>codebook_ci25r_EN_1.2.pdf</code> records that net-income
+questions <code>439</code>–<code>443</code> were mistakenly omitted
+during June/July fieldwork and administered to eligible respondents in
+September. The available <code>ci25r_EN_1.0p.sav</code> contains only
+16, 4, 46, 24 and 2 valid answers respectively in these fields. These
+counts do not establish eligible-population missingness rates, but they
+limit current-wave gross/net checks. The assessment cannot certify that
+this SAV incorporates the later administration. Verify the corrected
+release and follow-up provenance before interpreting those absences as
+respondent nonresponse. A cleaner cannot reconstruct unasked income
+items without fabricating information. This source-recovery prerequisite
+has high practical importance but is outside automated value
+correction.</p>
+<p>The occupation supplement <code>WorkSchoolingW10_isco08.sav</code>
+has 5,926 identifiers, all matching <code>cw17j_EN_2.0p.sav</code>
+one-to-one. Its 3,452 observed codes include 195 labelled “not codable”
+values at <code>-9</code>; those are not 3,452 valid occupation
+classifications. The current CW recipe does not integrate this
+supplement into the later in-file occupation series. A verified
+supplement join and compatible occupation taxonomy would improve
+completeness, but this is a source-integration prerequisite, not
+evidence of respondent typos.</p>
+<p>The CP substantive-scale screen found no values outside the allowed
+domains after accounting for the known <code>999</code>/<code>-9</code>
+nonresponse regimes. The extended screen covered 13,864,467 nonmissing
+labelled-scale cells; LOT-R items contributed a separate 768,721 cells
+with no domain violations. Its 4,971 corresponding raw sentinel cells
+are intentional nonresponse, not 4,971 newly discovered errors; existing
+recipe handling covers those regimes where supported. <code>cp26r</code>
+was available for raw-data screening beyond the current recipe and local
+codebook coverage. That screening does not certify a merge recipe or
+questionnaire specification for the new wave.</p>
+<p>Two apparent additional domain problems were checked against the
+source questionnaires. The continuous IOS sliders in
+<code>cp13f211</code>, <code>212</code>, <code>215</code>,
+<code>216</code> use a coordinate range of <strong>0–102</strong>; all
+184 observed values at 101/102 are permitted, not invalid percentages.
+In nine CH waves whose SAV limitation labels omit code 5, there are
+9,973 code-5 cells in 3,391 rows, not fewer cells than rows. Of these,
+8,556 cells in <code>ch11e</code>–<code>ch18k</code> have explicit
+same-wave questionnaire support for 5 = “not at all”. A blanket
+1–4-domain rule would remove the most limited responses. The other 1,417
+cells (483 rows) in <code>ch08b</code>/<code>ch10d</code> remain
+questionnaire/metadata discrepancies requiring archive confirmation;
+flag their source contract, preserve the responses and abstain from
+guessed recoding. These controls demonstrate why raw maxima, missing
+labels or an assumed standard scale cannot replace a release-specific
+source contract.</p>
+<p>The CH none-plus-some health-condition screen found six
+contradictions; one negative cigarette-count value in
+<code>ch15h130</code> violates the nonnegative count domain. It warrants
+a narrow flag or explicit invalid-to-missing treatment, not an
+absolute-value repair. Its isolated prevalence puts it below the larger
+groups. These binary/count contradictions do not identify an intended
+replacement response. The CS organization screen found none. The CR
+screen did not identify a comparable high-priority numerical cleaning
+group. These results justify placing those checks below the diagnosed
+problems, not assuming that all responses in those modules are valid.
+The CV bounded scale/category interval screen covered 2,849 file-column
+instances and 15,362,235 eligible cells; the 87 scale violations
+reported above were its only values beyond those intervals. It did not
+test every possible categorical gap or every cross-item semantic
+relation.</p>
+<p>The assessment covers the stated local release set, not all files
+ever published by the archive. It did not adjudicate respondents’
+intentions, validate free text, benchmark future correction accuracy, or
+establish which analytical models are sensitive to every flag. The CS
+mean comparison is the one direct downstream sensitivity calculation
+reported here; other impact statements identify mechanisms of possible
+distortion.</p>
+</div>
+<div id="source-references-for-the-constraints" class="section level3">
+<h3>Source references for the constraints</h3>
+<p>Source identifiers are given so that the tests can be repeated on the
+same releases. Page references below are the codebooks’ printed page
+numbers unless stated otherwise. Questionnaire text and original data
+were left unchanged; only aggregate results are reported here.</p>
+<ul>
+<li>CA encoding and signed ranges:
+<code>codebook_ca20g_EN_1.0.pdf</code>, pp. 6–16; affected data
+<code>ca20g_EN_1.0p.sav</code>; current
+<code>inst/recipes/ca_merge_recipe.yml</code>, especially B03.</li>
+<li>CV party scales: <code>codebook_cv17i_EN_1.0.pdf</code> and
+<code>codebook_cv18j_EN_1.0.pdf</code>, questionnaire p. 12 and
+descriptive tables pp. 28–29 (PDF pages 14 and 30–31); the two exact SAV
+releases listed above. Both specifications and published summaries were
+checked.</li>
+<li>CI inflation thresholds and response bounds:
+<code>codebook_ci25r_EN_1.2.pdf</code>, pp. 67–69; data
+<code>ci25r_EN_1.0p.sav</code>. The later codebook revision was
+inspected explicitly, rather than assumed to be the SAV release number.
+The omitted-income administration is documented on p. 7.</li>
+<li>CI23p amount/nonresponse routing:
+<code>codebook_ci23p_EN_1.1.pdf</code>, questions
+<code>337</code>–<code>339</code> and their bracket follow-ups; affected
+data <code>ci23p_EN_1.0p.sav</code>. CI15h ladder specification and
+statistics: <code>codebook_ci15h_EN_2.0.pdf</code>, PDF pp. 8 and 57.
+Annual component units: <code>codebook_ci17j_EN_3.0.pdf</code>,
+questions <code>010</code>, <code>012</code>, <code>076</code>,
+<code>078</code>, <code>082</code>, <code>140</code>, <code>143</code>;
+the numerical screening windows above are not taken from this
+codebook.</li>
+<li>CH anthropometry, survival and specialist visits:
+<code>codebook_ch25r_EN_1.0.pdf</code>, PDF pages 5, 8–11 and 28.
+Duration representation: <code>codebook_ch13g_EN_1.0.pdf</code>, PDF
+page 14, and <code>codebook_ch25r_EN_1.0.pdf</code>, PDF pages 17–18.
+Activity time: <code>codebook_ch13g_EN_1.0.pdf</code>, PDF pp. 20–21,
+and <code>codebook_ch18k_EN_1.0.pdf</code>, PDF pp. 18–19; deletion is
+documented in <code>codebook_ch19l_EN_1.0.pdf</code>, PDF p. 6. The
+specified zero-euro unknown codes were checked against the corresponding
+CH13g/15h/16i questions. Additional categorical unknown codes:
+<code>codebook_ch08b_EN_1.4.pdf</code>, question <code>124</code>;
+<code>codebook_ch13g_EN_1.0.pdf</code>, question <code>263</code>;
+<code>codebook_ch19l_EN_1.0.pdf</code>, question <code>260</code>;
+<code>codebook_ch24q_EN_1.0.pdf</code>, question <code>272</code>, with
+the corresponding source-wave labels/declarations.</li>
+<li>CS time domains: <code>codebook_cs15h_EN_1.1.pdf</code>, PDF page
+17; <code>codebook_cs16i_EN_1.3.pdf</code>, PDF pages 14 and 19;
+<code>codebook_cs21n_EN_1.0.pdf</code>, PDF page 22. The corrected full
+inventory includes early reading and billiards:
+<code>codebook_cs12e_EN_1.0.pdf</code>, PDF pp. 15–16; its loneliness
+format is on PDF p. 22. Holiday categories:
+<code>codebook_cs22o_EN_1.0.pdf</code> and
+<code>codebook_cs23p_EN_1.0.pdf</code>, PDF p. 13.</li>
+<li>CW events and hours: <code>codebook_cw25r_EN_1.0.pdf</code>,
+pp. 27–28, 33, 37, 41, 63 and 79–80, with year labels checked in each
+SAV release. Education attended: <code>codebook_cw19l_EN_3.0.pdf</code>,
+PDF pp. 10–11; <code>codebook_cw20m_EN_1.1.pdf</code>, PDF pp. 9–10;
+<code>codebook_cw23p_EN_1.0.pdf</code>, PDF p. 11, and
+<code>codebook_cw24q_EN_1.0.pdf</code>, PDF p. 12.</li>
+<li>CF rosters and chronology: <code>codebook_cf24q_EN_1.0.pdf</code>,
+pp. 7, 9–12, 24, 26, 29–30 and 35; older child fields and parent-type
+classification: <code>cf08a_codeboek_2.1_EN.pdf</code>. Task
+outsourcing: <code>codebook_cf15h_EN_1.1.pdf</code> and
+<code>codebook_cf16i_EN_1.1.pdf</code>, questions
+<code>483</code>–<code>488</code>, together with the wave-specific SAV
+user-missing declarations.</li>
+<li>Background definitions:
+<code>codebook_BackgroundVariables_EN_9.4.pdf</code>, pp. 4 and 6–7,
+checked against observed release-specific count coding.</li>
+<li>Housing dwelling scope: <code>codebook_cd25r_EN_1.0.pdf</code>,
+p. 30 (<code>cd25r039</code>).</li>
+<li>Domain controls: <code>codebook_cp13f_EN_1.0.pdf</code>, continuous
+IOS questions <code>211</code>, <code>212</code>, <code>215</code>,
+<code>216</code>; <code>codebook_ch13g_EN_1.0.pdf</code>, limitation
+batteries <code>023</code>–<code>045</code>. Slider coordinates and
+limitation categories must not be screened as assumed
+percentage/four-point scales.</li>
+</ul>
+<p>For every group, top-coded counts, category-coded years, multipart
+timing and selected-person indices remain part of each rule’s required
+source contract.</p>
+</div>
+</div>
+<div id="ordered-to-do-list-derived-from-the-assessment" class="section level2">
+<h2>Ordered to-do list derived from the assessment</h2>
+<p>Every future rule should declare its module, release and field scope,
+required evidence, detection predicate, candidate constraints,
+confidence and disposition. Preserve original values, flags and proposed
+values in separate columns. Record respondent/wave/month and field
+identity, input file hashes, rule and recipe versions, observed value,
+evidence, competing candidates, final disposition and reason in the
+audit ledger. A flag-only run must be possible. Rules must abstain when
+prerequisites are absent, and review disagreements must remain visible.
+No item below authorizes implementation or changes to the source
+datasets.</p>
+<p>Before these rule-development priorities, verify the CI25r follow-up
+release when those omitted income fields are needed. Source recovery is
+a prerequisite for that analysis, not a numerical replacement rule.
+Likewise, supplement integration must verify identifiers, taxonomy and
+nonresponse meaning before expanding occupation coverage.</p>
+<ol style="list-style-type: decimal">
+<li><strong>Normalize source-specific nonresponse before numerical
+cleaning.</strong> First place reflects the 52.68% household-income code
+exposure in CI23p, the tested cleaner proposal path, and the 48.71%
+CA20g respondent exposure. Develop exact release/field code detection
+for all three CI23p amounts, both CA20g code families and
+source-confirmed CH unknown amounts and categories. Put nonresponse
+classification before sign/scale/donor rules, and retain typed
+missingness or an explicit unknown category rather than fabricate an
+amount or erase a meaningful nonresponse category. Safeguards must test
+exact target binding, raw and merged metadata, positive and negative
+legitimate controls, routing, and uncertain DK/refusal subtypes. The
+diagnostic runner must preserve original values and a per-cell ledger.
+Expected improvement: prevent missing codes from driving wealth/income
+estimates or entering inappropriate correction proposals.</li>
+<li><strong>Preserve category meanings across instrument versions and
+exports.</strong> Second place reflects broad exposure and several
+source-identified, conservative normalization opportunities. Develop
+release-specific holiday crosswalks, a separate CS12e loneliness
+representation with a format flag, category-plus-score representations
+for CF outsourcing, and correct CI15h label metadata without shifting
+its values. Obtain authoritative CV mapping before applying any
+minus-one repair, and define an explicit coarser taxonomy for CW
+education attended (<code>s008</code>, recipe alias <code>q008</code>)
+only where defensible. Safeguards must preserve source
+labels/declarations, missing reasons, top-coding, score applicability
+and unmapped distinctions; test that the export/reimport sweep cannot
+erase newly derived substantive categories. Expected improvement:
+prevent artificial longitudinal shifts and loss of real outcomes without
+asserting unsupported measurement equivalence.</li>
+<li><strong>Validate CH and CS time inputs under their separate source
+contracts.</strong> Third place combines a larger CH impossible-hours
+group with measured CS mean distortion and strong unit/bound
+constraints. Inventory every relevant hour/minute pair by wave; validate
+single-activity daily/weekly budgets and only source-specified residual
+bounds. Invalidate a dependent CS total when its input is invalid. For
+CH exact-multiple patterns, retain competing additive/alternative-unit
+interpretations unless independent evidence resolves them. Safeguards
+must distinguish empty from zero, overlapping activities, deleted fields
+and score normalization from source-value correction. Expected
+improvement: protect activity scores and time-use estimates from
+impossible inputs without assuming a unit repair or halving legitimate
+durations.</li>
+<li><strong>Add probability-set and ordered-interval
+validation.</strong> This ranks fourth because almost one third of the
+CI25r grids are incoherent under necessary constraints, with
+corroborating smaller problems in CI/CH. Use wave-specific displayed
+thresholds, bounds, nested-event order, disjoint sums and endpoint
+order. The constrained-correction policy should abstain from numerical
+replacement; offer flag/review and explicit missing-set dispositions.
+Preserve tolerance choices and overlapping reasons, and require
+sensitivity comparisons for exclusion. Expected improvement: prevent
+incoherent sets from silently determining estimated expectations and
+uncertainty without manufacturing respondents’ beliefs.</li>
+<li><strong>Develop conservative anthropometry checks.</strong> Fifth
+place reflects amplified effects on BMI, but softer identification than
+the time-domain failures above. Combine units, instrument bounds, broad
+plausibility, derived BMI and temporal evidence. Permit a correction
+candidate only when independent observations support a unique
+unit/decimal repair; otherwise flag or use an explicit
+invalid-to-missing policy. Safeguards must accommodate genuine extremes
+and health changes, avoid smoothing, and ledger all rejected candidates.
+Expected improvement: reduce leverage from scale errors while preserving
+clinically unusual observations.</li>
+<li><strong>Add clinical-use, life-event and duration consistency rules
+for CH, CW and CF.</strong> These come sixth because contradictions are
+defensible but usually sparse and do not identify the erroneous field.
+Compare binary service-use answers with counts only for the same service
+and reference period. Include narrow nonnegative-count checks for the
+isolated tobacco anomaly. Decode year categories, use conservative
+birth-year intervals, distinguish relationship types and actual/planned
+events, and check duration against age. Allow constrained auxiliary
+recovery only from validated dates or correctly indexed rosters;
+otherwise abstain and flag. Expected improvement: protect event ordering
+and duration analyses without inventing onset years or family
+histories.</li>
+<li><strong>Add monthly demographic and roster review checks.</strong>
+Seventh position reflects widespread analytical use, a larger
+partner-recording boundary, and uncertain source precedence. Check
+identity/provenance, birthday-tolerant age progression, demographic
+discontinuities and same-month household constraints. Flag the 2014–2017
+partner/position disagreement without choosing a source automatically.
+Safeguards must honor 9+ top-coding, incomplete rosters and legitimate
+administrative corrections; prohibit nearest-month substitution and
+majority-value overwrites or assumptions that nonparticipation means
+departure. Expected improvement: expose covariate and equivalisation
+risks while retaining valid household transitions.</li>
+<li><strong>Develop evidence-based period checks and other
+financial/housing/workload review flags.</strong> This comes last
+because even frequent small annual amounts do not identify a reporting
+error, and extremes often remain legitimate. Use reference-year
+receipt/eligibility, recorded currency/period, comparable gross/net
+pairs and bracket/component constraints. Require independent evidence
+for a unique period or scale correction; otherwise retain a flag and
+competing candidates. Safeguards must preserve signed balances, losses,
+partial-year receipt and legitimate tiny amounts; a times-12
+plausibility window is not a correction rule. Do not transfer
+household-income caps, donor rules or generic clipping. Expected
+improvement: make analytical sensitivity and review needs visible while
+minimizing false corrections of unusual but real observations.</li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

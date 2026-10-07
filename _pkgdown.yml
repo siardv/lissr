@@ -32,10 +32,11 @@ articles:
   - cross-sectional-analysis
   - longitudinal-panel-analysis
   - multi-module-linkage
-- title: Income cleaning
-  navbar: Income cleaning
+- title: Data quality and cleaning
+  navbar: Data quality and cleaning
   contents:
   - income-cleaning
+  - data-quality-assessment
 - title: Recipes and pipelines
   navbar: Recipes and pipelines
   contents:

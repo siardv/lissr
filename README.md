@@ -93,6 +93,10 @@ rendered versions in your browser without installing:
 - [Income Cleaning](https://siardv.github.io/lissr/articles/income-cleaning.html):
   rule-driven detection and constrained correction of implausible
   household-income values, with a full audit ledger.
+- [Data Quality Assessment Beyond Household Income](https://siardv.github.io/lissr/articles/data-quality-assessment.html):
+  findings from a completed assessment of all ten core modules and monthly
+  Background Variables, with measured inconsistencies, correction limits
+  and an ordered cleaning roadmap.
 - [Reproducible Research Pipelines](https://siardv.github.io/lissr/articles/reproducible-pipelines.html):
   structuring the workflow as a reproducible pipeline.
 - [The Canonical Recipe Schema](https://siardv.github.io/lissr/articles/canonical-schema.html):

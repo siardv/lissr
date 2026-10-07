@@ -1,5 +1,11 @@
 # lissr 1.4.1.9000
 
+* Add a completed data-quality assessment beyond household income, covering
+  the available ten core-module collections and monthly Background Variables.
+  The documentation reports measured inconsistencies and coding exposures,
+  conservative correction limits, source caveats and an ordered roadmap.
+  It adds no cleaning functionality and changes no source data or recipes.
+
 * Correct the Health cross-sectional tutorial to use self-rated health
   `s004`, exact release filenames and explicit multi-month Background
   Variables sources. The guide removes unverified printed outputs and
