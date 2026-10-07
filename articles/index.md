@@ -16,10 +16,12 @@
 - [Multi-Module
   Linkage](https://siardv.github.io/lissr/articles/multi-module-linkage.md):
 
-### Income cleaning
+### Data quality and cleaning
 
 - [Income
   Cleaning](https://siardv.github.io/lissr/articles/income-cleaning.md):
+- [Data Quality Assessment Beyond Household
+  Income](https://siardv.github.io/lissr/articles/data-quality-assessment.md):
 
 ### Recipes and pipelines
 

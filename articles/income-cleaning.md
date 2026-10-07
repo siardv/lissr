@@ -188,3 +188,14 @@ while porting them. The declarative rules are maintained in
 `inst/cleaning/income_cleaning_rules.yml`, with regression coverage in
 `tests/testthat/test-clean-income.R`. Proposed rules and parameter
 changes can be reviewed through pull requests.
+
+## Assessment beyond household income
+
+The [Data Quality Assessment Beyond Household
+Income](https://siardv.github.io/lissr/articles/data-quality-assessment.md)
+documents a completed investigation of the available core modules and
+monthly Background Variables. It reports observed coding problems,
+implausible values and logical inconsistencies, distinguishes defensible
+corrections from review-only cases, and ranks future work using
+prevalence, analytical impact and correction risk. It describes a
+roadmap; the additional cleaners have not been implemented.

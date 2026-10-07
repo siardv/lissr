@@ -5,13 +5,14 @@ articles:
   canonical-schema: canonical-schema.html
   cross-sectional-analysis: cross-sectional-analysis.html
   custom-recipes: custom-recipes.html
+  data-quality-assessment: data-quality-assessment.html
   getting-started: getting-started.html
   income-cleaning: income-cleaning.html
   longitudinal-panel-analysis: longitudinal-panel-analysis.html
   merge-workflow: merge-workflow.html
   multi-module-linkage: multi-module-linkage.html
   reproducible-pipelines: reproducible-pipelines.html
-last_built: 2026-10-06T22:39Z
+last_built: 2026-10-07T09:40Z
 urls:
   reference: https://siardv.github.io/lissr/reference
   article: https://siardv.github.io/lissr/articles

@@ -43,8 +43,9 @@
     <li><a class="dropdown-item" href="../articles/longitudinal-panel-analysis.html">Longitudinal Panel Analysis</a></li>
     <li><a class="dropdown-item" href="../articles/multi-module-linkage.html">Multi-Module Linkage</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Income cleaning</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Data quality and cleaning</h6></li>
     <li><a class="dropdown-item" href="../articles/income-cleaning.html">Income Cleaning</a></li>
+    <li><a class="dropdown-item" href="../articles/data-quality-assessment.html">Data Quality Assessment Beyond Household Income</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
@@ -245,6 +246,18 @@ while porting them. The declarative rules are maintained in
 <code>inst/cleaning/income_cleaning_rules.yml</code>, with regression
 coverage in <code>tests/testthat/test-clean-income.R</code>. Proposed
 rules and parameter changes can be reviewed through pull requests.</p>
+</div>
+<div class="section level2">
+<h2 id="assessment-beyond-household-income">Assessment beyond household income<a class="anchor" aria-label="anchor" href="#assessment-beyond-household-income"></a>
+</h2>
+<p>The <a href="data-quality-assessment.html">Data Quality Assessment
+Beyond Household Income</a> documents a completed investigation of the
+available core modules and monthly Background Variables. It reports
+observed coding problems, implausible values and logical
+inconsistencies, distinguishes defensible corrections from review-only
+cases, and ranks future work using prevalence, analytical impact and
+correction risk. It describes a roadmap; the additional cleaners have
+not been implemented.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

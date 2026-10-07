@@ -28,8 +28,9 @@
     <li><a class="dropdown-item" href="../articles/longitudinal-panel-analysis.html">Longitudinal Panel Analysis</a></li>
     <li><a class="dropdown-item" href="../articles/multi-module-linkage.html">Multi-Module Linkage</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Income cleaning</h6></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Data quality and cleaning</h6></li>
     <li><a class="dropdown-item" href="../articles/income-cleaning.html">Income Cleaning</a></li>
+    <li><a class="dropdown-item" href="../articles/data-quality-assessment.html">Data Quality Assessment Beyond Household Income</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Recipes and pipelines</h6></li>
     <li><a class="dropdown-item" href="../articles/custom-recipes.html">Custom Merge Recipes</a></li>
@@ -55,7 +56,8 @@
 
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.1.9000" id="lissr-1419000">lissr 1.4.1.9000<a class="anchor" aria-label="anchor" href="#lissr-1419000"></a></h2>
-<ul><li><p>Correct the Health cross-sectional tutorial to use self-rated health <code>s004</code>, exact release filenames and explicit multi-month Background Variables sources. The guide removes unverified printed outputs and explains covariate metadata, missing-data checks and model assumptions. The Health collection note includes the December 2025 repeat; recipe transformations and analytical month/income policies are unchanged.</p></li>
+<ul><li><p>Add a completed data-quality assessment beyond household income, covering the available ten core-module collections and monthly Background Variables. The documentation reports measured inconsistencies and coding exposures, conservative correction limits, source caveats and an ordered roadmap. It adds no cleaning functionality and changes no source data or recipes.</p></li>
+<li><p>Correct the Health cross-sectional tutorial to use self-rated health <code>s004</code>, exact release filenames and explicit multi-month Background Variables sources. The guide removes unverified printed outputs and explains covariate metadata, missing-data checks and model assumptions. The Health collection note includes the December 2025 repeat; recipe transformations and analytical month/income policies are unchanged.</p></li>
 <li><p><code><a href="../reference/liss_attach_background.html">liss_attach_background()</a></code> attaches explicitly selected local SAV snapshots by respondent and caller-selected survey month. It returns <code>data</code>, <code>audit</code> and <code>provenance</code>, preserving survey rows, order and original columns. The helper validates file signatures, observed months, complete unique background keys and compatible selected-variable metadata, and rejects competing sources for one month. It reports unmatched rows and SHA256 file identities; optional local ZIP/member lineage is verified against the SAV bytes. Sources, variables and item/part month remain explicit choices, without automatic release ranking, format fallback, covariate harmonization or changes to annual income attachment.</p></li>
 <li><p>The file catalogue now includes monthly Background Variables ZIP releases from study 322, with filename-derived YYYYMM <code>wave</code> codes, <code>type: archive</code>, exact published filenames alongside their release descriptions. Its documents have no month (<code>wave: NA</code>). Invalid archive month filenames are warned about and omitted. Refresh an existing in-memory catalogue after updating the package.</p></li>
 <li><p>Interactive selection prompts for background months separately from core waves and offers ZIP archives and documents explicitly. Calendar month ranges cross year boundaries correctly. Module listings count distinct dated releases, and cached details expose archive counts; the availability matrix retains core waves only. Default SPSS downloads and the ten merge recipes are unchanged. Catalogue metadata does not verify archive contents or provide automatic background attachment or a survey-item month policy.</p></li>
