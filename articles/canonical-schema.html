@@ -88,7 +88,7 @@
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"schema"</span>, <span class="st">"CANONICAL_SCHEMA.md"</span>, package <span class="op">=</span> <span class="st">"lissr"</span><span class="op">)</span></span></code></pre></div>
-<!-- schema-source-md5: 074ebc6ef2822a859793de148aa7c99f -->
+<!-- schema-source-md5: c4df6700f0cb62fa882088eb2c85eb6b -->
 <div class="section level2">
 <h2 id="liss-panel-merge-recipe-canonical-schema-v1-1-0">LISS Panel Merge Recipe: Canonical Schema v1.1.0<a class="anchor" aria-label="anchor" href="#liss-panel-merge-recipe-canonical-schema-v1-1-0"></a>
 </h2>
@@ -1889,17 +1889,36 @@ does not reconstruct field origin after all carrier markers have been
 removed; such bare frames retain the documented legacy boundary.</p>
 <p>The legacy one-field carrier remains schema version
 <code>1.0.0</code>, including its original recipe rule object and key
-order. Registry metadata is resolved outside that carrier. Valid old RDS
-carriers are validated without migration or registry-driven resealing;
-source, target, metadata, complete-row and digest checks remain in
-force. The carrier uses version-2 R serialization with SHA256 for
-integrity and preserves typed reasons and exact doubles in an RDS round
-trip. The digest is an integrity check, not an authentication claim.
-Automatic SAV/CSV lineage round trips and automatic panel-lineage
-propagation are unsupported in this slice. Guarded merge file exports
-are blocked; use the in-memory result/RDS, or explicitly rebind an
-imported frame to the verified original source. A schema 2.0.0 recipe
-uses exactly
+order. Registry metadata is resolved outside that carrier. Valid R 4.6.1
+reference-profile RDS carriers are validated without migration or
+registry-driven resealing; source, target, metadata, complete-row and
+digest checks remain in force. Serialized object hashes now use the
+explicit identity profile <code>1.0.0</code>: SHA-256 over XDR version-2
+R serialization, with only the four writer-version header bytes fixed to
+R 4.6.1. Format and minimum-reader words, every payload byte, types,
+encodings, attributes and their order remain significant. Raw SAV,
+codebook and policy-file hashes are unchanged. Direct R identity and
+serialized payload equality checks remain separate; equal digests are
+not reference identity. The profile preserves the verified R 4.6.1
+reference representation. It does not infer a writer for an arbitrary
+old carrier, normalize changing object bodies, or promise compatibility
+with every R/package version. Other legacy profiles require their
+original package/runtime; there is no permissive digest fallback.</p>
+<p>New applied computation identities use schema <code>2.0.0</code>,
+include the serialization profile, and fingerprint all identity helpers
+with the existing computation. Reference-profile schema-1 computation
+records remain structurally readable. They do not become the new
+computation identity: replay requires exact recorded code, runtime,
+platform and dependency identity, so a changed computation rejects
+legacy replay even within the same R version. Numerical methods are
+unchanged.</p>
+<p>The carrier uses version-2 R serialization with SHA256 for integrity
+and preserves typed reasons and exact doubles in an RDS round trip. The
+digest is an integrity check, not an authentication claim. Automatic
+SAV/CSV lineage round trips and automatic panel-lineage propagation are
+unsupported in this slice. Guarded merge file exports are blocked; use
+the in-memory result/RDS, or explicitly rebind an imported frame to the
+verified original source. A schema 2.0.0 recipe uses exactly
 <code>source_nonresponse: {schema_version: "2.0.0", field: &lt;one complete reviewed field record&gt;}</code>.
 The full typed mirror selects either <code>CI23P337_FIELD</code> or
 <code>CI23P338_FIELD</code>, version 1.0.0, never both. Mapping key

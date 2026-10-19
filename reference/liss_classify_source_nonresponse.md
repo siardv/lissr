@@ -108,3 +108,11 @@ Reordering and subsets require retained column metadata and the complete
 carrier, as with supported tibble/dplyr operations. Base data-frame
 operations that strip target attributes fail closed. Validation does not
 relax metadata checks to accommodate such operations.
+
+Serialized object hashes use profile `1.0.0`: SHA-256 over XDR version-2
+R serialization with only the writer-version header fixed to R 4.6.1.
+All payload bytes remain significant; raw file hashes are unchanged.
+Compatibility covers the R 4.6.1 reference profile, not arbitrary
+historical writers or future serialization bodies. Other legacy profiles
+require their original package/runtime. Reference identity checks remain
+separate from digests.

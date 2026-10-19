@@ -176,6 +176,12 @@ amount cannot also serve as the cleaner's <code>category_code</code>.</p>
 carrier, as with supported tibble/dplyr operations. Base data-frame operations
 that strip target attributes fail closed. Validation does not relax metadata
 checks to accommodate such operations.</p>
+<p>Serialized object hashes use profile <code>1.0.0</code>: SHA-256 over XDR version-2
+R serialization with only the writer-version header fixed to R 4.6.1.
+All payload bytes remain significant; raw file hashes are unchanged.
+Compatibility covers the R 4.6.1 reference profile, not arbitrary historical
+writers or future serialization bodies. Other legacy profiles require their
+original package/runtime. Reference identity checks remain separate from digests.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
