@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -101,11 +101,471 @@ the returned data, and a generated report lets any reader reconstruct
 and contest each modification.</p>
 </div>
 <div class="section level2">
+<h2 id="source-nonresponse-before-numerical-cleaning">Source nonresponse before numerical cleaning<a class="anchor" aria-label="anchor" href="#source-nonresponse-before-numerical-cleaning"></a>
+</h2>
+<p>The default source guard selects one reviewed household response:
+<code>ci23p339 = -9999999999</code> in the verified English
+<code>ci23p_EN_1.0p.sav</code> release. This is an encoded nonresponse,
+not an income to rectify, scale or replace with a donor. Its answer
+subtype remains <code>nonresponse_unknown</code>; questionnaire routing
+does not establish a definitive don’t-know or refusal label. Other CI
+fields, CA and CH contracts remain outside this household contract.
+Explicit taxable and collection selections are described below.</p>
+<p>The recipe selects this exact reviewed contract from a versioned,
+package-owned registry. Package code pins the registry’s content digest
+and compares the complete typed recipe record with its approved entry.
+Changing a recipe, adding a field or supplying a new hash does not
+approve new scope. Missing, corrupt or unapproved registry records block
+guarded processing; the registry is not discovered from the working
+directory or fetched online. CI23p337/338 have separate approved field
+records and require explicit selection; they do not inherit household
+consumer approval.</p>
+<p>Keep the complete carrier when source-result classes or
+source/readiness attributes are retained. The cleaner rejects those
+markers without a carrier before unwrapping, target resolution or
+preparation, including on scalar frames. Carrier-free legacy wrapper
+readiness for unevaluated source scope remains a nonclaiming hint and
+does not approve source exclusion. This preserves actual absent-wave
+merge behavior and ordinary unguarded cleaner results.</p>
+<p>Report writing and panel merging also reject source classes or
+source/readiness attributes on the outer result or its selected inner
+frame. A partially named data wrapper cannot discard scalar source
+lineage through either path. Ordinary and absent-wave wrapper readiness
+retain their existing behavior. Guarded report export and panel lineage
+propagation remain unsupported.</p>
+<p>Enable the guard explicitly for an in-memory CI merge:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">guarded</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
+<span>  <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ci"</span><span class="op">)</span>, data_dir <span class="op">=</span> <span class="st">"data/ci"</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="cn">NULL</span>, source_nonresponse <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">dry_guarded</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span></span>
+<span>  <span class="va">guarded</span>, variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"s339"</span><span class="op">)</span>, mode <span class="op">=</span> <span class="st">"flag"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The merge verifies the exact source filename and SHA256, captures the
+raw cell and field metadata before harmonization, and exposes a missing
+analysis amount. Its <code>source_nonresponse</code> carrier records
+source identity, typed classification, original values and scoped
+readiness. The cleaner consumes that carrier before constructing
+numerical target or context vectors. It also checks the reviewed
+household-income consumer approval, construct, unit, measurement period
+and target binding. Passing source classification alone does not
+authorize a different cleaner or establish that another column is
+household income. Matched cells cannot receive finite proposals, enter
+the covered numerical roles or be revived by <code>disable</code>,
+<code>enable_only</code> or numerical parameter overrides. The older
+<code>valid_for_analysis</code> flag retains its existing meaning; it
+does not certify source nonresponse coverage. A source-bound household
+amount cannot also be assigned as <code>category_code</code>; bracket
+categories need a separate variable.</p>
+<p>A raw or legacy merged frame needs an explicit rebind against the
+original verified source. For example, first retain an ordinary
+in-memory merge result, then bind its unchanged household target with
+the exact source wave column:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">legacy_merge</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
+<span>  <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ci"</span><span class="op">)</span>, data_dir <span class="op">=</span> <span class="st">"data/ci"</span>, output_dir <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">bound</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_classify_source_nonresponse.html">liss_classify_source_nonresponse</a></span><span class="op">(</span></span>
+<span>  <span class="va">legacy_merge</span>,</span>
+<span>  source <span class="op">=</span> <span class="st">"data/ci/ci23p_EN_1.0p.sav"</span>,</span>
+<span>  target <span class="op">=</span> <span class="st">"s339"</span>, wave_col <span class="op">=</span> <span class="st">"wave_id"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">dry_bound</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span></span>
+<span>  <span class="va">bound</span>, variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"s339"</span><span class="op">)</span>, mode <span class="op">=</span> <span class="st">"flag"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Pass the complete classifier wrapper <code>bound</code> to the
+cleaner. The classifier does not add a frame marker to its unchanged
+<code>bound$data</code>: cleaning that unmarked frame alone enters
+ordinary unguarded processing and makes no source-nonresponse guarantee.
+Keep <code>legacy_merge</code> separately for its original provenance,
+log and validation; those fields are not forwarded into
+<code>bound</code>.</p>
+<p>Binding requires unique respondent keys and unchanged selected
+values; a suffix, calendar year, filename assertion or legacy merge
+provenance is insufficient. Reviewed target names are
+<code>ci23p339</code>, <code>s339</code>, <code>ci_s339</code>,
+<code>nethh</code> and <code>ci00a339</code>; an unapproved target name
+is rejected even if selected values happen to coincide. An approved name
+and value agreement do not establish unforgeable field origin. For a
+merged binding, every presented row needs a nonmissing, nonempty exact
+wave ID, including rows outside <code>ci23p</code>. Full-join panels
+with CI-absent rows lacking CI wave identity are unsupported, including
+when the selected target is <code>ci_s339</code>. The binder preserves
+the caller’s input. Flag mode preserves the actual supplied target,
+including normalized missing values from a guarded merge, and reports a
+missing proposed amount. Verified source originals are recovered only
+into the <code>_observed</code> audit column and source ledger. Applied
+modes return a missing target for matched cells while retaining that
+audit. Ordinary unmatched responses retain the existing numerical
+policies, including the cleaner’s sign policy. Default target aliases do
+not expand automatically.</p>
+<p>Sorting and subsetting remain usable through verified respondent and
+wave keys when column metadata and the complete carrier are retained, as
+with supported tibble/dplyr operations. Base data-frame operations that
+strip target attributes fail closed; the metadata validator is not
+relaxed. Changed values, missing lineage or altered audit metadata also
+block the guard. RDS preserves the carrier and its integrity checks. The
+one-field version-1 carrier and public interface remain unchanged: old
+valid RDS carriers are checked against the reviewed contract without
+adding registry metadata or migrating the saved object. Registry and
+carrier digests check integrity, not authentication or an unforgeable
+field origin. The consumer gate relies on an intact validated contract;
+it cannot recover lineage stripped from a bare frame. Guarded merges
+require <code>output_dir = NULL</code>, and cross-module panel merging
+is blocked for guarded results in this slice. SAV/CSV exports with
+verified sidecars and automatic panel propagation are deferred; an
+ordinary SAV or CSV file does not preserve this readiness. Guarded
+cleaner reports also require <code>output_dir = NULL</code>; the
+existing report writer cannot yet export the complete source audit.
+Legacy workflows without the guard remain available and make no new
+source nonresponse guarantee.</p>
+<p>The returned readiness is scoped to this reviewed source and
+household field. It does not make the source originals in
+<code>_observed</code> or other audit columns suitable for quantitative
+analysis; use the missing analysis amounts and proposals for
+quantitative review.</p>
+</div>
+<div class="section level2">
+<h2 id="explicit-taxable-classification-and-normalization">Explicit taxable classification and normalization<a class="anchor" aria-label="anchor" href="#explicit-taxable-classification-and-normalization"></a>
+</h2>
+<p>Taxable CI23p337 (respondent taxable income) and CI23p338 (its
+estimated follow-up) concern EUR amounts for 2022. Each can be selected
+explicitly by one complete reviewed field mirror in a schema 2.0.0
+recipe. The default CI recipe and <code>recipe = NULL</code> still
+select legacy household field 339.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">reviewed_registry</span> <span class="op">&lt;-</span> <span class="fu">yaml</span><span class="fu">::</span><span class="fu"><a href="https://yaml.r-lib.org/reference/yaml.load.html" class="external-link">yaml.load_file</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"schema"</span>, <span class="st">"source_nonresponse_registry.yml"</span>, package <span class="op">=</span> <span class="st">"lissr"</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">selected_fields</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Filter</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">field</span><span class="op">)</span> <span class="va">field</span><span class="op">$</span><span class="va">field_id</span> <span class="op">==</span> <span class="st">"CI23P337_FIELD"</span>,</span>
+<span>                          <span class="va">reviewed_registry</span><span class="op">$</span><span class="va">fields</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">selected_fields</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="va">tax_recipe</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ci"</span><span class="op">)</span></span>
+<span><span class="va">tax_recipe</span><span class="op">$</span><span class="va">source_nonresponse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  schema_version <span class="op">=</span> <span class="st">"2.0.0"</span>, field <span class="op">=</span> <span class="va">selected_fields</span><span class="op">[[</span><span class="fl">1L</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">tax_audit</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_classify_source_nonresponse.html">liss_classify_source_nonresponse</a></span><span class="op">(</span></span>
+<span>  <span class="va">legacy_merge</span>, source <span class="op">=</span> <span class="st">"data/ci/ci23p_EN_1.0p.sav"</span>, target <span class="op">=</span> <span class="st">"s337"</span>,</span>
+<span>  wave_col <span class="op">=</span> <span class="st">"wave_id"</span>, recipe <span class="op">=</span> <span class="va">tax_recipe</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">tax_normalized</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
+<span>  <span class="va">tax_recipe</span>, data_dir <span class="op">=</span> <span class="st">"data/ci"</span>, output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source_nonresponse <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The audit leaves data values and metadata unchanged
+(<code>normalized = FALSE</code>). The guarded merge replaces only the
+selected field’s exact <code>-9999999999.0</code> and
+<code>-9999999998.0</code> cases with missing analysis amounts
+(<code>normalized = TRUE</code>). One version-2 carrier contains one
+field, one coverage/input receipt and a ledger with distinct N01/N02
+case IDs. Readiness includes per-case counts; unknown answer subtypes
+remain <code>nonresponse_unknown</code>, with no numerical proposal.
+Original missing-value attributes are retained and checked per code.
+226/229 responses cannot resolve taxable subtypes or become amount
+estimates. Signed/zero amounts, near codes and unselected fields retain
+existing behavior.</p>
+<p>Select <code>CI23P338_FIELD</code> in a separate call for the
+estimated taxable amount. The scalar classifier rejects collection
+recipes and simultaneous selection. Approved taxable names are the
+selected raw name, <code>s337</code>/<code>s338</code> or
+<code>ci_s337</code>/<code>ci_s338</code>; aliases never establish
+source ownership. Existing guarded inputs cannot be rebound to a tax
+field, and version-2 lineage cannot be rebound to legacy 339. Keep the
+complete carrier for supported metadata-preserving subsets, reordering
+and RDS.</p>
+<p><code><a href="../reference/liss_clean_income.html">liss_clean_income()</a></code> rejects taxable carriers before
+target resolution, Background/P01 or numerical preparation under every
+mode and override, even when a column is renamed to a household alias.
+Taxable readiness does not certify household field 339 or approve
+taxable numerical cleaning. Source and carrier digests check integrity;
+they cannot recover origin after all markers are stripped or
+authenticate manually forged/resealed objects. Household projection,
+CA20g/CH and portable guarded exports remain deferred.</p>
+</div>
+<div class="section level2">
+<h2 id="joint-taxable-normalization-in-one-guarded-merge">Joint taxable normalization in one guarded merge<a class="anchor" aria-label="anchor" href="#joint-taxable-normalization-in-one-guarded-merge"></a>
+</h2>
+<p>A schema 3.0.0 recipe explicitly selects the complete reviewed
+337/338 pair. Guarded module merging supports this collection; the
+standalone classifier remains scalar and rejects collection recipes.</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">joint_recipe</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ci"</span><span class="op">)</span></span>
+<span><span class="va">joint_recipe</span><span class="op">$</span><span class="va">source_nonresponse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  schema_version <span class="op">=</span> <span class="st">"3.0.0"</span>, fields <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">reviewed_registry</span><span class="op">$</span><span class="va">fields</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">joint_taxable</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
+<span>  <span class="va">joint_recipe</span>, data_dir <span class="op">=</span> <span class="st">"data/ci"</span>, output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source_nonresponse <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">joint_taxable</span><span class="op">$</span><span class="va">source_nonresponse_readiness</span></span></code></pre></div>
+<p>Both complete mirrors must match package authority. Either selection
+order is accepted and retained; missing, duplicate, extra or altered
+fields block. Both source receipts must pass against unchanged original
+values before either field is normalized. Both final receipts must pass
+after metadata restoration and name cleanup before a collection is
+attached. Failure returns no partial guarded result or file.</p>
+<p>The singular <code>source_nonresponse</code> slot holds one tagged
+schema-3 collection with the common source and two named complete sealed
+schema-2 states under <code>fields</code>. Readiness retains actual
+per-case counts and sums field-cells. The 4,905-row source contributes
+9,810 evaluated field-cells and 2,680 plus 1,389 classified cells,
+totaling 4,069 field-cells, not a respondent union. Valid present fields
+pass even with zero matches. The entire shared wave absent is
+<code>not_evaluated</code>; a present source missing either required
+field blocks.</p>
+<p>Keep the complete collection for RDS and metadata-preserving
+subsets/reordering. Validation checks both leaf receipts and outer
+integrity and reseals returned state without changing the saved input.
+Unknown versions, incomplete carriers, field replacement/drop and lost
+target metadata block. No scalar migration, implicit first-field
+selection, household projection or new standalone collection classifier
+is provided.</p>
+<p>Schema-3 collections are rejected by the household cleaner before
+target/rules/P01 or numeric preparation under all modes/overrides.
+Unselected 339 is not certified by taxable readiness. Scalar rebinding
+rejects collection carriers and readiness/class claims, even with the
+carrier removed. Reports, panels and guarded exports remain unsupported.
+Stripping every marker loses lineage; digests do not authenticate
+manually forged objects.</p>
+</div>
+<div class="section level2">
+<h2 id="joint-three-field-normalization-with-native-scalar-receipts">Joint three-field normalization with native scalar receipts<a class="anchor" aria-label="anchor" href="#joint-three-field-normalization-with-native-scalar-receipts"></a>
+</h2>
+<p>Schema 4.0.0 explicitly selects exactly CI23p337, CI23p338 and
+CI23p339. The package separately pins
+<code>source_nonresponse_collection_adapter.yml</code>, which links
+<code>CI23P339_FIELD</code> to the existing <code>CI23P339_N01</code>
+rule. Registry 2 remains the authority for all source, code, binding and
+evidence details. The adapter is required only for schema 4; old scalar
+and two-field paths remain independent of that new resource. Recipes
+select complete existing scalar blocks:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">three_recipe</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ci"</span><span class="op">)</span></span>
+<span><span class="va">three_fields</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">reviewed_registry</span><span class="op">$</span><span class="va">fields</span>, <span class="kw">function</span><span class="op">(</span><span class="va">field</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  field_id <span class="op">=</span> <span class="va">field</span><span class="op">$</span><span class="va">field_id</span>,</span>
+<span>  scalar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>schema_version <span class="op">=</span> <span class="st">"2.0.0"</span>, field <span class="op">=</span> <span class="va">field</span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">household_records</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Filter</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">record</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">record</span><span class="op">$</span><span class="va">contract</span><span class="op">$</span><span class="va">rule_id</span>, <span class="st">"CI23P339_N01"</span><span class="op">)</span></span>
+<span><span class="op">}</span>, <span class="va">reviewed_registry</span><span class="op">$</span><span class="va">records</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">household_records</span><span class="op">)</span> <span class="op">==</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="va">three_fields</span><span class="op">[[</span><span class="fl">3L</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  field_id <span class="op">=</span> <span class="st">"CI23P339_FIELD"</span>,</span>
+<span>  scalar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>schema_version <span class="op">=</span> <span class="st">"1.0.0"</span>,</span>
+<span>                contracts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">household_records</span><span class="op">[[</span><span class="fl">1L</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">contract</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">three_recipe</span><span class="op">$</span><span class="va">source_nonresponse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  schema_version <span class="op">=</span> <span class="st">"4.0.0"</span>, fields <span class="op">=</span> <span class="va">three_fields</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">three_guarded</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span></span>
+<span>  <span class="va">three_recipe</span>, data_dir <span class="op">=</span> <span class="st">"data/ci"</span>, output_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source_nonresponse <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>All six member orders are accepted and retained. All three unchanged
+original receipts and normalization locks must pass before any amount
+column changes; all three finalizers must pass before one complete
+collection is attached. The <code>fields</code> members retain complete
+native version-2 taxable states and the complete version-1 household
+state, including its original rule and 229 routing candidate evidence.
+No scalar object is migrated or relabelled. Household 339 has only its
+existing exact <code>-9999999999.0</code> case; the second taxable code
+is not a household case. Authority comes from the pinned adapter and
+registry, never from an alias or list position.</p>
+<p>The version-4 boundary checks all three restored canonical metadata,
+complete source row/wave/key sets, receipts and ledgers. Every
+normalized classified amount must stay missing, including 339. Original
+229 routing supports a candidate only; authoritative household subtype
+remains unknown. The native household receipt has no separate original
+229 vector, so coverage alone cannot reconstruct that routing or
+authenticate a manually resealed object.</p>
+<p>Readiness counts field-cells, retaining all three native per-field
+records and actual case identities. Valid fields with zero matches pass.
+An entirely absent shared wave is <code>not_evaluated</code> with no
+carrier and three zero-count records; a present source missing any
+required field blocks the whole call. RDS and metadata-preserving
+subsets/reordering validate every leaf and reseal returned state without
+changing the saved input. Incomplete, contradictory, dropped or replaced
+carriers and lost metadata block.</p>
+<p>Separate pinned consumer policies permit the explicit household flag
+operation and the applied-result operation described below. A household
+leaf’s scalar approval and source readiness do not grant either
+collection permission. Corrected output uses a separate lineage contract
+because household cleaning can change values bound by the source
+receipt. Scalar classification rejects schema 4, and scalar rebinding
+rejects every claimed collection before discarding lineage. Guarded
+reports, panels and SAV/CSV export remain unsupported. Defaults, scalar
+versions 1/2 and the exact two-field version-3 contract retain their
+behavior; CA20g/CH remain deferred.</p>
+</div>
+<div class="section level2">
+<h2 id="household-flag-simulation-with-the-complete-collection">Household flag simulation with the complete collection<a class="anchor" aria-label="anchor" href="#household-flag-simulation-with-the-complete-collection"></a>
+</h2>
+<p>The package-owned
+<code>source_nonresponse_collection_consumers.yml</code> policy grants
+one operation on an intact version-4 collection. Select the target
+explicitly through the existing argument and keep the complete
+result:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">three_flag</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span></span>
+<span>  <span class="va">three_guarded</span>, mode <span class="op">=</span> <span class="st">"flag"</span>, variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"s339"</span><span class="op">)</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">three_flag</span>, <span class="st">"three_field_household_flag.rds"</span><span class="op">)</span></span></code></pre></div>
+<p>All original columns, values, attributes and row order remain
+unchanged. The complete three-field carrier stays on the result and
+frame. Native339 validation recovers observed codes only into
+<code>s339_observed</code> and keeps classified339
+<code>s339_proposed</code> values missing. Ordinary proposals use the
+existing flag rules. This simulation does not apply corrections or
+establish numerical-model validity.</p>
+<p>This FLAG capability does not cover correct/na_only; the distinct
+applied-result path below covers those modes. Omitted or alias-based
+target selection and taxable targets remain blocked. All three bound
+amount columns are prohibited in every secondary role, including
+personal-income predictors, household grouping, bounds and donor keys.
+These checks run before and after P01. Background must be an unguarded
+frame or NULL; every guarded/claimed background is rejected before
+conversion, even with disabled P01. Reserved P01 helper names and
+preexisting household audit columns block, so added context or audit
+output cannot overwrite original columns.</p>
+<p>Complete source validation runs before preparation, after P01 and on
+output. Valid source-input subsets/reorder/RDS include empty and
+other-wave-only bound frames. Zero household source evaluation keeps
+readiness <code>not_evaluated</code>; it does not prevent ordinary
+other-wave flag simulation or certify other waves. A result with no
+bound carrier cannot use this path.</p>
+<p>The wrapper’s separate
+<code>source_nonresponse_consumer_readiness</code> record binds the full
+carrier digest and complete produced data, decisions, effective ruleset,
+resolved variables, mode and summary except duration_s. The entire log
+is outside the proof. Native three-field source readiness remains
+separate. The wrapper has class
+<code>liss_clean_collection_flag_result</code>; its frame has source
+lineage only. Validating <code>$data</code> alone cannot validate edited
+proposals or decisions.</p>
+<p>Preserve the complete wrapper with RDS. Post-consumer subset/reorder
+and repeat cleaning are not resealed; supply a supported source subset
+before a new flag run. Source/consumer class-only or record-only claims
+still block rebinding and exports. Digests detect unresealed changes,
+not manually forged objects, source origin after every marker is
+stripped, or origin of copied unmarked predictors. This FLAG operation
+introduces no public scalar projection, taxable consumer or wider source
+scope.</p>
+</div>
+<div class="section level2">
+<h2 id="applied-household-amounts-with-retained-collection-lineage">Applied household amounts with retained collection lineage<a class="anchor" aria-label="anchor" href="#applied-household-amounts-with-retained-collection-lineage"></a>
+</h2>
+<p>The separate <code>source_nonresponse_collection_applied.yml</code>
+policy permits a whole applied result for the same explicit household
+target. Background attachment and file/report output are excluded from
+this capability:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">three_correct</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span></span>
+<span>  <span class="va">three_guarded</span>, mode <span class="op">=</span> <span class="st">"correct"</span>, variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>target <span class="op">=</span> <span class="st">"s339"</span><span class="op">)</span>,</span>
+<span>  background <span class="op">=</span> <span class="cn">NULL</span>, output_dir <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_validate_applied_income.html">liss_validate_applied_income</a></span><span class="op">(</span><span class="va">three_correct</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">three_correct</span>, <span class="st">"three_field_household_applied.rds"</span><span class="op">)</span></span>
+<span><span class="va">three_reloaded</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"three_field_household_applied.rds"</span><span class="op">)</span></span>
+<span><span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_validate_applied_income.html">liss_validate_applied_income</a></span><span class="op">(</span><span class="va">three_reloaded</span>, replay <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><code>source_input</code> retains the exact accepted source
+collection and all three native leaves. <code>data</code> contains the
+derived <code>s339</code> amount plus household audit columns; both tax
+fields and every other original column retain their values, attributes
+and order. Native source receipts are never rewritten to attest
+corrected amounts. The separate <code>applied_lineage</code> record
+binds source, effective rules, invocation, decisions, stable
+log/summary, metadata and output. Preserve the complete result; the
+analysis frame alone cannot validate this relationship.</p>
+<p>Source-classified household cells remain missing under every mode and
+override, with raw codes recovered only in <code>s339_observed</code>
+and the retained source audit. <code>na_only</code> uses the existing
+cleaner: preparation can rectify signs, and an explicit F01
+winsorisation override can produce a finite capped amount. It is not
+always a finite-to-missing-only operation. The numerical method itself
+is unchanged.</p>
+<p>Checked scoped source readiness is separate from analysis execution.
+A supported source view containing only ordinary other-wave rows can run
+analysis while its CI23p readiness remains <code>not_evaluated</code>.
+Its exact retained parent may contain broader source receipts; those
+broader counts do not become current scope counts. Raw-source metadata
+in native leaves, normalized input target metadata and derived target
+metadata are distinct; the applied numeric target retains its label
+under the existing cleaner’s metadata rule.</p>
+<p>Validation without replay checks typed whole-result integrity and
+source locks; an ordinary digest is not authenticated execution.
+<code>replay = TRUE</code> additionally requires the recorded
+computation identity/runtime and reproduces the captured invocation from
+<code>source_input</code>. It does not reread original sources or
+validate the statistical suitability of a correction. Engine/runtime
+changes can prevent replay even when structural checks remain
+available.</p>
+<p>Decision columns, optional dataset flags, summaries and log entries
+must retain their constructor-owned types and field sets. Counts cannot
+be character values or fractional numbers. Durations and timestamps
+still require valid scalar types when their values are excluded from
+semantic replay. These shape checks also apply to otherwise valid older
+whole-result RDS objects.</p>
+<p>Manual output subsets/reorders, extracted analysis frames, background
+attachment, second cleaning, reports, panels and SAV/CSV export remain
+unsupported. Start a separate new run explicitly from the original
+<code>source_input</code>. Recognized applied claims on wrappers or
+selected frames block lineage-discarding routes; deliberately removing
+every class and marker leaves ordinary input of unknown ownership.</p>
+<div class="section level3">
+<h3 id="controlled-views-of-existing-applied-output">Controlled views of existing applied output<a class="anchor" aria-label="anchor" href="#controlled-views-of-existing-applied-output"></a>
+</h3>
+<p>Use the separate applied-view capability to select explicit parent
+row keys without rerunning the cleaner on selected rows:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">selected_keys</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rev.html" class="external-link">rev</a></span><span class="op">(</span><span class="va">three_correct</span><span class="op">$</span><span class="va">applied_lineage</span><span class="op">$</span><span class="va">row_keys</span><span class="op">)</span></span>
+<span><span class="va">three_view</span> <span class="op">&lt;-</span> <span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_create_applied_income_view.html">liss_create_applied_income_view</a></span><span class="op">(</span><span class="va">three_correct</span>, <span class="va">selected_keys</span><span class="op">)</span></span>
+<span><span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_create_applied_income_view.html">liss_validate_applied_income_view</a></span><span class="op">(</span><span class="va">three_view</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS</a></span><span class="op">(</span><span class="va">three_view</span>, <span class="st">"three_field_household_applied_view.rds"</span><span class="op">)</span></span>
+<span><span class="va">view_reloaded</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"three_field_household_applied_view.rds"</span><span class="op">)</span></span>
+<span><span class="fu">lissr</span><span class="fu">::</span><span class="fu"><a href="../reference/liss_create_applied_income_view.html">liss_validate_applied_income_view</a></span><span class="op">(</span><span class="va">view_reloaded</span>, replay <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>The view retains the exact complete applied result, including
+original native source input, in <code>parent_result</code>. Supply
+ordered unique plain character row keys; <code>character(0)</code>
+explicitly requests an empty view. Every data column stays in parent
+order, with natural selected names/dimensions and unchanged descriptive
+metadata. Source locks, tax amounts and audit/status columns are
+projected as already computed. The separate version-1 view policy and
+lineage do not change the native version-4 carrier or the existing
+whole-parent computation identity.</p>
+<p>The projected decisions retain original root <code>row</code> and
+opaque <code>decision_id</code>, then append integer
+<code>root_decision_row</code> and <code>view_row</code>. References use
+the complete parent digest plus root ledger ordinal; repeated decision
+IDs are allowed. Entries are ordered by view row and root ledger
+ordinal. Row and decision counts are distinct because one selected row
+can have several decisions.</p>
+<p><code>view_status</code> records projection only. Scoped
+<code>source_readiness</code> is checked from selected ORIGINAL source
+rows with their unchanged receipt. Parent readiness and analysis
+execution status remain separate. Empty or other-wave-only selections
+can have <code>not_evaluated</code> source scope while the parent
+completed analysis.</p>
+<p>Validation reconstructs the exact closed projection. Optional replay
+executes the complete parent under its existing runtime gate, never a
+selected-row refit. Whole-view RDS is supported; whole-parent validation
+rejects a view wrapper. Nested views, repeated cleaning, source
+rebinding, background attachment, report/panel consumption and SAV/CSV
+export remain unsupported. Ordinary hashes are not authentication:
+coordinated resealing can describe another consistent parent/view, and
+permitted nonsemantic parent timing changes can pass both validation
+modes. Replay does not establish source authenticity or statistical
+validity. Retain the complete object and its recognized guarded
+claims.</p>
+</div>
+</div>
+<div class="section level2">
 <h2 id="the-ruleset">The ruleset<a class="anchor" aria-label="anchor" href="#the-ruleset"></a>
 </h2>
 <p>The default ruleset ships with the package and is the single source
 of truth for what the cleaner may do:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://siardv.github.io/lissr/">lissr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">rs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_cleaning_ruleset.html">liss_cleaning_ruleset</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -134,7 +594,7 @@ and an <code>enabled</code> switch.</p>
 single value; the simulated result arrives in
 <code>nethh_proposed</code> and every would-be decision in the
 ledger:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/merge_liss_module.html">merge_liss_module</a></span><span class="op">(</span><span class="fu"><a href="../reference/liss_recipe.html">liss_recipe</a></span><span class="op">(</span><span class="st">"ci"</span><span class="op">)</span>, data_dir <span class="op">=</span> <span class="st">"data/ci"</span>,</span>
 <span>                            output_dir <span class="op">=</span> <span class="st">"output/ci"</span><span class="op">)</span></span>
 <span></span>
@@ -144,7 +604,7 @@ ledger:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">dry</span><span class="op">)</span></span></code></pre></div>
 <p>Once the proposals look right, run in the default
 <code>"correct"</code> mode and write the audit artifacts:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cleaned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span><span class="va">result</span>, output_dir <span class="op">=</span> <span class="st">"output/ci"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">cleaned</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">nethh</span>          <span class="co"># cleaned values</span></span>
@@ -159,7 +619,7 @@ corrections.</p>
 </h2>
 <p>Every modified cell has at least one ledger row. A scale-error
 correction looks like this:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="va">cleaned</span><span class="op">$</span><span class="va">decisions</span></span>
 <span><span class="va">d</span><span class="op">[</span><span class="va">d</span><span class="op">$</span><span class="va">rule_id</span> <span class="op">==</span> <span class="st">"D06"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"person_id"</span>, <span class="st">"wave"</span>, <span class="st">"observed"</span>, <span class="st">"corrected"</span>,</span>
 <span>                        <span class="st">"candidate_source"</span>, <span class="st">"evidence"</span><span class="op">)</span><span class="op">]</span></span>
@@ -183,7 +643,7 @@ markdown report whose methodology section is generated from the ruleset
 itself (every rule with its description, rationale, parameters, and
 references), the complete decision ledger as CSV, and an engine-shaped
 JSONL audit log:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/liss_cleaning_report.html">liss_cleaning_report</a></span><span class="op">(</span><span class="va">cleaned</span>, output_dir <span class="op">=</span> <span class="st">"output/ci"</span><span class="op">)</span></span></code></pre></div>
 <p>Because the methodology is generated from the ruleset that actually
 ran, the report can never drift from the code.</p>
@@ -193,7 +653,7 @@ ran, the report can never drift from the code.</p>
 </h2>
 <p>Every rule can be switched off or re-parameterised per run, and the
 overrides are recorded in the report:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a stricter volatility requirement for scale-error detection,</span></span>
 <span><span class="co"># no extreme-z net, and a higher plausibility cap</span></span>
 <span><span class="va">cleaned2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span></span>
@@ -204,7 +664,7 @@ overrides are recorded in the report:</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>For a lasting policy, copy the packaged YAML, edit it, and pass the
 path; <code><a href="../reference/validate_cleaning_ruleset.html">validate_cleaning_ruleset()</a></code> enforces the schema:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cleaned3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span><span class="va">result</span>, ruleset <span class="op">=</span> <span class="st">"my_income_rules.yml"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -214,7 +674,7 @@ path; <code><a href="../reference/validate_cleaning_ruleset.html">validate_clean
 size, position, occupation, age, and education attached. Rule P01 aligns
 a monthly background file to the annual wave scale, keeps one row per
 person-year, and joins on the person id, never on the household id:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">background</span> <span class="op">&lt;-</span> <span class="fu">haven</span><span class="fu">::</span><span class="fu"><a href="https://haven.tidyverse.org/reference/read_spss.html" class="external-link">read_sav</a></span><span class="op">(</span><span class="st">"data/avars_201801_EN_1.0p.sav"</span><span class="op">)</span></span>
 <span><span class="va">cleaned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/liss_clean_income.html">liss_clean_income</a></span><span class="op">(</span><span class="va">result</span>, background <span class="op">=</span> <span class="va">background</span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -224,7 +684,7 @@ person-year, and joins on the person id, never on the household id:</p>
 <p>For cross-household comparison, <code><a href="../reference/liss_equivalise_income.html">liss_equivalise_income()</a></code>
 provides the scale the source analysis pipelines used, alongside the
 OECD-modified and square-root alternatives:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">panel</span> <span class="op">&lt;-</span> <span class="va">cleaned</span><span class="op">$</span><span class="va">data</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>

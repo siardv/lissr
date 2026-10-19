@@ -1,0 +1,110 @@
+# classify one reviewed CI23p source-income nonresponse field
+
+Bind one explicitly selected column to the exact, reviewed local SAV
+source. The returned data retain their values and metadata. The separate
+carrier records typed source nonresponse and prohibits numerical
+proposals for the matched household cells when consumed by
+[`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md).
+The default schema-1 recipe covers `ci23p339 = -9999999999`. An explicit
+schema-2 recipe selects either `ci23p337` or `ci23p338`, with exact
+codes `-9999999999` and `-9999999998` under one field receipt. Taxable
+fields have no household-cleaner approval. One classifier call selects
+one field. An explicit schema-3 guarded module merge can carry both
+taxable fields in one complete collection; this scalar classifier
+rejects schemas 3 and 4 and every existing collection lineage.
+
+## Usage
+
+``` r
+liss_classify_source_nonresponse(
+  data,
+  source,
+  target,
+  wave_col = NULL,
+  id_col = "nomem_encr",
+  recipe = NULL
+)
+```
+
+## Arguments
+
+- data:
+
+  a data frame, or a merge result containing `data`.
+
+- source:
+
+  path to the reviewed `ci23p_EN_1.0p.sav` file. Its filename and SHA256
+  must match the contract; a caller-provided hash is insufficient.
+
+- target:
+
+  one explicitly selected column. Raw binding without a wave column
+  requires the selected exact raw name. A merged binding requires an
+  explicit wave column and unchanged values under unique respondent
+  keys. Supported household targets are `ci23p339`, `s339`, `ci_s339`,
+  `nethh` and `ci00a339`. Taxable targets are only the selected
+  `ci23p337`/`s337`/ `ci_s337` or `ci23p338`/`s338`/`ci_s338` names;
+  aliases do not select a field or establish source ownership.
+
+- wave_col:
+
+  optional column containing exact wave identifiers. Only rows equal to
+  `ci23p` are evaluated, but every presented row must have a nonmissing,
+  nonempty exact wave identifier. Years alone are insufficient.
+  Full-join panels with CI-absent rows lacking CI wave identity are
+  unsupported.
+
+- id_col:
+
+  respondent-key column, default `nomem_encr`.
+
+- recipe:
+
+  optional parsed CI recipe or recipe path. Its contract must match the
+  complete typed contract in the package-owned, digest-pinned reviewed
+  registry. Recipes cannot approve new scope. The installed CI recipe is
+  used by default and selects the existing household contract. Consumer
+  approval is checked separately before numerical preparation. Schema
+  2.0.0 requires only `schema_version` and one complete reviewed `field`
+  record. Existing version-1 carriers retain their original rule and
+  scalar shape. Taxable bindings require unguarded inputs; rebinding any
+  taxable carrier is unsupported, including a reverse household binding.
+  Schema-3 taxable pairs and schema-4 mixed three-field collections are
+  available only through an explicitly guarded module merge. A separate
+  package-owned consumer policy permits explicit household339 flag
+  simulation on an intact schema-4 collection while retaining all three
+  fields and complete lineage. This scalar classifier provides no
+  collection projection or declassification.
+
+## Value
+
+a `liss_source_nonresponse_result` with unchanged `data` and a
+`source_nonresponse` carrier containing the source receipt, original
+metadata, cell ledger, coverage, readiness and serialization digest.
+Retain this complete wrapper. RDS preserves the carrier. SAV/CSV alone
+do not preserve readiness; reimport requires a new explicit verified
+source binding.
+
+## Details
+
+For household classification, pass the complete result to
+[`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md).
+The classifier does not add a frame marker to its unchanged `$data`;
+extracting an unmarked frame and cleaning it alone enters ordinary
+unguarded processing. Keep the original merge result separately when
+rebinding, because its provenance, log and validation fields are not
+copied into the classifier result.
+
+In flag mode the actual supplied target remains unchanged, including
+missing analysis amounts from a guarded merge. Verified source originals
+are retained in the cleaner's `_observed` audit column and source
+ledger; matched proposals stay missing. Readiness covers only this
+source/field contract, not the suitability of every audit column for
+analysis. A source-bound household amount cannot also serve as the
+cleaner's `category_code`.
+
+Reordering and subsets require retained column metadata and the complete
+carrier, as with supported tibble/dplyr operations. Base data-frame
+operations that strip target attributes fail closed. Validation does not
+relax metadata checks to accommodate such operations.

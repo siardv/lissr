@@ -20,9 +20,16 @@
 <url><loc>https://siardv.github.io/lissr/reference/index.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_attach_background.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_blueprint.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_classify_ca20g012.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_classify_ca20g014.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_classify_ca20g016.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_classify_ca20g023.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_classify_ca20g025.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_classify_source_nonresponse.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_clean_income.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_cleaning_report.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_cleaning_ruleset.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_create_applied_income_view.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_delete_credentials.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_download.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_equivalise_income.html</loc></url>
@@ -34,6 +41,7 @@
 <url><loc>https://siardv.github.io/lissr/reference/liss_select.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_server_status.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_store_credentials.html</loc></url>
+<url><loc>https://siardv.github.io/lissr/reference/liss_validate_applied_income.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/liss_wave_matrix.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/lissr-package.html</loc></url>
 <url><loc>https://siardv.github.io/lissr/reference/load_recipe.html</loc></url>

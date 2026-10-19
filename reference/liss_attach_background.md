@@ -59,6 +59,13 @@ global `valid_for_analysis` assertion is made.
 
 ## Details
 
+Recognized source-nonresponse results and source, consumer or applied
+claims are rejected with a `liss_source_nonresponse_blocked` condition,
+including residual claims on otherwise plain frames. This check precedes
+evaluation of the other arguments and source-file reads. Unmarked data
+has no inferred source ownership; this helper does not grant a new
+nonresponse capability.
+
 Only local, regular `.sav` files with the standard SPSS `$FL2` signature
 are admitted, before reading with `haven::read_sav(user_na = TRUE)`.
 Compressed containers and `$FL3` ZSAV files are rejected. Both supplied

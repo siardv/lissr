@@ -347,10 +347,35 @@ MIT
 - [`liss_attach_background()`](https://siardv.github.io/lissr/reference/liss_attach_background.md)
   : Attach explicitly selected local Background Variables snapshots
 
+## Source nonresponse
+
+- [`liss_classify_ca20g012()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g012.md)
+  [`liss_validate_ca20g012()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g012.md)
+  : Classify or validate exact CA20g012 source nonresponse
+- [`liss_classify_ca20g014()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g014.md)
+  [`liss_validate_ca20g014()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g014.md)
+  : Classify or validate exact CA20g014 source nonresponse
+- [`liss_classify_ca20g016()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g016.md)
+  [`liss_validate_ca20g016()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g016.md)
+  : Classify or validate exact CA20g016 source nonresponse
+- [`liss_classify_ca20g023()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g023.md)
+  [`liss_validate_ca20g023()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g023.md)
+  : Classify or validate exact CA20g023 source nonresponse
+- [`liss_classify_ca20g025()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g025.md)
+  [`liss_validate_ca20g025()`](https://siardv.github.io/lissr/reference/liss_classify_ca20g025.md)
+  : Classify or validate exact CA20g025 source nonresponse
+
 ## Income cleaning
 
+- [`liss_classify_source_nonresponse()`](https://siardv.github.io/lissr/reference/liss_classify_source_nonresponse.md)
+  : classify one reviewed CI23p source-income nonresponse field
 - [`liss_clean_income()`](https://siardv.github.io/lissr/reference/liss_clean_income.md)
   : Detect and correct implausible household-income values
+- [`liss_validate_applied_income()`](https://siardv.github.io/lissr/reference/liss_validate_applied_income.md)
+  : Validate a complete applied household-income result
+- [`liss_create_applied_income_view()`](https://siardv.github.io/lissr/reference/liss_create_applied_income_view.md)
+  [`liss_validate_applied_income_view()`](https://siardv.github.io/lissr/reference/liss_create_applied_income_view.md)
+  : Create or validate a view of an applied household-income result
 - [`liss_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/liss_cleaning_ruleset.md)
   : Load an income-cleaning ruleset
 - [`validate_cleaning_ruleset()`](https://siardv.github.io/lissr/reference/validate_cleaning_ruleset.md)

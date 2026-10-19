@@ -54,6 +54,12 @@ merge_liss_panel(
 
 a tibble with all modules joined side by side.
 
+## Details
+
+Source-bound inputs and source claims on a result or its selected data
+frame are rejected because panel merging does not preserve their source
+lineage.
+
 ## Examples
 
 ``` r

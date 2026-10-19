@@ -11,7 +11,7 @@ outputs (merged SAV, JSONL log, JSON summary, text report)."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,8 +67,14 @@ outputs (merged SAV, JSONL log, JSON summary, text report).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">merge_liss_module</span><span class="op">(</span><span class="va">recipe</span>, <span class="va">data_dir</span>, output_dir <span class="op">=</span> <span class="st">"."</span>, strict <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">merge_liss_module</span><span class="op">(</span></span>
+<span>  <span class="va">recipe</span>,</span>
+<span>  <span class="va">data_dir</span>,</span>
+<span>  output_dir <span class="op">=</span> <span class="st">"."</span>,</span>
+<span>  strict <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  source_nonresponse <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -84,7 +90,8 @@ outputs (merged SAV, JSONL log, JSON summary, text report).</p>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
-<dd><p>character. directory for output files.</p></dd>
+<dd><p>character. directory for output files, or <code>NULL</code> to return
+the complete result in memory without writing files.</p></dd>
 
 
 <dt id="arg-strict">strict<a class="anchor" aria-label="anchor" href="#arg-strict"></a></dt>
@@ -97,6 +104,27 @@ default <code>FALSE</code> preserves the historical report-and-continue behavior
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
 <dd><p>logical. if <code>FALSE</code>, abort instead of overwriting an
 existing merged output file. default <code>TRUE</code> preserves prior behavior.</p></dd>
+
+
+<dt id="arg-source-nonresponse">source_nonresponse<a class="anchor" aria-label="anchor" href="#arg-source-nonresponse"></a></dt>
+<dd><p>logical. opt in to the explicitly selected reviewed
+scalar source classifier before harmonization. The default CI recipe selects
+CI23p339; schema 2.0.0 explicitly selects either CI23p337 or CI23p338 with
+two exact codes under one field receipt. Taxable carriers cannot enter the
+household income cleaner. Package-registry approval is required.
+Schema 3.0.0 explicitly selects the complete CI23p337/CI23p338 pair, validates
+both original fields before normalizing either, and returns a tagged collection
+with two complete scalar receipts. Schema 4.0.0 explicitly selects all three
+CI23p337/338/339 fields through a separately pinned collection adapter. All
+three original checks precede normalization, and the tagged version-4 result
+retains complete native v2/v2/v1 receipts. Registry-2 authority, defaults and
+scalar/pair behavior stay unchanged. Separate pinned policies permit explicit
+household <code>s339</code> flag simulation or applied <code>correct</code>/<code>na_only</code> results on a
+complete version-4 result. Applied results require <code>background = NULL</code>;
+taxable consumption remains unsupported.
+Requires <code>output_dir = NULL</code>; guarded
+SAV export and automatic panel joining are not yet supported. Retain the
+complete result (or serialize it with <code><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">saveRDS()</a></code>) to preserve its audit.</p></dd>
 
 </dl></div>
     <div class="section level2">

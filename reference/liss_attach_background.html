@@ -13,7 +13,7 @@ month, download files, harmonize covariates or establish analytical validity."><
 
     <a class="navbar-brand me-2" href="../index.html">lissr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -120,7 +120,12 @@ No global <code>valid_for_analysis</code> assertion is made.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Only local, regular <code>.sav</code> files with the standard SPSS <code>$FL2</code> signature are
+    <p>Recognized source-nonresponse results and source, consumer or applied claims
+are rejected with a <code>liss_source_nonresponse_blocked</code> condition, including
+residual claims on otherwise plain frames. This check precedes evaluation
+of the other arguments and source-file reads. Unmarked data has no inferred
+source ownership; this helper does not grant a new nonresponse capability.</p>
+<p>Only local, regular <code>.sav</code> files with the standard SPSS <code>$FL2</code> signature are
 admitted, before reading with <code>haven::read_sav(user_na = TRUE)</code>. Compressed
 containers and <code>$FL3</code> ZSAV files are rejected. Both supplied and symlink-resolved
 paths must have the required extension. Each source must have one observed

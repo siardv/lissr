@@ -7,8 +7,14 @@ outputs (merged SAV, JSONL log, JSON summary, text report).
 ## Usage
 
 ``` r
-merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE,
-  overwrite = TRUE)
+merge_liss_module(
+  recipe,
+  data_dir,
+  output_dir = ".",
+  strict = FALSE,
+  overwrite = TRUE,
+  source_nonresponse = FALSE
+)
 ```
 
 ## Arguments
@@ -25,7 +31,8 @@ merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE,
 
 - output_dir:
 
-  character. directory for output files.
+  character. directory for output files, or `NULL` to return the
+  complete result in memory without writing files.
 
 - strict:
 
@@ -38,6 +45,30 @@ merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE,
 
   logical. if `FALSE`, abort instead of overwriting an existing merged
   output file. default `TRUE` preserves prior behavior.
+
+- source_nonresponse:
+
+  logical. opt in to the explicitly selected reviewed scalar source
+  classifier before harmonization. The default CI recipe selects
+  CI23p339; schema 2.0.0 explicitly selects either CI23p337 or CI23p338
+  with two exact codes under one field receipt. Taxable carriers cannot
+  enter the household income cleaner. Package-registry approval is
+  required. Schema 3.0.0 explicitly selects the complete
+  CI23p337/CI23p338 pair, validates both original fields before
+  normalizing either, and returns a tagged collection with two complete
+  scalar receipts. Schema 4.0.0 explicitly selects all three
+  CI23p337/338/339 fields through a separately pinned collection
+  adapter. All three original checks precede normalization, and the
+  tagged version-4 result retains complete native v2/v2/v1 receipts.
+  Registry-2 authority, defaults and scalar/pair behavior stay
+  unchanged. Separate pinned policies permit explicit household `s339`
+  flag simulation or applied `correct`/`na_only` results on a complete
+  version-4 result. Applied results require `background = NULL`; taxable
+  consumption remains unsupported. Requires `output_dir = NULL`; guarded
+  SAV export and automatic panel joining are not yet supported. Retain
+  the complete result (or serialize it with
+  [`saveRDS()`](https://rdrr.io/r/base/readRDS.html)) to preserve its
+  audit.
 
 ## Value
 

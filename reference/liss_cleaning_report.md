@@ -32,3 +32,8 @@ liss_cleaning_report(result, output_dir, verbose = TRUE)
 ## Value
 
 invisibly, a list with the `report`, `decisions`, and `log` paths.
+
+## Details
+
+Source-result classes and source/readiness attributes on the result or
+its selected data frame are rejected before report files are created.
