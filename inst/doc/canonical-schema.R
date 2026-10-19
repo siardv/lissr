@@ -1,8 +1,10 @@
 ## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
+
 ## ----eval = FALSE-------------------------------------------------------------
 # system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")
+
 
 ## ----schema-body, echo = FALSE, results = "asis"------------------------------
 schema_path <- system.file("schema", "CANONICAL_SCHEMA.md", package = "lissr")

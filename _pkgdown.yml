@@ -77,9 +77,24 @@ reference:
 - title: Background variables
   contents:
   - liss_attach_background
+- title: Source nonresponse
+  contents:
+  - liss_classify_ca20g012
+  - liss_validate_ca20g012
+  - liss_classify_ca20g014
+  - liss_validate_ca20g014
+  - liss_classify_ca20g016
+  - liss_validate_ca20g016
+  - liss_classify_ca20g023
+  - liss_validate_ca20g023
+  - liss_classify_ca20g025
+  - liss_validate_ca20g025
 - title: Income cleaning
   contents:
+  - liss_classify_source_nonresponse
   - liss_clean_income
+  - liss_validate_applied_income
+  - liss_create_applied_income_view
   - liss_cleaning_ruleset
   - validate_cleaning_ruleset
   - liss_cleaning_report

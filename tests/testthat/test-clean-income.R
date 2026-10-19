@@ -531,6 +531,62 @@ test_that("P01 attaches a monthly background on the annual scale, keeping the la
   expect_identical(res2$data$oplmet, c(9, 9, 8))
 })
 
+test_that("P01 rejects residual source and consumer claims on ordinary backgrounds", {
+  inc <- data.frame(nomem_encr = c(1, 1, 2), nohouse_encr = c(1, 1, 2),
+                    wavenr = c(1, 2, 1), nethh = c(21000, 21500, 30000))
+  background <- data.frame(nomem_encr = c(1, 2), oplmet = c(9, 8))
+  forms <- list()
+  for (class_name in c("liss_source_nonresponse_result",
+    "liss_source_nonresponse_v2_result", "liss_source_nonresponse_collection_result",
+    "liss_clean_collection_flag_result", "liss_clean_collection_applied_result",
+    "liss_applied_income_frame"))
+    forms[[class_name]] <- structure(background, class = c(class_name, class(background)))
+  for (key in c("liss_source_nonresponse", "source_nonresponse_readiness",
+    "liss_source_nonresponse_readiness", "source_nonresponse_consumer_readiness",
+    "liss_source_nonresponse_consumer_readiness", "liss_source_nonresponse_applied")) {
+    marked <- background
+    attr(marked, key) <- list(status = "not_evaluated")
+    forms[[key]] <- marked
+  }
+  for (key in c("source_nonresponse", "source_nonresponse_readiness",
+    "source_nonresponse_consumer_readiness", "applied_lineage", "source_input")) {
+    wrapper <- list(data = background)
+    wrapper[[key]] <- list(status = "not_evaluated")
+    forms[[paste0("wrapper_", key)]] <- wrapper
+  }
+  forms$partial_applied <- list(data_partial = forms$liss_applied_income_frame)
+  joins <- 0L
+  testthat::local_mocked_bindings(left_join = function(...) {
+    joins <<- joins + 1L
+    stop("claimed background reached the join")
+  }, .package = "dplyr")
+  for (name in names(forms)) {
+    before <- serialize(forms[[name]], NULL, version = 2L)
+    expect_error(clean_quiet(inc, background = forms[[name]]),
+      class = "liss_source_nonresponse_blocked", info = name)
+    expect_identical(serialize(forms[[name]], NULL, version = 2L), before, info = name)
+  }
+  expect_identical(joins, 0L)
+})
+
+test_that("P01 keeps ordinary backgrounds and ignores unused claimed backgrounds", {
+  inc <- data.frame(nomem_encr = c(1, 1, 2), nohouse_encr = c(1, 1, 2),
+                    wavenr = c(1, 2, 1), nethh = c(21000, 21500, 30000))
+  background <- data.frame(nomem_encr = c(1, 2), oplmet = c(9, 8))
+  attr(background, "readiness") <- list(status = "passed")
+  ordinary <- clean_quiet(inc, background = background)
+  expect_identical(ordinary$data$oplmet, c(9, 9, 8))
+  marked <- background
+  attr(marked, "liss_source_nonresponse") <- list(kind = "ca20g012_analysis_frame")
+  before <- serialize(marked, NULL, version = 2L)
+  control <- clean_quiet(inc, disable = "P01")
+  ignored <- clean_quiet(inc, background = marked, disable = "P01")
+  expect_identical(ignored$data, control$data)
+  expect_identical(ignored$decisions, control$decisions)
+  expect_identical(serialize(marked, NULL, version = 2L), before)
+  expect_false("oplmet" %in% names(ignored$data))
+})
+
 # ---- report artifacts ------------------------------------------------------------------
 
 test_that("liss_cleaning_report writes a methodology-bearing report, CSV ledger, and JSONL log", {

@@ -163,6 +163,14 @@ if (!.lissr_have_executors) {
   }
 }
 
+# source the opt-in classifier alongside standalone engine copies when present
+if (!exists("validate_source_nonresponse_contracts", mode = "function")) {
+  cand <- c(file.path(getwd(), "liss_source_nonresponse.R"),
+            "liss_source_nonresponse.R")
+  hit <- cand[file.exists(cand)]
+  if (length(hit) > 0L) source(hit[[1]])
+}
+
 # ============================================================================
 # 1. RECIPE LOADING & PRE-FLIGHT VALIDATION
 # ============================================================================
@@ -350,6 +358,11 @@ load_recipe <- function(path) {
 #' @export
 validate_recipe <- function(recipe, path = "<unknown>") {
   errors <- .harvested_metadata_errors(recipe)
+  if (exists("validate_source_nonresponse_contracts", mode = "function")) {
+    errors <- c(errors, validate_source_nonresponse_contracts(recipe, path))
+  } else if (!is.null(recipe$source_nonresponse)) {
+    errors <- c(errors, "source_nonresponse validator is unavailable")
+  }
 
   # required top-level sections
   required_sections <- c("meta", "global", "wave_index", "logging")
@@ -3631,13 +3644,32 @@ run_validations <- function(df, checks, log_entries) {
 #'
 #' @param recipe a parsed recipe list (from [load_recipe()]), or a path to a recipe file.
 #' @param data_dir character. directory containing wave data files.
-#' @param output_dir character. directory for output files.
+#' @param output_dir character. directory for output files, or `NULL` to return
+#'   the complete result in memory without writing files.
 #' @param strict logical. if `TRUE`, abort before writing any outputs when a
 #'   validation check with `severity: error` fails or cannot be evaluated,
 #'   or when a wave's selected file violates its `expected_release` pin; the
 #'   default `FALSE` preserves the historical report-and-continue behavior.
 #' @param overwrite logical. if `FALSE`, abort instead of overwriting an
 #'   existing merged output file. default `TRUE` preserves prior behavior.
+#' @param source_nonresponse logical. opt in to the explicitly selected reviewed
+#'   scalar source classifier before harmonization. The default CI recipe selects
+#'   CI23p339; schema 2.0.0 explicitly selects either CI23p337 or CI23p338 with
+#'   two exact codes under one field receipt. Taxable carriers cannot enter the
+#'   household income cleaner. Package-registry approval is required.
+#'   Schema 3.0.0 explicitly selects the complete CI23p337/CI23p338 pair, validates
+#'   both original fields before normalizing either, and returns a tagged collection
+#'   with two complete scalar receipts. Schema 4.0.0 explicitly selects all three
+#'   CI23p337/338/339 fields through a separately pinned collection adapter. All
+#'   three original checks precede normalization, and the tagged version-4 result
+#'   retains complete native v2/v2/v1 receipts. Registry-2 authority, defaults and
+#'   scalar/pair behavior stay unchanged. Separate pinned policies permit explicit
+#'   household `s339` flag simulation or applied `correct`/`na_only` results on a
+#'   complete version-4 result. Applied results require `background = NULL`;
+#'   taxable consumption remains unsupported.
+#'   Requires `output_dir = NULL`; guarded
+#'   SAV export and automatic panel joining are not yet supported. Retain the
+#'   complete result (or serialize it with `saveRDS()`) to preserve its audit.
 #' @return a list (invisibly) with elements `data`, `log`, `validation`,
 #'   `summary`, `recipe`, `provenance` (package and recipe versions, input
 #'   file md5 hashes, release decisions, strictness, timestamp), and
@@ -3645,10 +3677,25 @@ run_validations <- function(df, checks, log_entries) {
 #'   unevaluable and all release pins matched).
 #' @export
 merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE,
-                              overwrite = TRUE) {
+                              overwrite = TRUE, source_nonresponse = FALSE) {
   # accept either a parsed recipe list or a path to a recipe file
   recipe_path <- if (is.character(recipe) && length(recipe) == 1) recipe else NULL
   if (is.character(recipe) && length(recipe) == 1) recipe <- load_recipe(recipe)
+  if (!is.logical(source_nonresponse) || length(source_nonresponse) != 1L ||
+      is.na(source_nonresponse))
+    cli::cli_abort("`source_nonresponse` must be TRUE or FALSE")
+  if (source_nonresponse && !is.null(output_dir))
+    cli::cli_abort("source_nonresponse requires output_dir = NULL; guarded SAV export is not supported")
+  nonresponse_plan <- NULL
+  if (source_nonresponse) {
+    errors <- validate_source_nonresponse_contracts(recipe, recipe_path %||% "<list>")
+    if (length(errors)) .liss_nonresponse_abort(paste(errors, collapse = "; "))
+    if (is.null(recipe$source_nonresponse))
+      cli::cli_abort("this recipe has no reviewed source_nonresponse contract")
+    if (!identical(recipe$global$labelled_policy, "to_numeric"))
+      cli::cli_abort("source_nonresponse requires labelled_policy = to_numeric")
+    nonresponse_plan <- .liss_nonresponse_plan(recipe)
+  }
 
   mod_code  <- recipe$meta$module
   mod_label <- recipe$meta$module_label
@@ -3673,6 +3720,7 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   log_entries <- list()
   # per-column value-label registry for the write-time restore (round-trip)
   label_registry <- new.env(parent = emptyenv())
+  nonresponse_state <- NULL
 
   # phase 1: load and pre-process each wave
   cli::cli_h2("phase 1: loading and pre-processing waves")
@@ -3704,7 +3752,40 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     wm  <- wave_meta_map[[wid]] %||% list()
     cli::cli_inform("  processing wave {.val {wid}} ({length(wf$paths)} file(s))")
 
-    dfs <- purrr::map(wf$paths, read_wave_file)
+    dfs <- purrr::map(wf$paths, function(path) {
+      source_df <- read_wave_file(path)
+      if (source_nonresponse && isTRUE(nonresponse_plan$collection)) {
+        if (identical(wid, nonresponse_plan$wave)) {
+          if (!is.null(nonresponse_state))
+            .liss_nonresponse_abort("multiple files cannot share this source_nonresponse scope")
+          states <- .liss_nonresponse_preflight(source_df, path,
+                                                nonresponse_plan, id_var)
+          # validate every unchanged field before normalizing any selected column
+          locks <- lapply(states, function(state)
+            source_nonresponse_validate(source_df, state,
+                                         .liss_nonresponse_state_rule(state)$raw_column)$lock)
+          for (field_id in names(states)) {
+            raw_column <- .liss_nonresponse_state_rule(states[[field_id]])$raw_column
+            source_df[[raw_column]][locks[[field_id]]] <- NA_real_
+          }
+          nonresponse_state <<- states
+        }
+      } else if (source_nonresponse) {
+        contract <- .liss_nonresponse_rule(recipe)
+        if (identical(wid, contract$wave)) {
+          if (!is.null(nonresponse_state))
+            cli::cli_abort("multiple files cannot share this source_nonresponse scope")
+          classified <- liss_classify_source_nonresponse(
+            source_df, source = path, target = contract$raw_column,
+            id_col = id_var, recipe = recipe)
+          checked <- source_nonresponse_validate(
+            source_df, classified$source_nonresponse, contract$raw_column)
+          nonresponse_state <<- checked$state
+          source_df[[contract$raw_column]][checked$lock] <- NA_real_
+        }
+      }
+      source_df
+    })
     df <- if (length(dfs) == 1) dfs[[1]] else dplyr::bind_rows(dfs)
 
     # aux files (recipe-declared supplemental samples): stack only under an
@@ -4023,8 +4104,10 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   }
 
   # phase 7: write outputs
-  cli::cli_h2("phase 7: writing outputs")
-  dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+  cli::cli_h2(if (is.null(output_dir)) "phase 7: finalizing in memory"
+             else "phase 7: writing outputs")
+  if (!is.null(output_dir))
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
   if (!requireNamespace("haven", quietly = TRUE)) {
     stop("The 'haven' package is required to write .sav output.\n",
@@ -4078,23 +4161,91 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     log_entries[[length(log_entries)]]$details <- sweep_details
   }
 
+  # pin restored metadata before name sanitization can change the final binding
+  nonresponse_target_metadata <- NULL
+  if (!is.null(nonresponse_state) && isTRUE(nonresponse_plan$collection)) {
+    nonresponse_target_metadata <- lapply(nonresponse_plan$rules, function(field) {
+      .liss_nonresponse_column(merged, field$canonical_column, "canonical target")
+      attributes(merged[[field$canonical_column]])
+    })
+  } else if (!is.null(nonresponse_state)) {
+    contract <- .liss_nonresponse_rule(recipe)
+    if (.liss_nonresponse_is_field(contract)) {
+      .liss_nonresponse_column(merged, contract$canonical_column, "canonical target")
+      nonresponse_target_metadata <- attributes(merged[[contract$canonical_column]])
+    }
+  }
   # merged data (SPSS .sav carries the variable labels and the restored value labels)
   merged <- sanitize_spss_names(merged)
-  out_sav <- file.path(output_dir, paste0(mod_code, "_merged.sav"))
-  if (!isTRUE(overwrite) && file.exists(out_sav)) {
-    cli::cli_abort(c(
-      "output file {.file {out_sav}} already exists",
-      "i" = "pass overwrite = TRUE to replace it"))
+  if (!is.null(nonresponse_state) && isTRUE(nonresponse_plan$collection)) {
+    targets <- vapply(nonresponse_plan$rules, function(field)
+      field$canonical_column, character(1))
+    nonresponse_state <- .liss_nonresponse_finalize_collection(
+      merged, nonresponse_state, targets, wave_var, nonresponse_target_metadata,
+      schema_version = nonresponse_plan$schema_version)
+    checked <- source_nonresponse_validate(merged, nonresponse_state)
+    nonresponse_state <- checked$state
+    # attach the complete collection only after every final leaf passes
+    attr(merged, "liss_source_nonresponse") <- nonresponse_state
+    for (field_id in names(nonresponse_state$fields)) {
+      state <- nonresponse_state$fields[[field_id]]
+      rule <- .liss_nonresponse_state_rule(state)
+      cases <- if (.liss_nonresponse_is_field(rule)) rule$cases else list(rule)
+      for (case in cases) {
+        count <- sum(state$ledger$rule_id == case$rule_id)
+        log_entries <- append(log_entries, list(make_log(
+          case$rule_id, rule$wave, state$target,
+          "source_nonresponse:missing_amount", count, values_changed = count)))
+      }
+    }
+  } else if (!is.null(nonresponse_state)) {
+    contract <- .liss_nonresponse_rule(recipe)
+    nonresponse_state <- if (.liss_nonresponse_is_field(contract))
+      source_nonresponse_finalize(
+        merged, nonresponse_state, contract$canonical_column,
+        wave_col = wave_var, normalized = TRUE,
+        expected_target_metadata = nonresponse_target_metadata)
+    else source_nonresponse_finalize(
+      merged, nonresponse_state, contract$canonical_column,
+      wave_col = wave_var, normalized = TRUE)
+    checked <- source_nonresponse_validate(
+      merged, nonresponse_state, contract$canonical_column, wave_col = wave_var)
+    if (any(is.finite(as.numeric(merged[[contract$canonical_column]][checked$lock]))))
+      cli::cli_abort("classified source nonresponse became finite after merge processing")
+    attr(merged, "liss_source_nonresponse") <- nonresponse_state
+    if (.liss_nonresponse_is_field(contract)) {
+      for (case in contract$cases) {
+        count <- sum(nonresponse_state$ledger$rule_id == case$rule_id)
+        log_entries <- append(log_entries, list(make_log(
+          case$rule_id, contract$wave, contract$canonical_column,
+          "source_nonresponse:missing_amount", count, values_changed = count)))
+      }
+    } else {
+      log_entries <- append(log_entries, list(make_log(
+        contract$rule_id, contract$wave, contract$canonical_column,
+        "source_nonresponse:missing_amount", sum(checked$lock),
+        values_changed = sum(checked$lock))))
+    }
   }
-  haven::write_sav(merged, out_sav)
-  cli::cli_inform("  data: {.file {out_sav}}")
+  if (!is.null(output_dir)) {
+    out_sav <- file.path(output_dir, paste0(mod_code, "_merged.sav"))
+    if (!isTRUE(overwrite) && file.exists(out_sav)) {
+      cli::cli_abort(c(
+        "output file {.file {out_sav}} already exists",
+        "i" = "pass overwrite = TRUE to replace it"))
+    }
+    haven::write_sav(merged, out_sav)
+    cli::cli_inform("  data: {.file {out_sav}}")
+  }
 
   # audit-grade JSONL log
   log_cfg <- recipe$logging %||% list()
-  log_file <- file.path(output_dir,
-    log_cfg$log_file %||% paste0(mod_code, "_merge_log.jsonl"))
-  write_jsonl(log_entries, log_file)
-  cli::cli_inform("  log: {.file {log_file}}")
+  if (!is.null(output_dir)) {
+    log_file <- file.path(output_dir,
+      log_cfg$log_file %||% paste0(mod_code, "_merge_log.jsonl"))
+    write_jsonl(log_entries, log_file)
+    cli::cli_inform("  log: {.file {log_file}}")
+  }
 
   # summary artifact
   summary_cfg <- log_cfg$summary_artifact %||% list()
@@ -4103,9 +4254,11 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   summary <- NULL
   if (isTRUE(summary_cfg$enabled)) {
     summary <- generate_summary(merged, log_entries, recipe)
-    summary_file <- file.path(output_dir, paste0(mod_code, "_merge_summary.json"))
-    jsonlite::write_json(summary, summary_file, pretty = TRUE, auto_unbox = TRUE)
-    cli::cli_inform("  summary: {.file {summary_file}}")
+    if (!is.null(output_dir)) {
+      summary_file <- file.path(output_dir, paste0(mod_code, "_merge_summary.json"))
+      jsonlite::write_json(summary, summary_file, pretty = TRUE, auto_unbox = TRUE)
+      cli::cli_inform("  summary: {.file {summary_file}}")
+    }
   }
 
   valid_for_analysis <- (val$error_count == 0L) &&
@@ -4128,13 +4281,15 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
   )
 
   # text report
-  report_file <- file.path(output_dir,
-    log_cfg$report_file %||% paste0(mod_code, "_merge_report.txt"))
-  write_report(merged, val$results, log_entries, recipe, report_file,
-               provenance = provenance,
-               valid_for_analysis = valid_for_analysis,
-               sweep = sweep_details)
-  cli::cli_inform("  report: {.file {report_file}}")
+  if (!is.null(output_dir)) {
+    report_file <- file.path(output_dir,
+      log_cfg$report_file %||% paste0(mod_code, "_merge_report.txt"))
+    write_report(merged, val$results, log_entries, recipe, report_file,
+                 provenance = provenance,
+                 valid_for_analysis = valid_for_analysis,
+                 sweep = sweep_details)
+    cli::cli_inform("  report: {.file {report_file}}")
+  }
 
   cli::cli_alert_success(
     "module {toupper(mod_code)} merge complete: {nrow(merged)} rows x {ncol(merged)} cols")
@@ -4142,7 +4297,7 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     cli::cli_alert_warning(
       "output is NOT flagged valid_for_analysis (failed or unevaluable error-severity checks, or release-pin violations)")
 
-  invisible(list(
+  result <- list(
     data       = merged,
     log        = log_entries,
     validation = val$results,
@@ -4150,7 +4305,28 @@ merge_liss_module <- function(recipe, data_dir, output_dir = ".", strict = FALSE
     recipe     = recipe,
     provenance = provenance,
     valid_for_analysis = valid_for_analysis
-  ))
+  )
+  if (source_nonresponse) {
+    result$source_nonresponse <- nonresponse_state
+    result$source_nonresponse_readiness <- if (is.null(nonresponse_state)) {
+      if (isTRUE(nonresponse_plan$collection)) {
+        readiness <- .liss_nonresponse_plan_readiness(nonresponse_plan)
+        readiness$reason <- "reviewed source wave is absent"
+        readiness
+      } else {
+        contract <- .liss_nonresponse_rule(recipe)
+        if (.liss_nonresponse_is_field(contract)) {
+          readiness <- .liss_nonresponse_readiness(0L, 0L, contract)
+          readiness$reason <- "reviewed source wave is absent"
+          readiness
+        } else list(status = "not_evaluated", reason = "reviewed source wave is absent")
+      }
+    } else nonresponse_state$readiness
+    if (isTRUE(nonresponse_plan$collection))
+      class(result) <- c("liss_source_nonresponse_collection_result",
+                          "liss_source_nonresponse_result")
+  }
+  invisible(result)
 }
 
 #' find built-in recipes with local wave data (internal)
@@ -4420,6 +4596,9 @@ liss_recipe <- function(module) {
 #' must be one row per join key; the joins are performed with
 #' `relationship = "one-to-one"` and abort otherwise.
 #'
+#' Source-bound inputs and source claims on a result or its selected data frame
+#' are rejected because panel merging does not preserve their source lineage.
+#'
 #' @param results either the named list returned by [merge_liss_modules()]
 #'   (where each element has a `$data` tibble), or a named list of data frames
 #'   directly. names should be module codes (e.g. `"ch"`, `"cv"`).
@@ -4451,6 +4630,19 @@ merge_liss_panel <- function(results,
   dfs <- list()
   for (mod in names(results)) {
     d <- results[[mod]]
+    if (.liss_nonresponse_claims_collection(d))
+      .liss_nonresponse_abort("merge_liss_panel() does not preserve source_nonresponse collection lineage")
+    claimed_readiness <- if (is.list(d) && !is.data.frame(d))
+      d[["source_nonresponse_readiness"]] else NULL
+    if (!is.null(attr(d, "liss_source_nonresponse", exact = TRUE)) ||
+        inherits(d, "liss_source_nonresponse_result") ||
+        (is.list(claimed_readiness) && identical(claimed_readiness$status, "passed")) ||
+        (is.list(d) && !is.data.frame(d) &&
+         (!is.null(d[["source_nonresponse"]]) ||
+          !is.null(attr(d[["data"]], "liss_source_nonresponse", exact = TRUE)))))
+      cli::cli_abort("merge_liss_panel() does not preserve source_nonresponse lineage; retain the guarded module result")
+    if (.liss_nonresponse_claims_source(d))
+      .liss_nonresponse_abort("merge_liss_panel() does not preserve source_nonresponse lineage; retain the guarded module result")
     if (is.data.frame(d)) {
       dfs[[mod]] <- d
     } else if (is.list(d) && !is.null(d$data) && is.data.frame(d$data)) {

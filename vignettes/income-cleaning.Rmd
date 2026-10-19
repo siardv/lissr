@@ -32,6 +32,453 @@ plain-language justification, the original values stay in the returned
 data, and a generated report lets any reader reconstruct and contest
 each modification.
 
+## Source nonresponse before numerical cleaning
+
+The default source guard selects one reviewed household response:
+`ci23p339 = -9999999999` in the verified English
+`ci23p_EN_1.0p.sav` release. This is an encoded nonresponse, not an income
+to rectify, scale or replace with a donor. Its answer subtype remains
+`nonresponse_unknown`; questionnaire routing does not establish a definitive
+don't-know or refusal label. Other CI fields, CA and CH contracts remain
+outside this household contract. Explicit taxable and collection selections are
+described below.
+
+The recipe selects this exact reviewed contract from a versioned,
+package-owned registry. Package code pins the registry's content digest and
+compares the complete typed recipe record with its approved entry. Changing
+a recipe, adding a field or supplying a new hash does not approve new scope.
+Missing, corrupt or unapproved registry records block guarded processing;
+the registry is not discovered from the working directory or fetched online.
+CI23p337/338 have separate approved field records and require explicit selection;
+they do not inherit household consumer approval.
+
+Keep the complete carrier when source-result classes or source/readiness
+attributes are retained. The cleaner rejects those markers without a carrier
+before unwrapping, target resolution or preparation, including on scalar frames.
+Carrier-free legacy wrapper readiness for unevaluated source scope remains a
+nonclaiming hint and does not approve source exclusion. This preserves actual
+absent-wave merge behavior and ordinary unguarded cleaner results.
+
+Report writing and panel merging also reject source classes or source/readiness
+attributes on the outer result or its selected inner frame. A partially named
+data wrapper cannot discard scalar source lineage through either path. Ordinary
+and absent-wave wrapper readiness retain their existing behavior. Guarded report
+export and panel lineage propagation remain unsupported.
+
+Enable the guard explicitly for an in-memory CI merge:
+
+```{r source-nonresponse-merge}
+guarded <- lissr::merge_liss_module(
+  lissr::liss_recipe("ci"), data_dir = "data/ci",
+  output_dir = NULL, source_nonresponse = TRUE
+)
+dry_guarded <- lissr::liss_clean_income(
+  guarded, variables = list(target = "s339"), mode = "flag"
+)
+```
+
+The merge verifies the exact source filename and SHA256, captures the raw
+cell and field metadata before harmonization, and exposes a missing analysis
+amount. Its `source_nonresponse` carrier records source identity, typed
+classification, original values and scoped readiness. The cleaner consumes
+that carrier before constructing numerical target or context vectors.
+It also checks the reviewed household-income consumer approval, construct,
+unit, measurement period and target binding. Passing source classification
+alone does not authorize a different cleaner or establish that another
+column is household income.
+Matched cells cannot receive finite proposals, enter the covered numerical
+roles or be revived by `disable`, `enable_only` or numerical parameter
+overrides. The older `valid_for_analysis` flag retains its existing meaning;
+it does not certify source nonresponse coverage. A source-bound household
+amount cannot also be assigned as `category_code`; bracket categories need a
+separate variable.
+
+A raw or legacy merged frame needs an explicit rebind against the original
+verified source. For example, first retain an ordinary in-memory merge result,
+then bind its unchanged household target with the exact source wave column:
+
+```{r source-nonresponse-rebind}
+legacy_merge <- lissr::merge_liss_module(
+  lissr::liss_recipe("ci"), data_dir = "data/ci", output_dir = NULL
+)
+bound <- lissr::liss_classify_source_nonresponse(
+  legacy_merge,
+  source = "data/ci/ci23p_EN_1.0p.sav",
+  target = "s339", wave_col = "wave_id"
+)
+dry_bound <- lissr::liss_clean_income(
+  bound, variables = list(target = "s339"), mode = "flag"
+)
+```
+
+Pass the complete classifier wrapper `bound` to the cleaner. The classifier
+does not add a frame marker to its unchanged `bound$data`: cleaning that
+unmarked frame alone enters ordinary unguarded processing and makes no
+source-nonresponse guarantee. Keep `legacy_merge` separately for its original provenance, log and
+validation; those fields are not forwarded into `bound`.
+
+Binding requires unique respondent keys and unchanged selected values;
+a suffix, calendar year, filename assertion or legacy merge provenance is
+insufficient. Reviewed target names are `ci23p339`, `s339`, `ci_s339`, `nethh`
+and `ci00a339`;
+an unapproved target name is rejected even if selected values happen to coincide.
+An approved name and value agreement do not establish unforgeable field origin.
+For a merged binding, every presented row needs a nonmissing, nonempty exact
+wave ID, including rows outside `ci23p`. Full-join panels with CI-absent rows lacking CI wave identity
+are unsupported, including when the selected target is `ci_s339`.
+The binder preserves the caller's input. Flag mode preserves the actual supplied
+target, including normalized missing values from a guarded merge, and reports
+a missing proposed amount. Verified source originals are recovered only into
+the `_observed` audit column and source ledger. Applied modes return a missing
+target for matched cells while retaining that audit. Ordinary unmatched
+responses retain the existing numerical policies, including the cleaner's
+sign policy. Default target aliases do not expand automatically.
+
+Sorting and subsetting remain usable through verified respondent and wave keys
+when column metadata and the complete carrier are retained, as with supported
+tibble/dplyr operations. Base data-frame operations that strip target attributes
+fail closed; the metadata validator is not relaxed. Changed values, missing
+lineage or altered audit metadata also block the guard. RDS preserves the carrier
+and its integrity checks. The one-field version-1 carrier and public interface
+remain unchanged: old valid RDS carriers are checked against the reviewed
+contract without adding registry metadata or migrating the saved object.
+Registry and carrier digests check integrity, not authentication or an
+unforgeable field origin. The consumer gate relies on an intact validated
+contract; it cannot recover lineage stripped from a bare frame.
+Guarded merges require `output_dir = NULL`, and
+cross-module panel merging is blocked for guarded results in this slice.
+SAV/CSV exports with verified sidecars and automatic panel propagation are
+deferred; an ordinary SAV or CSV file does not preserve this readiness.
+Guarded cleaner reports also require `output_dir = NULL`; the existing report
+writer cannot yet export the complete source audit.
+Legacy workflows without the guard remain available and make no new source
+nonresponse guarantee.
+
+The returned readiness is scoped to this reviewed source and household field.
+It does not make the source originals in `_observed` or other audit columns
+suitable for quantitative analysis; use the missing analysis amounts and
+proposals for quantitative review.
+
+## Explicit taxable classification and normalization
+
+Taxable CI23p337 (respondent taxable income) and CI23p338 (its estimated
+follow-up) concern EUR amounts for 2022. Each can be selected explicitly by
+one complete reviewed field mirror in a schema 2.0.0 recipe. The default CI
+recipe and `recipe = NULL` still select legacy household field 339.
+
+```{r taxable-source-selection}
+reviewed_registry <- yaml::yaml.load_file(system.file(
+  "schema", "source_nonresponse_registry.yml", package = "lissr"
+))
+selected_fields <- Filter(function(field) field$field_id == "CI23P337_FIELD",
+                          reviewed_registry$fields)
+stopifnot(length(selected_fields) == 1L)
+tax_recipe <- lissr::liss_recipe("ci")
+tax_recipe$source_nonresponse <- list(
+  schema_version = "2.0.0", field = selected_fields[[1L]]
+)
+tax_audit <- lissr::liss_classify_source_nonresponse(
+  legacy_merge, source = "data/ci/ci23p_EN_1.0p.sav", target = "s337",
+  wave_col = "wave_id", recipe = tax_recipe
+)
+tax_normalized <- lissr::merge_liss_module(
+  tax_recipe, data_dir = "data/ci", output_dir = NULL,
+  source_nonresponse = TRUE
+)
+```
+
+The audit leaves data values and metadata unchanged (`normalized = FALSE`).
+The guarded merge replaces only the selected field's exact `-9999999999.0`
+and `-9999999998.0` cases with missing analysis amounts (`normalized = TRUE`).
+One version-2 carrier contains one field, one coverage/input receipt and a
+ledger with distinct N01/N02 case IDs. Readiness includes per-case counts;
+unknown answer subtypes remain `nonresponse_unknown`, with no numerical
+proposal. Original missing-value attributes are retained and checked per code.
+226/229 responses cannot resolve taxable subtypes or become amount estimates.
+Signed/zero amounts, near codes and unselected fields retain existing behavior.
+
+Select `CI23P338_FIELD` in a separate call for the estimated taxable amount.
+The scalar classifier rejects collection recipes and simultaneous selection.
+Approved taxable names
+are the selected raw name, `s337`/`s338` or `ci_s337`/`ci_s338`; aliases never
+establish source ownership. Existing guarded inputs cannot be rebound to a tax
+field, and version-2 lineage cannot be rebound to legacy 339. Keep the complete
+carrier for supported metadata-preserving subsets, reordering and RDS.
+
+`liss_clean_income()` rejects taxable carriers before target resolution,
+Background/P01 or numerical preparation under every mode and override, even
+when a column is renamed to a household alias. Taxable readiness does not
+certify household field 339 or approve taxable numerical cleaning. Source and
+carrier digests check integrity; they cannot recover origin after all markers
+are stripped or authenticate manually forged/resealed objects. Household
+projection, CA20g/CH and portable guarded exports remain deferred.
+
+## Joint taxable normalization in one guarded merge
+
+A schema 3.0.0 recipe explicitly selects the complete reviewed 337/338 pair.
+Guarded module merging supports this collection; the standalone classifier
+remains scalar and rejects collection recipes.
+
+```{r joint-taxable-selection}
+joint_recipe <- lissr::liss_recipe("ci")
+joint_recipe$source_nonresponse <- list(
+  schema_version = "3.0.0", fields = unname(reviewed_registry$fields)
+)
+joint_taxable <- lissr::merge_liss_module(
+  joint_recipe, data_dir = "data/ci", output_dir = NULL,
+  source_nonresponse = TRUE
+)
+joint_taxable$source_nonresponse_readiness
+```
+
+Both complete mirrors must match package authority. Either selection order is
+accepted and retained; missing, duplicate, extra or altered fields block. Both
+source receipts must pass against unchanged original values before either
+field is normalized. Both final receipts must pass after metadata restoration
+and name cleanup before a collection is attached. Failure returns no partial
+guarded result or file.
+
+The singular `source_nonresponse` slot holds one tagged schema-3 collection
+with the common source and two named complete sealed schema-2 states under
+`fields`. Readiness retains actual per-case counts and sums field-cells. The
+4,905-row source contributes 9,810 evaluated field-cells and 2,680 plus 1,389
+classified cells, totaling 4,069 field-cells, not a respondent union. Valid
+present fields pass even with zero matches. The entire shared wave absent is
+`not_evaluated`; a present source missing either required field blocks.
+
+Keep the complete collection for RDS and metadata-preserving subsets/reordering.
+Validation checks both leaf receipts and outer integrity and reseals returned
+state without changing the saved input. Unknown versions, incomplete carriers,
+field replacement/drop and lost target metadata block. No scalar migration,
+implicit first-field selection, household projection or new standalone collection
+classifier is provided.
+
+Schema-3 collections are rejected by the household cleaner before target/rules/P01 or
+numeric preparation under all modes/overrides. Unselected 339 is not certified
+by taxable readiness. Scalar rebinding rejects collection carriers and
+readiness/class claims, even with the carrier removed. Reports, panels and
+guarded exports remain unsupported. Stripping every marker loses lineage;
+digests do not authenticate manually forged objects.
+
+## Joint three-field normalization with native scalar receipts
+
+Schema 4.0.0 explicitly selects exactly CI23p337, CI23p338 and CI23p339.
+The package separately pins `source_nonresponse_collection_adapter.yml`, which
+links `CI23P339_FIELD` to the existing `CI23P339_N01` rule. Registry 2 remains
+the authority for all source, code, binding and evidence details. The adapter
+is required only for schema 4; old scalar and two-field paths remain independent
+of that new resource. Recipes select complete existing scalar blocks:
+
+```{r joint-three-field-selection}
+three_recipe <- lissr::liss_recipe("ci")
+three_fields <- lapply(reviewed_registry$fields, function(field) list(
+  field_id = field$field_id,
+  scalar = list(schema_version = "2.0.0", field = field)
+))
+household_records <- Filter(function(record) {
+  identical(record$contract$rule_id, "CI23P339_N01")
+}, reviewed_registry$records)
+stopifnot(length(household_records) == 1L)
+three_fields[[3L]] <- list(
+  field_id = "CI23P339_FIELD",
+  scalar = list(schema_version = "1.0.0",
+                contracts = list(household_records[[1L]]$contract))
+)
+three_recipe$source_nonresponse <- list(
+  schema_version = "4.0.0", fields = three_fields
+)
+three_guarded <- lissr::merge_liss_module(
+  three_recipe, data_dir = "data/ci", output_dir = NULL,
+  source_nonresponse = TRUE
+)
+```
+
+All six member orders are accepted and retained. All three unchanged original
+receipts and normalization locks must pass before any amount column changes;
+all three finalizers must pass before one complete collection is attached.
+The `fields` members retain complete native version-2 taxable states and the
+complete version-1 household state, including its original rule and 229 routing
+candidate evidence. No scalar object is migrated or relabelled. Household 339
+has only its existing exact `-9999999999.0` case; the second taxable code is not
+a household case. Authority comes from the pinned adapter and registry, never
+from an alias or list position.
+
+The version-4 boundary checks all three restored canonical metadata, complete
+source row/wave/key sets, receipts and ledgers. Every normalized classified
+amount must stay missing, including 339. Original 229 routing supports a
+candidate only; authoritative household subtype remains unknown. The native
+household receipt has no separate original 229 vector, so coverage alone cannot
+reconstruct that routing or authenticate a manually resealed object.
+
+Readiness counts field-cells, retaining all three native per-field records and
+actual case identities. Valid fields with zero matches pass. An entirely absent
+shared wave is `not_evaluated` with no carrier and three zero-count records;
+a present source missing any required field blocks the whole call. RDS and
+metadata-preserving subsets/reordering validate every leaf and reseal returned
+state without changing the saved input. Incomplete, contradictory, dropped or
+replaced carriers and lost metadata block.
+
+Separate pinned consumer policies permit the explicit household flag operation
+and the applied-result operation described below. A household leaf's scalar
+approval and source readiness do not grant either collection permission.
+Corrected output uses a separate lineage contract because household cleaning can
+change values bound by the source receipt. Scalar classification rejects schema
+4, and scalar rebinding rejects
+every claimed collection before discarding lineage. Guarded reports, panels
+and SAV/CSV export remain unsupported. Defaults, scalar versions 1/2 and the
+exact two-field version-3 contract retain their behavior; CA20g/CH remain deferred.
+
+## Household flag simulation with the complete collection
+
+The package-owned `source_nonresponse_collection_consumers.yml` policy grants
+one operation on an intact version-4 collection. Select the target explicitly
+through the existing argument and keep the complete result:
+
+```{r collection-household-flag}
+three_flag <- lissr::liss_clean_income(
+  three_guarded, mode = "flag", variables = list(target = "s339"),
+  output_dir = NULL
+)
+saveRDS(three_flag, "three_field_household_flag.rds")
+```
+
+All original columns, values, attributes and row order remain unchanged. The
+complete three-field carrier stays on the result and frame. Native339 validation
+recovers observed codes only into `s339_observed` and keeps classified339
+`s339_proposed` values missing. Ordinary proposals use the existing flag rules.
+This simulation does not apply corrections or establish numerical-model validity.
+
+This FLAG capability does not cover correct/na_only; the distinct applied-result
+path below covers those modes. Omitted or alias-based target selection and taxable
+targets remain blocked. All three bound amount columns are prohibited in every secondary
+role, including personal-income predictors, household grouping, bounds and donor
+keys. These checks run before and after P01. Background must be an unguarded
+frame or NULL; every guarded/claimed background is rejected before conversion,
+even with disabled P01. Reserved P01 helper names and preexisting household audit
+columns block, so added context or audit output cannot overwrite original columns.
+
+Complete source validation runs before preparation, after P01 and on output.
+Valid source-input subsets/reorder/RDS include empty and other-wave-only bound
+frames. Zero household source evaluation keeps readiness `not_evaluated`; it
+does not prevent ordinary other-wave flag simulation or certify other waves.
+A result with no bound carrier cannot use this path.
+
+The wrapper's separate `source_nonresponse_consumer_readiness` record binds the
+full carrier digest and complete produced data, decisions, effective ruleset,
+resolved variables, mode and summary except duration_s. The entire log is outside
+the proof. Native three-field source readiness remains separate. The wrapper
+has class `liss_clean_collection_flag_result`; its frame has source lineage only.
+Validating `$data` alone cannot validate edited proposals or decisions.
+
+Preserve the complete wrapper with RDS. Post-consumer subset/reorder and repeat
+cleaning are not resealed; supply a supported source subset before a new flag
+run. Source/consumer class-only or record-only claims still block rebinding and
+exports. Digests detect unresealed changes, not manually forged objects, source
+origin after every marker is stripped, or origin of copied unmarked predictors.
+This FLAG operation introduces no public scalar projection, taxable consumer or
+wider source scope.
+
+## Applied household amounts with retained collection lineage
+
+The separate `source_nonresponse_collection_applied.yml` policy permits a whole
+applied result for the same explicit household target. Background attachment and
+file/report output are excluded from this capability:
+
+```{r collection-household-applied}
+three_correct <- lissr::liss_clean_income(
+  three_guarded, mode = "correct", variables = list(target = "s339"),
+  background = NULL, output_dir = NULL
+)
+lissr::liss_validate_applied_income(three_correct)
+saveRDS(three_correct, "three_field_household_applied.rds")
+three_reloaded <- readRDS("three_field_household_applied.rds")
+lissr::liss_validate_applied_income(three_reloaded, replay = TRUE)
+```
+
+`source_input` retains the exact accepted source collection and all three native
+leaves. `data` contains the derived `s339` amount plus household audit columns;
+both tax fields and every other original column retain their values, attributes
+and order. Native source receipts are never rewritten to attest corrected
+amounts. The separate `applied_lineage` record binds source, effective rules,
+invocation, decisions, stable log/summary, metadata and output. Preserve the
+complete result; the analysis frame alone cannot validate this relationship.
+
+Source-classified household cells remain missing under every mode and override,
+with raw codes recovered only in `s339_observed` and the retained source audit.
+`na_only` uses the existing cleaner: preparation can rectify signs, and an explicit
+F01 winsorisation override can produce a finite capped amount. It is not always
+a finite-to-missing-only operation. The numerical method itself is unchanged.
+
+Checked scoped source readiness is separate from analysis execution. A supported
+source view containing only ordinary other-wave rows can run analysis while its
+CI23p readiness remains `not_evaluated`. Its exact retained parent may contain
+broader source receipts; those broader counts do not become current scope counts.
+Raw-source metadata in native leaves, normalized input target metadata and derived
+target metadata are distinct; the applied numeric target retains its label under
+the existing cleaner's metadata rule.
+
+Validation without replay checks typed whole-result integrity and source locks;
+an ordinary digest is not authenticated execution. `replay = TRUE` additionally
+requires the recorded computation identity/runtime and reproduces the captured
+invocation from `source_input`. It does not reread original sources or validate
+the statistical suitability of a correction. Engine/runtime changes can prevent
+replay even when structural checks remain available.
+
+Decision columns, optional dataset flags, summaries and log entries must retain
+their constructor-owned types and field sets. Counts cannot be character values
+or fractional numbers. Durations and timestamps still require valid scalar
+types when their values are excluded from semantic replay. These shape checks
+also apply to otherwise valid older whole-result RDS objects.
+
+Manual output subsets/reorders, extracted analysis frames, background attachment,
+second cleaning, reports, panels and SAV/CSV export remain unsupported. Start a
+separate new run explicitly from the original `source_input`. Recognized applied
+claims on wrappers or selected frames block lineage-discarding routes; deliberately
+removing every class and marker leaves ordinary input of unknown ownership.
+
+### Controlled views of existing applied output
+
+Use the separate applied-view capability to select explicit parent row keys
+without rerunning the cleaner on selected rows:
+
+```{r collection-household-applied-view}
+selected_keys <- rev(three_correct$applied_lineage$row_keys)
+three_view <- lissr::liss_create_applied_income_view(three_correct, selected_keys)
+lissr::liss_validate_applied_income_view(three_view)
+saveRDS(three_view, "three_field_household_applied_view.rds")
+view_reloaded <- readRDS("three_field_household_applied_view.rds")
+lissr::liss_validate_applied_income_view(view_reloaded, replay = TRUE)
+```
+
+The view retains the exact complete applied result, including original native
+source input, in `parent_result`. Supply ordered unique plain character row keys;
+`character(0)` explicitly requests an empty view. Every data column stays in
+parent order, with natural selected names/dimensions and unchanged descriptive
+metadata. Source locks, tax amounts and audit/status columns are projected as
+already computed. The separate version-1 view policy and lineage do not change
+the native version-4 carrier or the existing whole-parent computation identity.
+
+The projected decisions retain original root `row` and opaque `decision_id`,
+then append integer `root_decision_row` and `view_row`. References use the complete
+parent digest plus root ledger ordinal; repeated decision IDs are allowed.
+Entries are ordered by view row and root ledger ordinal. Row and decision counts
+are distinct because one selected row can have several decisions.
+
+`view_status` records projection only. Scoped `source_readiness` is checked from
+selected ORIGINAL source rows with their unchanged receipt. Parent readiness and
+analysis execution status remain separate. Empty or other-wave-only selections
+can have `not_evaluated` source scope while the parent completed analysis.
+
+Validation reconstructs the exact closed projection. Optional replay executes
+the complete parent under its existing runtime gate, never a selected-row refit.
+Whole-view RDS is supported; whole-parent validation rejects a view wrapper.
+Nested views, repeated cleaning, source rebinding, background attachment,
+report/panel consumption and SAV/CSV export remain unsupported. Ordinary hashes
+are not authentication: coordinated resealing can describe another consistent
+parent/view, and permitted nonsemantic parent timing changes can pass both
+validation modes. Replay does not establish source authenticity or statistical
+validity. Retain the complete object and its recognized guarded claims.
+
 ## The ruleset
 
 The default ruleset ships with the package and is the single source of

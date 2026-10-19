@@ -41,6 +41,10 @@ code (e.g. \code{ch_s004}, \code{cv_s004}) to avoid name collisions. every modul
 must be one row per join key; the joins are performed with
 \code{relationship = "one-to-one"} and abort otherwise.
 }
+\details{
+Source-bound inputs and source claims on a result or its selected data frame
+are rejected because panel merging does not preserve their source lineage.
+}
 \examples{
 \dontrun{
 results <- merge_liss_modules(recipe_paths, data_dir = "~/Downloads/liss")

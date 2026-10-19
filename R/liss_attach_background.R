@@ -21,6 +21,12 @@
 #'   Existing survey columns are never overwritten.
 #'
 #' @details
+#' Recognized source-nonresponse results and source, consumer or applied claims
+#' are rejected with a `liss_source_nonresponse_blocked` condition, including
+#' residual claims on otherwise plain frames. This check precedes evaluation
+#' of the other arguments and source-file reads. Unmarked data has no inferred
+#' source ownership; this helper does not grant a new nonresponse capability.
+#'
 #' Only local, regular `.sav` files with the standard SPSS `$FL2` signature are
 #' admitted, before reading with `haven::read_sav(user_na = TRUE)`. Compressed
 #' containers and `$FL3` ZSAV files are rejected. Both supplied and symlink-resolved
@@ -91,6 +97,8 @@
 #' }
 liss_attach_background <- function(data, sources, month_col, variables,
                                    prefix = "avars_") {
+  if (.liss_nonresponse_claims_guarded(data))
+    .liss_nonresponse_abort("background attachment does not support source-nonresponse results or claims")
   .liss_bg_frame(data, "data")
   .liss_bg_frame(sources, "sources")
   .liss_bg_scalar(month_col, "month_col")

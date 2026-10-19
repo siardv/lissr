@@ -643,6 +643,8 @@ write_clean_jsonl <- function(entries, path) {
 # the person id plus the aligned annual index. never joins on the
 # household id. single-snapshot backgrounds join on the person id only.
 attach_background_frame <- function(df, background, vars, origin, wv) {
+  if (.liss_nonresponse_claims_guarded(background))
+    .liss_nonresponse_abort("income background attachment does not support source-nonresponse results or claims")
   b <- as.data.frame(background, stringsAsFactors = FALSE)
   person <- vars$person
   if (!person %in% names(b)) {
@@ -785,8 +787,10 @@ generate_candidates <- function(gv, p, obs_v, rmin, rmax, vmin, vmax,
 #' the responsible rule, the evidence, the admissible candidate set,
 #' and a plain-language justification.
 #'
-#' The returned data always carries the untouched input values in
-#' `<target>_observed`. In `"correct"` mode the target column holds the
+#' The returned data include the numeric input values in
+#' `<target>_observed`. For normalized source-bound input, that audit column
+#' recovers the verified original source codes for classified cells.
+#' In `"correct"` mode the target column holds the
 #' cleaned values and `<target>_clean_status` marks each modified cell
 #' with its final action and rule. In `"flag"` mode the target column is
 #' left untouched and the fully simulated result is returned in
@@ -803,7 +807,9 @@ generate_candidates <- function(gv, p, obs_v, rmin, rmax, vmin, vmax,
 #'   [merge_liss_module()] result (its `$data` element is used).
 #' @param background optional background/demographics frame attached by
 #'   rule P01 before cleaning (joined on the person id and, when the
-#'   background is wave-stamped, the aligned annual wave index).
+#'   background is wave-stamped, the aligned annual wave index). P01 rejects
+#'   source-nonresponse results or claims before converting the background.
+#'   For ordinary income input, disabling P01 leaves the background unused.
 #' @param ruleset a ruleset object from [liss_cleaning_ruleset()], a
 #'   path to a ruleset YAML file, or `NULL` for the packaged default.
 #' @param mode `"correct"` (apply corrections), `"flag"` (dry run,
@@ -825,6 +831,55 @@ generate_candidates <- function(gv, p, obs_v, rmin, rmax, vmin, vmax,
 #'   decision ledger, and JSONL log are written via
 #'   [liss_cleaning_report()].
 #' @param verbose print progress with cli.
+#' @details
+#'   When supplied a result from [liss_classify_source_nonresponse()] or an
+#'   opt-in guarded module merge, source-classified amounts are excluded from
+#'   numerical proposals in every mode, independently of rule overrides.
+#'   The source audit is retained in `$source_nonresponse`; finite-count and
+#'   distribution summaries exclude the classified amount codes.
+#'   In `"flag"` mode the target remains exactly as supplied, including
+#'   normalized missing amounts; recovered source codes remain in the observed
+#'   audit column and carrier. A source-bound household-income target cannot
+#'   also be assigned as `category_code`. Readiness covers the specified source
+#'   exclusion and does not certify every returned audit column for analysis.
+#' Guarded inputs require separate package-registry approval for the household
+#' net-income construct, EUR, the reviewed measurement period and target binding
+#' before numerical preparation. Classification readiness alone does not approve
+#' another consumer or establish the origin of a marker-stripped bare frame.
+#' Source-result classes or source/readiness attributes without a usable carrier
+#' are rejected before household preparation; a wrapper readiness slot alone may
+#' still report a legacy `not_evaluated` result.
+#' Explicit taxable CI23p337/338 version-2 carriers are rejected before target
+#' resolution, Background/P01 or numeric preparation, under every mode and override.
+#' Schema-3 taxable collections remain unsupported. An intact schema-4
+#' three-field collection has a separate package-pinned household FLAG capability:
+#' explicitly select `variables = list(target = "s339")` with `mode = "flag"`.
+#' This retains all original columns and the complete collection, excludes the
+#' sealed taxable amounts from every secondary cleaner role, and rejects guarded
+#' Background data. Guarded exports remain unsupported.
+#' Complete returned wrappers carry a separate consumer receipt binding the data,
+#' decisions, effective rules, resolved variables and summary except duration.
+#' Retain the complete result as RDS for this proof. Its bare `$data` carries source
+#' lineage only; it does not certify proposals or decisions as a complete result.
+#' A consumer receipt establishes source exclusion for household flag simulation,
+#' not statistical validity, taxable-field approval or source ownership elsewhere.
+#'
+#' With an explicit schema-4 `s339` target, `mode = "correct"` or `"na_only"`
+#' uses a distinct applied-result capability, requiring `background = NULL` and
+#' `output_dir = NULL`. The complete original input remains in `$source_input`;
+#' `$data` contains the derived household amount and audit columns. Both tax
+#' fields and all other original columns remain unchanged. Native source metadata,
+#' bound input metadata and derived target metadata remain distinct. The original
+#' source carrier is never rewritten to attest corrected values.
+#' `$applied_lineage` binds source, execution, options and output, with scoped
+#' source readiness separate from analysis execution status. `na_only` preserves
+#' the existing method, including sign rectification and an explicit F01
+#' winsorisation override; it is not universally a finite-to-missing operation.
+#' Retain the whole applied result as RDS and use [liss_validate_applied_income()]
+#' for structural checks or optional exact-runtime replay. Ordinary digests do
+#' not authenticate execution or establish statistical validity. Extracted frames,
+#' manual subsets/reorders, repeat cleaning, background attachment, guarded panel
+#' assembly and report exports are unsupported for these results.
 #' @return invisibly, a `liss_clean_result` list with elements `data`,
 #'   `decisions` (the ledger), `log`, `summary`, `ruleset`, `variables`,
 #'   and `mode`.
@@ -838,14 +893,96 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
                               params = NULL, variables = NULL,
                               output_dir = NULL, verbose = TRUE) {
   t0 <- Sys.time()
+  explicit_mode <- !missing(mode)
   mode <- match.arg(mode)
 
+  collection_state <- NULL
+  collection_policy <- NULL
+  collection_original <- NULL
+  collection_applied <- FALSE
+  collection_source_input <- NULL
+  collection_invocation <- NULL
+  if (.liss_nonresponse_claims_consumer(data))
+    .liss_nonresponse_abort("a previous collection consumer result cannot be cleaned again; retain the original merge input")
+  if (.liss_nonresponse_claims_collection(data)) {
+    selected <- if (is.list(variables)) variables[["target", exact = TRUE]] else NULL
+    if (!explicit_mode || !is.null(output_dir) ||
+        !is.list(variables) || is.null(names(variables)) || anyNA(names(variables)) ||
+        any(!nzchar(names(variables))) || anyDuplicated(names(variables)) ||
+        sum(names(variables) == "target") != 1L ||
+        !is.character(selected) || length(selected) != 1L || is.na(selected) ||
+        !is.null(attributes(selected)))
+      .liss_nonresponse_abort("collection household consumer requires explicit flag mode or applied correct/na_only, an exact plain scalar variables target and output_dir = NULL")
+    collection_applied <- !identical(mode, "flag")
+    if (collection_applied && !is.null(background))
+      .liss_nonresponse_abort("applied collection household consumer requires background = NULL")
+    applied_parent <- if (collection_applied) .liss_applied_parent(data) else NULL
+    wrapper <- is.list(data) && !is.data.frame(data) && !is.null(data$data)
+    frame <- if (wrapper) data$data else data
+    state <- if (wrapper) data[["source_nonresponse", exact = TRUE]] else
+      attr(data, "liss_source_nonresponse", exact = TRUE)
+    if (!is.list(state) || !identical(state$schema_version, "4.0.0") ||
+        is.null(attr(frame, "liss_source_nonresponse", exact = TRUE)))
+      .liss_nonresponse_abort("collection household consumer requires the complete intact schema-4 carrier")
+    checked <- if (collection_applied) applied_parent$checked else
+      .liss_nonresponse_validate_mixed(data, state)
+    collection_policy <- if (collection_applied) .liss_applied_policy() else
+      .liss_nonresponse_collection_consumers()
+    collection_state <- checked$state
+    target <- collection_state$fields[["CI23P339_FIELD"]]$target
+    if (!identical(selected, target) || !identical(selected, "s339"))
+      .liss_nonresponse_abort("collection household consumer requires the sealed explicit household target")
+    if (collection_applied) collection_source_input <- data
+    if (!is.null(background)) {
+      if (.liss_nonresponse_claims_guarded(background) || !is.data.frame(background))
+        .liss_nonresponse_abort("collection consumer background must be an ordinary unguarded data frame")
+      .liss_nonresponse_consumer_columns(background, target, background = TRUE)
+    }
+    .liss_nonresponse_consumer_columns(frame, target)
+    collection_original <- frame
+    data <- frame
+    attr(data, "liss_source_nonresponse") <- collection_state
+    for (key in c("source_nonresponse_readiness", "liss_source_nonresponse_readiness"))
+      if (!is.null(attr(data, key, exact = TRUE)))
+        attr(data, key) <- collection_state$readiness
+  }
+  # retain claims on either surface before a wrapper can discard them
+  source_wrapper <- is.list(data) && !is.data.frame(data) &&
+    !is.null(data[["data", exact = FALSE]])
+  source_frame <- if (source_wrapper) data[["data", exact = FALSE]] else data
+  source_wrapper_state <- if (source_wrapper)
+    data[["source_nonresponse", exact = TRUE]] else NULL
+  source_frame_state <- attr(source_frame, "liss_source_nonresponse", exact = TRUE)
+  if (!is.list(source_wrapper_state) && !is.list(source_frame_state) &&
+      .liss_nonresponse_claims_source(data))
+    .liss_nonresponse_abort("source nonresponse binding blocked: classified input is missing its carrier")
+  nonresponse_state <- if (is.null(collection_state))
+    attr(data, "liss_source_nonresponse", exact = TRUE) else
+    collection_state$fields[["CI23P339_FIELD"]]
   if (is.list(data) && !is.data.frame(data) && !is.null(data$data)) {
+    wrapper_state <- data[["source_nonresponse"]]
+    frame_state <- attr(data$data, "liss_source_nonresponse", exact = TRUE)
+    if (!is.null(wrapper_state) && !is.null(frame_state) &&
+        !identical(wrapper_state, frame_state))
+      cli::cli_abort("source_nonresponse wrapper and data receipts disagree")
+    nonresponse_state <- wrapper_state %||% frame_state
+    claimed_readiness <- data[["source_nonresponse_readiness"]]
+    if (is.null(nonresponse_state) &&
+        (inherits(data, "liss_source_nonresponse_result") ||
+         (is.list(claimed_readiness) && identical(claimed_readiness$status, "passed"))))
+      .liss_nonresponse_abort("source nonresponse binding blocked: classified input is missing its carrier")
     data <- data$data
   }
   if (!is.data.frame(data)) {
     cli::cli_abort("`data` must be a data frame or a merge result with a $data element")
   }
+  # deny unsupported consumers before target resolution or numeric preparation
+  if (!is.null(nonresponse_state) &&
+      !identical(nonresponse_state$schema_version, "1.0.0"))
+    .liss_nonresponse_consumer(.liss_nonresponse_state_rule(nonresponse_state),
+                               nonresponse_state$target)
+  if (!is.null(nonresponse_state) && !is.null(output_dir))
+    cli::cli_abort("guarded report export is not supported; use output_dir = NULL and retain the complete result")
   was_tibble <- inherits(data, "tbl_df")
   df <- as.data.frame(data, stringsAsFactors = FALSE)
   n <- nrow(df)
@@ -854,6 +991,12 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     ruleset
   } else {
     liss_cleaning_ruleset(ruleset)
+  }
+  if (collection_applied) {
+    collection_invocation <- list(ruleset = rs,
+      income_cap = income_cap, min_income = min_income, disable = disable,
+      enable_only = enable_only, params = params, variables = variables)
+    .liss_applied_invocation_validate(collection_invocation)
   }
   rs <- apply_ruleset_overrides(rs, income_cap, min_income, disable,
                                 enable_only, params, variables)
@@ -880,6 +1023,9 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     if (length(hit) == 0) {
       cli::cli_abort("income target column not found; tried: {paste(cands, collapse = ', ')}")
     }
+    if (!is.null(nonresponse_state) && length(unique(hit)) > 1L &&
+        is.null(variables$target))
+      cli::cli_abort("source_nonresponse requires an explicit target when aliases are ambiguous")
     hit[1]
   }
   obs_col <- paste0(tv0, "_observed")
@@ -888,6 +1034,11 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
       "column {.field {obs_col}} already present: {.field {tv0}} appears to be cleaned already",
       "i" = "run liss_clean_income() on the raw merged data, or drop the *_observed/*_clean_status columns first"
     ))
+  }
+  if (!is.null(nonresponse_state)) {
+    source_nonresponse_validate(df, nonresponse_state, tv0,
+                               wave_col = nonresponse_state$wave_col)
+    .liss_nonresponse_consumer(nonresponse_state$rule, tv0)
   }
 
   if (verbose) cli::cli_h2("income cleaning ({mode} mode)")
@@ -898,6 +1049,14 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
 
   # wave context is needed before P01 for the annual join alignment
   vars_pre <- resolve_cleaning_variables(df, rs$variables)
+  if (!is.null(collection_state))
+    .liss_nonresponse_consumer_roles(vars_pre, collection_state)
+  if (!is.null(nonresponse_state) && identical(vars_pre$category_code, tv0))
+    .liss_nonresponse_abort("source-bound household income cannot serve as its own category-code variable")
+  if (!is.null(nonresponse_state) &&
+      any(c(vars_pre$person, vars_pre$household, vars_pre$wave,
+            vars_pre$birth_year, vars_pre$age) == tv0, na.rm = TRUE))
+    cli::cli_abort("source-bound household income cannot serve as an identifier, wave, age or birth-year variable")
   wv <- if (!is.na(vars_pre$wave)) numeric_view(df[[vars_pre$wave]]) else rep(NA_real_, n)
 
   # ---- P01: attach background -------------------------------------------
@@ -925,20 +1084,53 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
 
   vars <- resolve_cleaning_variables(df, rs$variables)
   tv <- vars$target
+  if (!is.null(collection_state)) {
+    .liss_nonresponse_consumer_columns(df, tv)
+    .liss_nonresponse_consumer_roles(vars, collection_state)
+    .liss_nonresponse_consumer_unchanged(df, collection_original)
+    checked_collection <- .liss_nonresponse_validate_mixed(df, collection_state)
+    collection_state <- checked_collection$state
+    nonresponse_state <- collection_state$fields[["CI23P339_FIELD"]]
+    attr(df, "liss_source_nonresponse") <- collection_state
+  }
+  if (!is.null(nonresponse_state) && identical(vars$category_code, tv))
+    .liss_nonresponse_abort("source-bound household income cannot serve as its own category-code variable")
   if (verbose) for (nt in vars$notes) cli::cli_alert_info(nt)
 
   # ---- context vectors -----------------------------------------------------
+  nonresponse_lock <- rep(FALSE, nrow(df))
+  nonresponse_observed <- NULL
+  if (!is.null(nonresponse_state)) {
+    checked <- source_nonresponse_validate(df, nonresponse_state, tv,
+                                          wave_col = nonresponse_state$wave_col)
+    .liss_nonresponse_consumer(checked$state$rule, tv)
+    nonresponse_state <- checked$state
+    nonresponse_lock <- checked$lock
+    nonresponse_observed <- checked$observed
+  }
   raw <- df[[tv]]
   observed <- numeric_view(raw)
+  if (!is.null(nonresponse_observed)) observed <- nonresponse_observed
   coerce_na <- sum(!is.na(raw) & is.na(observed))
   w <- observed
+  w[nonresponse_lock] <- NA_real_
+  eligible_observed <- w
   status <- rep(NA_character_, n)
+  if (any(nonresponse_lock)) {
+    status[nonresponse_lock] <- "source_nonresponse:missing_amount"
+    logs <- c(logs, list(clean_log_entry(
+      nonresponse_state$rule$rule_id, tv, "source_nonresponse:missing_amount",
+      sum(nonresponse_lock), values_changed = sum(nonresponse_lock))))
+  }
 
   pid <- as.character(unclass(df[[vars$person]]))
   hid <- as.character(unclass(df[[vars$household]]))
   wv <- if (!is.na(vars$wave)) numeric_view(df[[vars$wave]]) else rep(NA_real_, n)
   ctx_abs <- function(col) {
-    if (is.na(col)) rep(NA_real_, n) else abs(numeric_view(df[[col]]))
+    if (is.na(col)) return(rep(NA_real_, n))
+    x <- numeric_view(df[[col]])
+    if (identical(col, tv)) x[nonresponse_lock] <- NA_real_
+    abs(x)
   }
   pnet <- ctx_abs(vars$personal_net)
   pgross <- ctx_abs(vars$personal_gross)
@@ -947,6 +1139,7 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   } else {
     numeric_view(df[[vars$household_size]])
   }
+  if (identical(vars$household_size, tv)) hsize[nonresponse_lock] <- NA_real_
 
   p02 <- first_rule(rs, "preparation_rules", "resolve_target_variable")
   if (rule_enabled(p02) && isTRUE(p02$log %||% TRUE)) {
@@ -1021,6 +1214,8 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   # ---- category bounds (P04, D01) ------------------------------------------
   row_min <- if (!is.na(vars$category_min)) numeric_view(df[[vars$category_min]]) else rep(NA_real_, n)
   row_max <- if (!is.na(vars$category_max)) numeric_view(df[[vars$category_max]]) else rep(NA_real_, n)
+  if (identical(vars$category_min, tv)) row_min[nonresponse_lock] <- NA_real_
+  if (identical(vars$category_max, tv)) row_max[nonresponse_lock] <- NA_real_
 
   p04 <- first_rule(rs, "preparation_rules", "map_category_bounds")
   if (rule_enabled(p04) && !is.na(vars$category_code)) {
@@ -1192,6 +1387,7 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     donor_df <- as.data.frame(lapply(df[donor_keys], numeric_view),
                               stringsAsFactors = FALSE)
     names(donor_df) <- donor_keys
+    if (tv %in% donor_keys) donor_df[[tv]][nonresponse_lock] <- NA_real_
 
     p05 <- first_rule(rs, "preparation_rules", "backfill_age")
     if (rule_enabled(p05) && !is.na(vars$age) && vars$age %in% donor_keys &&
@@ -1264,6 +1460,8 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
 
   apply_cell <- function(i_glob, p_loc, rule, evd, gv, gmin_p, gmax_p) {
     # shared correction path for one flagged cell; returns the new value
+    if (nonresponse_lock[i_glob])
+      cli::cli_abort("source nonresponse cannot enter a numerical correction path")
     obs_v <- gv[p_loc]
     vmin_c <- if (is.finite(gmin_p)) gmin_p else mn
     vmax_c <- min(if (is.finite(gmax_p)) gmax_p else cap, cap)
@@ -1640,6 +1838,8 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   }
 
   # ---- assemble output -----------------------------------------------------------
+  if (any(is.finite(w[nonresponse_lock])))
+    cli::cli_abort("source nonresponse cannot become a finite numerical proposal")
   out <- df
   out[[obs_col]] <- observed
   if (identical(mode, "flag")) {
@@ -1654,6 +1854,16 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
   }
   if (!is.null(ds_flag)) out[[paste0(tv, "_dataset_flag")]] <- ds_flag
   if (was_tibble) out <- tibble::as_tibble(out)
+  if (!is.null(collection_state) && !collection_applied) {
+    .liss_nonresponse_consumer_unchanged(out, collection_original)
+    attr(out, "liss_source_nonresponse") <- collection_state
+    final_collection <- .liss_nonresponse_validate_mixed(out, collection_state)
+    collection_state <- final_collection$state
+    attr(out, "liss_source_nonresponse") <- collection_state
+  } else if (!collection_applied && !is.null(nonresponse_state) &&
+             !is.null(attr(out, "liss_source_nonresponse", exact = TRUE))) {
+    attr(out, "liss_source_nonresponse") <- nonresponse_state
+  }
 
   # ---- summary, log tail, result --------------------------------------------------
   decisions <- ledger_frame(ld)
@@ -1682,7 +1892,7 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     n_rows = n,
     n_groups = length(groups),
     n_groups_processed = n_groups_processed,
-    n_finite_before = sum(is.finite(observed)),
+    n_finite_before = sum(is.finite(eligible_observed)),
     n_finite_after = sum(is.finite(w)),
     n_decisions = nrow(decisions),
     n_corrected = cnt("correct"),
@@ -1695,13 +1905,13 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
     n_ungroupable = n_ungroupable,
     n_bounds_voided = sum(decisions$action == "void_bounds"),
     n_flagged_dataset = sum(decisions$action == "flag"),
-    pct_corrected = if (sum(is.finite(observed)) > 0) {
-      round(100 * cnt("correct") / sum(is.finite(observed)), 2)
+    pct_corrected = if (sum(is.finite(eligible_observed)) > 0) {
+      round(100 * cnt("correct") / sum(is.finite(eligible_observed)), 2)
     } else {
       NA_real_
     },
     by_rule = agg,
-    distribution_before = dist_stats(observed),
+    distribution_before = dist_stats(eligible_observed),
     distribution_after = dist_stats(w),
     remaining_over_cap = sum(is.finite(w) & w > cap),
     remaining_under_min = sum(is.finite(w) & w > 0 & w < mn),
@@ -1719,6 +1929,26 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
          ruleset = rs, variables = vars, mode = mode),
     class = "liss_clean_result"
   )
+  if (!collection_applied) res$source_nonresponse_readiness <- if (is.null(nonresponse_state))
+    list(status = "not_evaluated", reason = "no source-bound classification supplied")
+  else nonresponse_state$readiness
+  if (!is.null(nonresponse_state)) {
+    if (!collection_applied) res$source_nonresponse <- nonresponse_state
+    res$summary$n_source_nonresponse <- sum(nonresponse_lock)
+    res$summary$n_raw_finite_before <- sum(is.finite(observed))
+  }
+
+  if (collection_applied) {
+    res <- .liss_applied_finish(res, collection_source_input, collection_invocation)
+  } else if (!is.null(collection_state)) {
+    res$source_nonresponse <- collection_state
+    res$source_nonresponse_readiness <- collection_state$readiness
+    class(res) <- c("liss_clean_collection_flag_result", "liss_clean_result",
+      "liss_source_nonresponse_collection_result", "liss_source_nonresponse_result")
+    res$source_nonresponse_consumer_readiness <-
+      .liss_nonresponse_consumer_record(res, collection_policy)
+    .liss_nonresponse_validate_consumer_result(res, collection_state)
+  }
 
   if (!is.null(output_dir)) {
     liss_cleaning_report(res, output_dir, verbose = verbose)
@@ -1726,8 +1956,13 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
 
   if (verbose) {
     if (identical(mode, "flag")) {
-      cli::cli_alert_success(
-        "dry run complete: {summary$n_decisions} decision{?s} ledgered as proposals; data unchanged")
+      if (is.null(nonresponse_state)) {
+        cli::cli_alert_success(
+          "dry run complete: {summary$n_decisions} decision{?s} ledgered as proposals; data unchanged")
+      } else {
+        cli::cli_alert_success(
+          "dry run complete: {summary$n_decisions} numerical decision{?s} ledgered as proposals; source originals retained separately from analysis proposals")
+      }
     } else {
       cli::cli_alert_success(
         "income cleaning complete: {summary$n_corrected} corrected, {summary$n_voided} voided, {summary$n_rectified} rectified, {summary$n_capped} capped, {summary$n_winsorised} winsorised, {summary$n_flagged_dataset} dataset-flagged")
@@ -1742,10 +1977,13 @@ liss_clean_income <- function(data, background = NULL, ruleset = NULL,
 print.liss_clean_result <- function(x, ...) {
   s <- x$summary
   cli::cli_h3("liss income cleaning result ({s$mode} mode)")
+  last <- if (inherits(x, "liss_clean_collection_applied_result"))
+    "{s$n_decisions} ledgered decision{?s}; retain the complete result and inspect liss_validate_applied_income()"
+  else "{s$n_decisions} ledgered decision{?s}; inspect $decisions or write artifacts with liss_cleaning_report()"
   cli::cli_bullets(c(
     "*" = "target {.field {s$target}}: {s$n_finite_before} finite value{?s} in, {s$n_finite_after} out ({s$n_rows} row{?s}, {s$n_groups_processed} household{?s} processed)",
     "*" = "{s$n_corrected} corrected, {s$n_voided} voided, {s$n_rectified} rectified, {s$n_capped} capped, {s$n_winsorised %||% 0} winsorised, {s$n_flagged_dataset} dataset-flagged",
-    "*" = "{s$n_decisions} ledgered decision{?s}; inspect $decisions or write artifacts with liss_cleaning_report()"
+    "*" = last
   ))
   invisible(x)
 }
@@ -1787,6 +2025,9 @@ summary.liss_clean_result <- function(object, ...) {
 #' appendix. Alongside the report, the complete decision ledger is
 #' written as CSV and the engine-shaped audit log as JSONL.
 #'
+#' Source-result classes and source/readiness attributes on the result or its
+#' selected data frame are rejected before report files are created.
+#'
 #' @param result a `liss_clean_result` from [liss_clean_income()].
 #' @param output_dir directory for the artifacts (created if needed).
 #'   Required, so three files are never written into the working
@@ -1796,9 +2037,18 @@ summary.liss_clean_result <- function(object, ...) {
 #'   paths.
 #' @export
 liss_cleaning_report <- function(result, output_dir, verbose = TRUE) {
+  if (.liss_nonresponse_claims_collection(result))
+    .liss_nonresponse_abort("guarded collection report export is not supported")
   if (!inherits(result, "liss_clean_result")) {
     cli::cli_abort("`result` must be a liss_clean_result from liss_clean_income()")
   }
+  claimed_readiness <- result[["source_nonresponse_readiness"]]
+  if (!is.null(result[["source_nonresponse"]]) ||
+      !is.null(attr(result$data, "liss_source_nonresponse", exact = TRUE)) ||
+      (is.list(claimed_readiness) && identical(claimed_readiness$status, "passed")))
+    cli::cli_abort("guarded report export is not supported; retain the complete source_nonresponse result")
+  if (.liss_nonresponse_claims_source(result))
+    .liss_nonresponse_abort("guarded report export is not supported; retain the complete source_nonresponse result")
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   lcfg <- result$ruleset$logging %||% list()
   paths <- list(

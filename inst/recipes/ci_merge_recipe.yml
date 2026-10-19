@@ -8,7 +8,7 @@
 meta:
   module: ci
   module_label: Economic Integration (Income)
-  recipe_version: "1.1.0"
+  recipe_version: "1.2.0"
   created: '2026-02-10'
   source_spec: cross-wave harmonization specification
   covered_waves:
@@ -58,6 +58,29 @@ global:
       waves: all
       on_absence: warn
     optional_note: add module-specific critical variables here
+# opt-in phase-1 source normalization, independent of numerical cleaning rules
+source_nonresponse:
+  schema_version: "1.0.0"
+  contracts:
+  - rule_id: CI23P339_N01
+    rule_version: "1.0.0"
+    module: ci
+    wave: ci23p
+    language: EN
+    source_filename: ci23p_EN_1.0p.sav
+    source_sha256: 2e4578cafb649cf4bb3e89d7bc27ea50f8ea1f42038e2ba957a055eff4871862
+    raw_column: ci23p339
+    canonical_column: s339
+    code: -9999999999.0
+    construct: household_net_income
+    unit: EUR
+    measurement_period: 2022
+    codebook_filename: codebook_ci23p_EN_1.1.pdf
+    codebook_sha256: 408db5ddadf3e4ab4d3af269dc77a1e6edaf04935b9c2cc833d99904c2bb331f
+    response_validity: source_nonresponse_encoding
+    answer_status: nonresponse_unknown
+    analysis_disposition: missing_amount
+    no_numeric_proposal: true
 wave_index:
 - id: ci08a
   year: 2008

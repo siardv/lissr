@@ -25,7 +25,9 @@ liss_clean_income(
 
 \item{background}{optional background/demographics frame attached by
 rule P01 before cleaning (joined on the person id and, when the
-background is wave-stamped, the aligned annual wave index).}
+background is wave-stamped, the aligned annual wave index). P01 rejects
+source-nonresponse results or claims before converting the background.
+For ordinary income input, disabling P01 leaves the background unused.}
 
 \item{ruleset}{a ruleset object from \code{\link[=liss_cleaning_ruleset]{liss_cleaning_ruleset()}}, a
 path to a ruleset YAML file, or \code{NULL} for the packaged default.}
@@ -73,8 +75,10 @@ the responsible rule, the evidence, the admissible candidate set,
 and a plain-language justification.
 }
 \details{
-The returned data always carries the untouched input values in
-\verb{<target>_observed}. In \code{"correct"} mode the target column holds the
+The returned data include the numeric input values in
+\verb{<target>_observed}. For normalized source-bound input, that audit column
+recovers the verified original source codes for classified cells.
+In \code{"correct"} mode the target column holds the
 cleaned values and \verb{<target>_clean_status} marks each modified cell
 with its final action and rule. In \code{"flag"} mode the target column is
 left untouched and the fully simulated result is returned in
@@ -86,6 +90,55 @@ are annotations in \verb{<target>_dataset_flag} and never modify values.
 Calling the function on already-cleaned data (recognizable by the
 \verb{<target>_observed} column) is an error, which prevents accidental
 double cleaning.
+
+When supplied a result from \code{\link[=liss_classify_source_nonresponse]{liss_classify_source_nonresponse()}} or an
+opt-in guarded module merge, source-classified amounts are excluded from
+numerical proposals in every mode, independently of rule overrides.
+The source audit is retained in \verb{$source_nonresponse}; finite-count and
+distribution summaries exclude the classified amount codes.
+In \code{"flag"} mode the target remains exactly as supplied, including
+normalized missing amounts; recovered source codes remain in the observed
+audit column and carrier. A source-bound household-income target cannot
+also be assigned as \code{category_code}. Readiness covers the specified source
+exclusion and does not certify every returned audit column for analysis.
+Guarded inputs require separate package-registry approval for the household
+net-income construct, EUR, the reviewed measurement period and target binding
+before numerical preparation. Classification readiness alone does not approve
+another consumer or establish the origin of a marker-stripped bare frame.
+Source-result classes or source/readiness attributes without a usable carrier
+are rejected before household preparation; a wrapper readiness slot alone may
+still report a legacy \code{not_evaluated} result.
+Explicit taxable CI23p337/338 version-2 carriers are rejected before target
+resolution, Background/P01 or numeric preparation, under every mode and override.
+Schema-3 taxable collections remain unsupported. An intact schema-4
+three-field collection has a separate package-pinned household FLAG capability:
+explicitly select \code{variables = list(target = "s339")} with \code{mode = "flag"}.
+This retains all original columns and the complete collection, excludes the
+sealed taxable amounts from every secondary cleaner role, and rejects guarded
+Background data. Guarded exports remain unsupported.
+Complete returned wrappers carry a separate consumer receipt binding the data,
+decisions, effective rules, resolved variables and summary except duration.
+Retain the complete result as RDS for this proof. Its bare \verb{$data} carries source
+lineage only; it does not certify proposals or decisions as a complete result.
+A consumer receipt establishes source exclusion for household flag simulation,
+not statistical validity, taxable-field approval or source ownership elsewhere.
+
+With an explicit schema-4 \code{s339} target, \code{mode = "correct"} or \code{"na_only"}
+uses a distinct applied-result capability, requiring \code{background = NULL} and
+\code{output_dir = NULL}. The complete original input remains in \verb{$source_input};
+\verb{$data} contains the derived household amount and audit columns. Both tax
+fields and all other original columns remain unchanged. Native source metadata,
+bound input metadata and derived target metadata remain distinct. The original
+source carrier is never rewritten to attest corrected values.
+\verb{$applied_lineage} binds source, execution, options and output, with scoped
+source readiness separate from analysis execution status. \code{na_only} preserves
+the existing method, including sign rectification and an explicit F01
+winsorisation override; it is not universally a finite-to-missing operation.
+Retain the whole applied result as RDS and use \code{\link[=liss_validate_applied_income]{liss_validate_applied_income()}}
+for structural checks or optional exact-runtime replay. Ordinary digests do
+not authenticate execution or establish statistical validity. Extracted frames,
+manual subsets/reorders, repeat cleaning, background attachment, guarded panel
+assembly and report exports are unsupported for these results.
 }
 \seealso{
 \code{\link[=liss_cleaning_ruleset]{liss_cleaning_ruleset()}}, \code{\link[=liss_cleaning_report]{liss_cleaning_report()}},

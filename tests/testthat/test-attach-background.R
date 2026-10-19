@@ -123,6 +123,107 @@ test_that("background attachment requires an explicit month and plain survey fra
   expect_identical(class(.bg_attach(fixture, data = tibble_data)$data), class(tibble_data))
 })
 
+test_that("background attachment denies recognized claims before argument or reader work", {
+  data <- data.frame(nomem_encr = c(2, 1), fieldwork_ym = c(202301, 202301))
+  forms <- list()
+  for (class_name in c("liss_source_nonresponse_result",
+    "liss_source_nonresponse_collection_result", "liss_clean_collection_flag_result",
+    "liss_clean_collection_applied_result", "liss_applied_income_frame"))
+    forms[[class_name]] <- structure(data, class = c(class_name, class(data)))
+  for (key in c("liss_source_nonresponse", "source_nonresponse_readiness",
+    "liss_source_nonresponse_readiness", "source_nonresponse_consumer_readiness",
+    "liss_source_nonresponse_consumer_readiness", "liss_source_nonresponse_applied")) {
+    claimed <- data
+    attr(claimed, key) <- list(status = "not_evaluated")
+    forms[[key]] <- claimed
+  }
+  for (key in c("source_nonresponse", "source_nonresponse_readiness",
+    "source_nonresponse_consumer_readiness", "applied_lineage", "source_input")) {
+    wrapper <- list(data = data)
+    wrapper[[key]] <- list(status = "not_evaluated")
+    forms[[paste0("wrapper_", key)]] <- wrapper
+  }
+  forms$partial_applied <- list(data_partial = forms$liss_applied_income_frame)
+  reads <- 0L
+  testthat::local_mocked_bindings(.liss_bg_read_sav = function(...) {
+    reads <<- reads + 1L
+    stop("reader should not be reached")
+  })
+  for (name in names(forms)) {
+    forced <- character()
+    unexpected <- function(argument) {
+      forced <<- c(forced, argument)
+      stop("attachment argument should not be forced")
+    }
+    before <- serialize(forms[[name]], NULL, version = 2L)
+    condition <- tryCatch(lissr::liss_attach_background(forms[[name]],
+      sources = unexpected("sources"), month_col = unexpected("month_col"),
+      variables = unexpected("variables"), prefix = unexpected("prefix")), error = identity)
+    expect_true(inherits(condition, "liss_source_nonresponse_blocked"), info = name)
+    expect_identical(forced, character(), info = name)
+    expect_identical(serialize(forms[[name]], NULL, version = 2L), before, info = name)
+  }
+  expect_identical(reads, 0L)
+  expect_error(lissr::liss_attach_background(list(data_partial = forms$liss_source_nonresponse),
+    sources = stop("sources should not be forced")), class = "liss_background_error")
+})
+
+test_that("background attachment denies residual CA claims with a typed empty ledger", {
+  fixture <- .bg_fixture()
+  original <- tibble::as_tibble(fixture$data)
+  original$ca20g012 <- c(100, -9)
+  # minimal no-hit claim witnesses do not assert a valid complete source result
+  field <- list(raw_column = "ca20g012", status = "passed", classified_cells = 0L)
+  readiness <- list(schema_version = "1.0.0", kind = "ca20g012_readiness",
+    status = "passed", overall_amount_validity = "not_evaluated",
+    fields = list(CA20G012_FIELD = field))
+  marker <- list(schema_version = "1.0.0", kind = "ca20g012_analysis_frame",
+    fields = list(CA20G012_FIELD = list(raw_column = "ca20g012")))
+  marked <- original
+  class(marked) <- c("liss_source_nonresponse_collection_result", class(marked))
+  attr(marked, "liss_source_nonresponse") <- marker
+  attr(marked, "source_nonresponse_readiness") <- readiness
+  marker_only <- original
+  attr(marker_only, "liss_source_nonresponse") <- marker
+  readiness_only <- original
+  attr(readiness_only, "source_nonresponse_readiness") <- readiness
+  class_only <- structure(original,
+    class = c("liss_source_nonresponse_collection_result", class(original)))
+  whole <- structure(list(original_data = original, analysis = list(data = marked,
+    ledger = data.frame(source_row_index = integer(), original_value = double())),
+    data = marked, source_nonresponse = marker, source_nonresponse_readiness = readiness),
+    class = "liss_source_nonresponse_collection_result")
+  reads <- 0L
+  testthat::local_mocked_bindings(.liss_bg_read_sav = function(...) {
+    reads <<- reads + 1L
+    stop("reader should not be reached")
+  })
+  for (input in list(whole, marked, class_only, marker_only, readiness_only)) {
+    condition <- tryCatch(.bg_attach(fixture, data = input), error = identity)
+    expect_s3_class(condition, "liss_source_nonresponse_blocked")
+  }
+  expect_identical(reads, 0L)
+})
+
+test_that("background attachment retains ordinary readiness and unmarked originals", {
+  fixture <- .bg_fixture()
+  original <- tibble::as_tibble(fixture$data)
+  attr(original, "readiness") <- list(status = "passed")
+  stripped <- original
+  class(stripped) <- c("liss_source_nonresponse_collection_result", class(stripped))
+  attr(stripped, "liss_source_nonresponse") <- list(kind = "ca20g012_analysis_frame")
+  attr(stripped, "source_nonresponse_readiness") <- list(status = "passed")
+  class(stripped) <- class(original)
+  attr(stripped, "liss_source_nonresponse") <- NULL
+  attr(stripped, "source_nonresponse_readiness") <- NULL
+  for (input in list(original, stripped)) {
+    out <- .bg_attach(fixture, data = input)
+    expect_identical(out$data$nomem_encr, input$nomem_encr)
+    expect_identical(attr(out$data, "readiness"), attr(input, "readiness"))
+    expect_identical(as.numeric(out$data$avars_age), c(32, 31))
+  }
+})
+
 test_that("background attachment validates scalar arguments and exact variable names", {
   fixture <- .bg_fixture()
   for (month in list(NA_character_, "", character(), c("fieldwork_ym", "wave"),

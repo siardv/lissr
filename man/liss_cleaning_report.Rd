@@ -27,3 +27,7 @@ summaries with observed-versus-cleaned distributions, and a decision
 appendix. Alongside the report, the complete decision ledger is
 written as CSV and the engine-shaped audit log as JSONL.
 }
+\details{
+Source-result classes and source/readiness attributes on the result or its
+selected data frame are rejected before report files are created.
+}

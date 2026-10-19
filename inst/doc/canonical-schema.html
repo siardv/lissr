@@ -345,7 +345,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 (<code>inst/schema/CANONICAL_SCHEMA.md</code>) at build time. The same
 document ships inside every installation:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">system.file</span>(<span class="st">&quot;schema&quot;</span>, <span class="st">&quot;CANONICAL_SCHEMA.md&quot;</span>, <span class="at">package =</span> <span class="st">&quot;lissr&quot;</span>)</span></code></pre></div>
-<!-- schema-source-md5: b94d1717d0b26adc931380ac27074b92 -->
+<!-- schema-source-md5: 074ebc6ef2822a859793de148aa7c99f -->
 <div id="liss-panel-merge-recipe-canonical-schema-v1.1.0" class="section level2">
 <h2>LISS Panel Merge Recipe: Canonical Schema v1.1.0</h2>
 <p>Version note: v1.1.0 is strictly additive to v1.0.0. Every v1.0.0
@@ -1984,10 +1984,983 @@ silently treated as outside the scope.</li>
 <li>Failures and unevaluable results include diagnostic details in
 returned validation results and text reports. Severity is preserved.
 <code>assert_presence</code> and <code>presence_matrix</code> remain
-separate documentary types.</li>
+separate documentary types. ### Scalar source nonresponse contracts,
+opt-in</li>
 </ul>
+<p>The optional top-level <code>source_nonresponse</code> block has
+<code>schema_version: &quot;1.0.0&quot;</code> and one <code>contracts</code>
+entry. Its exact reviewed CI rule is declared in
+<code>ci_merge_recipe.yml</code>: <code>CI23P339_N01</code>, version
+<code>1.0.0</code>, binds module <code>ci</code>, wave
+<code>ci23p</code>, language <code>EN</code>,
+<code>ci23p_EN_1.0p.sav</code> and its SHA256 to raw field
+<code>ci23p339</code>, canonical field <code>s339</code>, exact double
+<code>-9999999999</code>, household net income, euros, measurement year
+2022. It separately records the codebook filename and SHA256. Unknown
+keys, additional contracts, changed identity, field/code scope, or
+policy fail validation. The first slice accepts only
+<code>source_nonresponse_encoding</code>,
+<code>nonresponse_unknown</code>, <code>missing_amount</code>, and
+<code>no_numeric_proposal: true</code>; its unresolved subtype is not
+inferred from the last digit. This block is separate from the numerical
+action vocabulary.</p>
+<p>The recipe block is a selector and mirror, not an approval mechanism.
+<code>schema/source_nonresponse_registry.yml</code> is package-owned,
+versioned reviewed data; trusted package code pins its SHA256 and
+compares the complete typed recipe record with its approved contract.
+The installed schema/registry version 2.0.0 preserves the existing
+CI23p339 record under <code>records</code> and adds only the two
+approved taxable records under <code>fields</code>. The installed CI
+recipe and <code>recipe = NULL</code> remain on schema 1.0.0 and legacy
+CI23p339. Missing or corrupt registry data, unsupported versions,
+duplicate or overlapping records, and extra or changed recipe keys block
+guarded work. A caller-supplied path, digest or reviewed flag cannot
+approve a new contract. No working-directory lookup or network retrieval
+is used. Registry approval, classification validity and named consumer
+approval are separate checks. The digest constrains integrity and scope;
+it is not a signature or an authentication claim.</p>
+<p><code>merge_liss_module(..., source_nonresponse = TRUE, output_dir = NULL)</code>
+captures the reviewed source before binding, prefix stripping, metadata
+conversion or recipe transformations. The default remains opt-out. The
+matched analysis amounts become numeric missing values; originals,
+original field metadata, source row keys and typed reasons remain in the
+result’s separate carrier. Each matched-cell ledger entry also records
+source release/language, raw storage type and lossless code
+representation, the value before analysis and its missing analysis
+disposition, prior system/source-declared missingness, rule version,
+source metadata identity and codebook field reference. Original field
+metadata are stored once and covered by the carrier’s digest. The final
+guard checks the source-to-target mapping after metadata restoration and
+sweeping. Existing <code>valid_for_analysis</code> semantics remain
+unchanged; <code>source_nonresponse_readiness</code> is scoped
+separately to this one reviewed field.</p>
+<p><code>liss_classify_source_nonresponse()</code> provides a strict
+explicit binding for a raw frame or legacy merged frame. A raw binding
+requires <code>ci23p339</code>; a merged binding requires one selected
+target, an exact wave-ID column, unique nominal <code>nomem_encr</code>
+keys, and unchanged selected values against the actual source. Years,
+suffixes, filenames alone and old aggregate provenance cannot establish
+binding. Default cleaner aliases are unchanged. Sorting and subsets
+retain source-cell identity only when column metadata and the complete
+carrier are retained, as with supported tibble/dplyr operations. Base
+data-frame operations that strip target attributes fail closed; metadata
+checks are not relaxed. Changed values, keys, wave/target mapping,
+metadata or carrier digest block quantitative use. Original values and
+metadata remain available even when matched analysis values are already
+missing. For a merged binding, every presented row needs a nonmissing,
+nonempty exact wave identifier, including rows outside CI23p. A
+full-join panel with CI-absent rows lacking CI wave identity is
+unsupported, including for the target <code>ci_s339</code>. Retain the
+complete classifier wrapper when cleaning: the classifier does not add a
+frame marker to its unchanged <code>$data</code>, so extracting and
+cleaning an unmarked frame alone enters ordinary unguarded processing.
+Preserve the original merge result separately when rebinding; its
+provenance, log and validation are not forwarded into the classifier
+wrapper. The sealed one-field input receipt covers every presented row’s
+respondent key, exact wave and target value, including rows outside
+CI23p. Validation checks this complete receipt before selecting source
+scope, so moving a classified or ordinary row to another wave cannot
+escape the guard. The controlled merge finalization validates
+source-selected lineage and values, then captures the trusted pipeline’s
+final metadata and complete input keys; ordinary cleaner validation
+never refreshes that receipt from changed data. Readiness uses
+<code>passed</code>, <code>blocked</code>, and
+<code>not_evaluated</code>: absent scope is not a pass, and a binding
+failure raises <code>liss_source_nonresponse_blocked</code> with the
+blocked readiness record. The public binder can repeat an unchanged raw
+binding. Already normalized missing values require their intact carrier;
+rebinding them against the source without that carrier fails value
+agreement.</p>
+<p>Flag mode preserves the actual supplied target, including normalized
+missing values from a guarded merge. Verified source originals are
+recovered only in the <code>_observed</code> audit column and source
+ledger; matched proposals remain missing. Applied modes return missing
+matched analysis values while retaining the source audit. Readiness
+covers this source/field contract, not every audit column’s suitability
+for quantitative analysis. A source-bound household amount cannot also
+be assigned as the cleaner’s <code>category_code</code>. Before
+numerical preparation, the household cleaner separately checks that the
+validated approved rule permits its consumer, household net income,
+euros, measurement year 2022 and the selected target binding. Renaming a
+column does not add consumer approval to an intact source contract. This
+does not reconstruct field origin after all carrier markers have been
+removed; such bare frames retain the documented legacy boundary.</p>
+<p>The legacy one-field carrier remains schema version
+<code>1.0.0</code>, including its original recipe rule object and key
+order. Registry metadata is resolved outside that carrier. Valid old RDS
+carriers are validated without migration or registry-driven resealing;
+source, target, metadata, complete-row and digest checks remain in
+force. The carrier uses version-2 R serialization with SHA256 for
+integrity and preserves typed reasons and exact doubles in an RDS round
+trip. The digest is an integrity check, not an authentication claim.
+Automatic SAV/CSV lineage round trips and automatic panel-lineage
+propagation are unsupported in this slice. Guarded merge file exports
+are blocked; use the in-memory result/RDS, or explicitly rebind an
+imported frame to the verified original source. A schema 2.0.0 recipe
+uses exactly
+<code>source_nonresponse: {schema_version: &quot;2.0.0&quot;, field: &lt;one complete reviewed field record&gt;}</code>.
+The full typed mirror selects either <code>CI23P337_FIELD</code> or
+<code>CI23P338_FIELD</code>, version 1.0.0, never both. Mapping key
+order may vary and is preserved in the carrier; cases retain the
+approved N01/N02 sequence. Each field owns exact codes
+<code>-9999999999.0</code> and <code>-9999999998.0</code>, stable case
+IDs, source release 1.0p, EUR/2022, targets and metadata policy. Aliases
+cannot select or approve a source field. Taxable bindings allow only the
+selected raw name, canonical <code>s337</code>/<code>s338</code>, or
+<code>ci_s337</code>/<code>ci_s338</code>; household aliases never
+belong to these fields.</p>
+<p>Taxable carriers have <code>schema_version = &quot;2.0.0&quot;</code> and one
+<code>field</code>, source receipt, coverage table, complete input-row
+receipt, cell ledger, metadata and digest. Coverage counts selected rows
+once; each classified cell has one ledger row and its actual case ID.
+Readiness includes field identity and named per-case counts;
+<code>unresolved_cells</code> concerns failed binding/classification,
+not the known-unknown answer subtype. All classified answers remain
+<code>nonresponse_unknown</code>, with <code>missing_amount</code> and
+<code>no_numeric_proposal = TRUE</code>. Original
+<code>na_values</code>/<code>na_range</code> evidence is evaluated
+separately for each code; original attributes are retained without
+inventing missing declarations. Taxable routing is null and 226/229
+cannot resolve a subtype. No taxable analytical consumer is
+approved.</p>
+<p>Standalone classification retains unchanged values/metadata and
+<code>normalized = FALSE</code>; it is an audit, not excluded analysis
+amounts. A scalar guarded merge sets only the selected field’s exact
+cases missing and returns <code>normalized = TRUE</code>. Final
+validation rejects finite classified values, unexpected mappings and
+metadata changes. Legitimate signed/zero amounts, near codes, system
+missingness and unrelated brackets retain their existing behavior.
+Separate 337/338 calls are required; their counts cannot be called a
+respondent union or combined normalized result.</p>
+<p>Before a tax binding unwraps any input, it rejects guarded wrappers,
+frame markers, carriers, guarded classes and claimed source readiness,
+including same-field rebinding. Every classifier binding, including
+legacy 339, rejects inputs carrying or claiming version-2 lineage.
+Validation, metadata-preserving subsets, reordering and RDS remain
+supported without a destructive rebind. The household cleaner rejects
+taxable carriers before target resolution, Background/P01 or numeric
+preparation under all modes and rule overrides. Renaming to a household
+alias cannot grant consumer approval. These checks do not recover origin
+after all lineage markers are stripped from a bare frame, or
+authenticate manually forged/resealed R objects.</p>
+<p>Other CI fields, CA20g, CH, taxable numerical cleaning, subtype
+resolution and broader export sidecars remain outside this scope.</p>
 </div>
 </div>
+</div>
+<div id="joint-taxable-collection-recipe-and-carrier-schema-3.0.0" class="section level3">
+<h3>Joint taxable collection, recipe and carrier schema 3.0.0</h3>
+<p>A schema-3 source_nonresponse block contains only
+<code>schema_version: &quot;3.0.0&quot;</code> and <code>fields</code>, an unnamed
+list of exactly the complete approved CI23P337_FIELD and CI23P338_FIELD
+mirrors, each once. Either selection order is accepted and retained.
+Registry 2.0.0 and its approvals/pin stay unchanged; no 339 field record
+is inferred or migrated. The installed CI recipe stays schema 1.0.0. The
+scalar classifier explicitly rejects schema 3 before scalar lookup.
+Guarded module merging is the sole new producer; guard-off/default
+behavior is unchanged.</p>
+<p>Both original fields, complete values/metadata and common
+source/row/key bindings must pass before any normalization. Both exact
+case sets are then made missing before transformations. Expected
+metadata is pinned after restoration/sweep and before sanitization for
+both canonical targets. Finalize and validate both leaves and their
+consistency before attaching any collection. A second-field preflight or
+finalizer failure returns no partial guard or guarded file. Four actual
+case IDs retain their own logs; aggregate counts explicitly count
+field-cells.</p>
+<p>The outer carrier has exactly schema_version, kind, source, fields,
+normalized, readiness and digest. Schema is 3.0.0, kind is
+source_nonresponse_collection, and normalized is TRUE. Fields is a named
+list of two complete sealed schema-2 states keyed by field IDs in
+selection order, retaining each approved record/key order, source,
+bindings, coverage, complete input receipt, typed ledger, metadata,
+readiness and digest. Common source and raw/canonical/id/wave bindings
+must agree. The outer digest binds all nested bytes and order; it is not
+authentication. A collection-specific result class inherits the
+source-result base; its frame marker carries the identical complete
+outer state.</p>
+<p>Collection readiness includes schema/kind, status, scoped
+description, evaluated/classified/unresolved field-cell totals and named
+full leaf readiness. Present valid fields pass even without exact
+matches. The shared wave entirely absent has no carrier and
+not_evaluated readiness with two zero-count entries. Missing a required
+field in a present source blocks. Unknown subtype differs from
+unresolved binding/classification. Full collection validation supports
+metadata-preserving subsets/reorder/RDS with returned-state resealing,
+retaining the saved input. Unknown versions, naked/incomplete leaves and
+field replacement or drop are unsupported. Scalar v1/v2 receipts are not
+implicitly migrated.</p>
+<p>Every scalar rebind rejects existing/claimed collection lineage
+before unwrap, including wrapper/frame disagreement, absent carrier,
+readiness and collection class alone. The household cleaner rejects
+schema-3 collections before target/rules, Background/P01 or numeric work
+under every mode/override. No 339 projection or approval exists;
+unselected 339 is not covered. Report/panel/export restrictions and the
+honest all-markers-stripped bare-frame boundary remain. Household
+projection, CA20g/CH and wider lineage are separate later units.</p>
+</div>
+<div id="three-field-collection-recipe-and-carrier-schema-4.0.0" class="section level3">
+<h3>Three-field collection, recipe and carrier schema 4.0.0</h3>
+<p>Schema 4 selects exactly CI23P337_FIELD, CI23P338_FIELD and
+CI23P339_FIELD through an unnamed <code>fields</code> list. Each
+selector has only <code>field_id</code> and <code>scalar</code>, the
+complete existing scalar source_nonresponse block. Taxable members carry
+schema 2 plus their complete approved <code>field</code>; the household
+member carries schema 1 plus
+<code>contracts: [&lt;complete CI23P339_N01 rule&gt;]</code>. All six
+selection orders are accepted and retained. Typed mirrors, IDs, native
+schemas and adapter membership must agree. Changed, missing, additional,
+duplicate or ambiguous selectors block. The public classifier remains
+scalar-only and rejects schema 4 before source reads.</p>
+<p>A separate package-owned
+<code>source_nonresponse_collection_adapter.yml</code> has its own
+trusted-code digest pin and same-buffer hash/parse path. It binds the
+collection slot CI23P339_FIELD explicitly to the intact existing
+CI23P339_N01 authority; 337/338 bind to their existing field IDs. Its
+consumer list is empty. Registry schema/version 2.0.0 and its bytes/pin
+remain unchanged and still own source, bindings, metadata, construct,
+period, codes, routing and scalar approvals. The new adapter is loaded
+only for schema 4; a missing/corrupt adapter blocks that path without
+changing old scalar 1/2 or pair 3 authority. No caller hash, path, flag,
+alias or suffix approves scope. No household scalar-v2 field or
+additional household encoding case is introduced.</p>
+<p>All three original receipts and every normalization lock pass against
+unchanged source input before any selected raw value is replaced. All
+three canonical metadata are pinned after restoration/sweep and before
+name sanitization. Complete selected-wave source key sets, values and
+metadata must reconcile for every member. All three finalizers and full
+outer validation pass before the identical carrier is attached to
+wrapper/frame; failure returns no partial collection, passed aggregate
+or guarded file. Household-first order cannot use legacy scalar-v1
+rebinding permission to discard existing guarded lineage.</p>
+<p>The outer has exactly schema_version, kind, source, fields,
+normalized, readiness and digest. Version is 4.0.0, kind
+source_nonresponse_collection, normalized TRUE. Fields names are the
+three adapter IDs in caller order. Taxable leaves remain complete sealed
+schema-2 states; the household leaf remains a complete sealed schema-1
+state with its native rule, ledger and readiness. Old states are not
+migrated or supplemented to resemble another schema. Shared source, key,
+wave, ID bindings and ID metadata agree. The digest binds every nested
+byte and order; it checks integrity, not authentication. Outer
+validation explicitly dispatches native leaves and verifies complete
+shapes/digests/receipt/ledger invariants.</p>
+<p>At the new v4 boundary, household target metadata must equal the
+pinned restored metadata before/after native-v1 finalization, and every
+normalized protected household value must be NA during finalization and
+later validation. These checks do not change scalar-v1’s historical
+behavior. Household ledger candidates retain original 229 producer
+evidence and valid candidate/evidence pairs. V1 has no separate original
+229 vector; coverage alone cannot reconstruct routing or establish
+authority after manual resealing. The original producer and fresh raw
+comparison establish the observed routing; all authoritative subtypes
+stay unknown.</p>
+<p>Readiness retains three complete native leaf records, named by
+adapter ID, and sums evaluated/classified/unresolved field-cell counts.
+V1 keeps its actual rule ID; v2 keeps field identity and case counts.
+These are not respondent counts. Present valid zero-match fields pass.
+An entirely absent shared wave returns no carrier and three zero-count
+not_evaluated entries; any present missing member blocks.
+Metadata-preserving subsets/reordering/RDS validate all leaves and
+reseal returned state without changing saved inputs. Unknown versions,
+incomplete leaf lists, replaced/dropped members, contradictory markers
+and metadata loss block.</p>
+<p>Scalar approval and source readiness do not approve a collection
+consumer or taxable predictor/donor roles. A separate pinned policy
+permits the closed household flag operation below. The source collection
+is not a transformed-output receipt for ordinary household corrections.
+Scalar rebinding rejects every existing/claimed collection, including
+schema-only/class-only/readiness claims, before unwrapping can discard
+it. Report/panel/export restrictions stay; guarded output_dir remains
+NULL. All-markers-stripped bare frames retain the existing unguarded
+boundary. Default/v1, taxable/v2 and exact-pair/v3 meanings remain
+unchanged. Applied correction uses the separate result contract below;
+CA20g/CH and broader lineage require separate contracts.</p>
+</div>
+<div id="household-flag-consumer-of-the-complete-version-4-collection" class="section level3">
+<h3>Household flag consumer of the complete version-4 collection</h3>
+<p><code>source_nonresponse_collection_consumers.yml</code> is a
+separately pinned, closed package-owned policy. It references the
+unchanged registry2 and adapter1 hashes and grants only CI23P339_V4_FLAG
+to <code>liss_clean_income()</code>. The adapter’s empty consumer list
+grants nothing by itself. The consumer resource is required only for
+this new operation and its complete-result validation; old merges and
+scalar consumers remain independent. Caller paths, hashes, flags and
+aliases cannot approve new scope. Hashing and parsing use the same
+resource bytes.</p>
+<p>The caller must explicitly select <code>mode = &quot;flag&quot;</code> and
+<code>variables = list(target = &quot;s339&quot;)</code> on a complete validated
+version-4 wrapper or attributed frame. The sealed CI23P339_FIELD leaf
+supplies its native lock and observed values internally; it never
+replaces the outer carrier. Complete v4 validation runs before
+rules/background preparation, after P01 and on output. All three bound
+amount targets are denied in every non-target resolved role, including
+identifiers, household grouping, personal income, household size,
+category/bounds, donor keys, age and birth year, before and after P01.
+Correct and na_only require the distinct applied policy below; tax
+targets and previously produced consumer wrappers block.</p>
+<p>Background must be NULL or an ordinary unguarded frame. Any
+guarded/claimed background blocks before conversion, even when P01 is
+disabled. Reserved P01 helper columns and existing household
+observed/proposed/status/dataset audit columns block before preparation;
+audit names are checked again after P01. Every original column retains
+its position, values and attributes, with the same rows and order. P01
+may append context columns. Classified339 proposals stay missing with
+source_nonresponse:missing_amount status; original codes appear only in
+observed/audit values. Ordinary proposals retain existing flag
+rules.</p>
+<p>The result and frame retain the complete native v2/v2/v1 carrier and
+full source readiness. Supported source-input subsets/reorder/RDS
+include empty and other-wave-only bound inputs: their native339
+exclusion readiness is not_evaluated with zero counts and locks.
+Ordinary other-wave flag simulation does not promote source readiness.
+An absent-wave result without a bound carrier is ineligible. No public
+scalar projection or declassification API is added.</p>
+<p>The complete wrapper has class
+<code>liss_clean_collection_flag_result</code> and a separate
+<code>source_nonresponse_consumer_readiness</code> record, schema1. It
+identifies the pinned capability, full outer carrier digest and
+household339 source counts. Its scoped status is passed only when
+household339 cells were evaluated. The frame has no consumer record or
+consumer-result class; <code>$data</code> validation establishes source
+lineage alone, not proposal or decision integrity.</p>
+<p>The consumer result digest binds complete data and attributes,
+decisions, effective ruleset, resolved variables, mode and summary
+except duration_s, using R serialization version2. The entire log is
+outside this proof. A separate record digest binds the closed typed
+consumer record. Consumer claims dispatch before scalar/version
+validation, so replacing the complete carrier by a scalar leaf cannot
+bypass validation. Private validation also reconstructs observed values
+and checks every locked proposal/status. Complete consumer RDS
+roundtrips validate; post-consumer subsets/reorder and repeated cleaning
+are not resealed. Supply a supported source subset first and run a fresh
+flag simulation instead.</p>
+<p>These digests check integrity, not authenticated origin, numerical
+validity or manually resealed forgery. Copied/derived unmarked columns
+have no inferable source ownership. All guarded report/panel/SAV/CSV
+exports and rebinding remain denied, including new consumer
+class/record-only claims after source slots are removed. Preserve the
+complete result with RDS. This FLAG policy adds no taxable numerical
+consumer, applied correction, second household encoding case or CA20g/CH
+scope.</p>
+</div>
+<div id="applied-household-result-with-an-immutable-version-4-source-input" class="section level3">
+<h3>Applied household result with an immutable version-4 source
+input</h3>
+<p><code>source_nonresponse_collection_applied.yml</code> is a distinct
+closed, digest-pinned package-owned authority. It grants the explicit
+<code>CI23P339_V4_APPLIED</code> capability to
+<code>liss_clean_income()</code> for <code>mode = &quot;correct&quot;</code> or
+<code>&quot;na_only&quot;</code>, an exact <code>s339</code> target and an intact
+native version-4 collection. Both <code>background</code> and
+<code>output_dir</code> must be NULL. The registry, adapter, FLAG policy
+and all native carrier versions retain their previous bytes and
+meanings.</p>
+<p>The complete result has class
+<code>liss_clean_collection_applied_result</code> followed by
+<code>liss_clean_result</code>. It contains the ordinary data,
+decisions, log, summary, ruleset, variables and mode plus
+<code>source_input</code>, captured <code>invocation</code> and
+<code>applied_lineage</code>. The exact accepted native wrapper or
+attributed frame stays unchanged in <code>source_input</code>, including
+all three leaves and original raw metadata. Changed analysis data carry
+a distinct applied marker and frame class, never a native source
+receipt. Both tax vectors and all other original non-target columns
+retain values, types, attributes, column position, row identities and
+order. Sealed amounts remain prohibited in every secondary role before
+numerical work.</p>
+<p>Source339 locks and observed recovery derive from native parent
+validation. Locked amounts stay NA with
+source_nonresponse:missing_amount status, including under rule
+overrides. Checked scoped source readiness is recorded separately from
+analysis execution status and any broader receipt retained in the
+original parent. Nonempty other-wave analysis does not turn zero CI23p
+source evaluation into passed source evidence. Empty analysis is
+not_evaluated.</p>
+<p>Raw-source attributes in native leaves, bound normalized input target
+metadata and derived target metadata are recorded separately. Applied
+target assembly uses the existing numeric cleaner and retains the
+variable label; it does not silently claim that all raw SPSS
+missing-value metadata are unchanged. The actual correct/na_only
+behavior is retained, including sign rectification and explicitly
+configured F01 winsorisation in na_only.</p>
+<p><code>liss_validate_applied_income()</code> checks the whole typed
+result, native source relationship, permitted output changes, locks,
+metadata and structural digests. Constructor-owned ledger columns,
+optional dataset flags, summary fields and log entries have closed typed
+shapes. Count fields require plain nonnegative whole numbers, without
+character or fractional coercion. Timing fields must have valid scalar
+types even where their values are excluded from replay comparison. Its
+default does not authenticate execution. Optional
+<code>replay = TRUE</code> requires the matching recorded
+computation/helper and runtime identity, reruns the captured invocation
+from retained source input, and compares deterministic output and
+execution fields. Declared nonsemantic timing/path fields are excluded
+from that comparison. Replay does not reread original sources or
+establish numerical or statistical validity. A changed runtime can block
+replay while compatible structural checks remain available.</p>
+<p>Whole-result RDS is supported. Data-only/manual row or column
+projections are not complete applied-result proof. The separate
+controlled view capability below retains the complete parent. Repeated
+consumption, source rebinding, panel assembly and report/SAV/CSV export
+reject recognized applied claims before unwrapping or writing. This
+includes claims on selected inner frames and incomplete wrappers.
+Deliberately stripping every claim leaves unknown unguarded input;
+aliases cannot reconstruct ownership. No taxable cleaner, new numerical
+method, background contract or CA20g/CH scope is added by this
+applied-result capability.</p>
+</div>
+<div id="controlled-views-of-applied-household-results" class="section level3">
+<h3>Controlled views of applied household results</h3>
+<p><code>source_nonresponse_collection_applied_views.yml</code> grants
+the separate version-1 <code>CI23P339_V4_APPLIED_VIEW</code> capability.
+Its digest-pinned policy binds the existing whole-parent applied policy
+without changing that policy or the numerical engine.
+<code>liss_create_applied_income_view(parent_result, row_keys)</code>
+first validates a whole <code>s339</code> correct/na_only applied parent
+from a native schema-4 collection. It retains that exact complete
+object, including original <code>source_input</code>, in
+<code>parent_result</code>. Nested views are unsupported; make another
+selection from the whole parent.</p>
+<p>Selection requires explicit ordered unique plain character keys from
+the parent’s <code>applied_lineage$row_keys</code>, without names,
+missing/empty keys, coercion or other attributes.
+<code>character(0)</code> is an explicit empty selection. The closed
+<code>selection</code> contains those keys and their exact integer
+<code>root_rows</code>. All data columns remain in parent order with
+selected values/types. Names and dimensions follow natural row
+subsetting; all other column metadata stay exact. Root data row names
+remain. No cleaning, outlier detection or fitting executes during
+projection.</p>
+<p>Decisions preserve all original ledger columns, root
+<code>row</code>, opaque <code>decision_id</code> and subset row names.
+They append integer <code>root_decision_row</code> (the ordinal in the
+complete parent ledger) and <code>view_row</code> (selected data-row
+position), ordered by <code>view_row</code> then
+<code>root_decision_row</code>. Reference identity is the full parent
+digest plus root ledger ordinal. Decision IDs need not be unique and
+have no new meaning. Multiple decisions per selected row are supported;
+empty ledgers retain types.</p>
+<p>The closed <code>summary</code> contains integer <code>n_rows</code>,
+<code>n_decisions</code>, <code>n_finite</code> and
+<code>n_source_locked</code>, plus <code>view_status</code>,
+<code>source_readiness</code>, <code>parent_source_readiness</code> and
+<code>parent_analysis_execution_status</code>. Decisions count ledger
+entries, which can exceed row counts. Scoped readiness comes from native
+validation of selected ORIGINAL source rows with their unchanged
+receipt, never from corrected amounts. <code>view_status</code> is
+<code>projected</code> for a nonempty selection and
+<code>not_evaluated</code> for an empty selection. Empty and
+other-wave-only source scopes can be <code>not_evaluated</code> while
+complete-parent execution is <code>completed</code>. Parent readiness
+and execution status remain separately available, as do complete
+denominators.</p>
+<p>The wrapper has exactly <code>parent_result</code>,
+<code>selection</code>, <code>data</code>, <code>decisions</code>,
+<code>summary</code> and <code>applied_lineage</code>, in that order.
+Its exact existing guarded class is
+<code>liss_clean_collection_applied_result</code>, without
+<code>liss_clean_result</code>. Frame classes stay identical to the
+parent. The controlled frame-claim change is a distinct version-1
+<code>applied_income_view_frame</code> marker in
+<code>liss_source_nonresponse_applied</code>. The version-1
+<code>applied_income_view_lineage</code> records the view
+policy/capability, parent lineage version, native carrier version,
+target/mode, full serialized parent digest and
+selection/output/decisions/summary digests, then its own digest. SHA-256
+uses R serialization version 2. These view records are distinct from
+whole-parent lineage version 1.0.0 and native carrier version 4.0.0.</p>
+<p><code>liss_validate_applied_income_view()</code> validates the whole
+retained parent and reconstructs the exact closed projection.
+Extra/partial fields, metadata changes, incorrect mappings and
+projections that disagree with the parent fail even after refreshing
+digests. <code>replay = TRUE</code> additionally uses the whole-parent
+validator’s matching computation/runtime gate and executes the complete
+saved invocation, never a selected-row fit. Existing whole-parent
+structural/replay compatibility is preserved, including its dynamic
+helper fingerprint. Whole-parent validation rejects view wrappers; the
+separate view validator owns this shape and kind. Whole-view RDS is
+supported. Existing guards reject recognized wrapper, frame and partial
+claims before source/numerical work or writes. No panel/report consumer,
+export, source rebind, background attachment, tax cleaning or new source
+scope is granted. No new class requiring an unrecognized guard path is
+introduced.</p>
+<p>Ordinary digests are not authentication. Coordinated resealing of a
+structurally valid parent/view can describe another consistent object.
+Permitted finite parent timing changes can pass structure and replay
+after consistent resealing; the full parent hash changes, but there is
+no external authenticated anchor. Whole-parent replay checks execution
+outputs under trusted code/runtime. It does not authenticate source
+observations or establish statistical validity. Complete removal of
+every recognized claim leaves unknown ownership; aliases cannot recover
+it.</p>
+</div>
+<div id="missing-source-carriers-at-the-household-cleaner-boundary" class="section level3">
+<h3>Missing source carriers at the household-cleaner boundary</h3>
+<p>A known source-result class or a non-null source/readiness attribute
+on the outer input or its data frame requires a supplied carrier. The
+cleaner checks these claims before unwrapping, target/rules resolution,
+background preparation or numerical work. Missing carriers fail closed
+for scalar as well as collection claims, including malformed readiness
+attributes. An outer wrapper’s source attribute cannot be discarded
+while its frame enters ordinary cleaning.</p>
+<p>This marker check is separate from carrier validation and consumer
+approval. Valid wrapper-slot or frame carriers follow their existing
+paths. Carrier-free legacy wrapper readiness such as
+<code>list(status = &quot;not_evaluated&quot;)</code>, actual absent-wave scalar
+merge readiness and ordinary cleaner readiness remain nonclaiming hints
+when no source class or attribute is present. They do not certify source
+exclusion. Standalone classifier data extracted without any marker still
+has the documented unguarded boundary. This missing-carrier guard does
+not itself grant a consumer; the applied capability above has its own
+complete-result contract. No taxable consumer is added.</p>
+<p>The same explicit source-claim detector also protects report and
+panel boundaries. A source class or source/readiness attribute on an
+outer object or the selected inner frame cannot enter report writing or
+panel merging, including when legacy partial data-name matching selects
+the frame. Existing scalar and collection carrier denials remain in
+place. A readiness slot alone keeps its legacy semantics, so an ordinary
+or actual absent-wave <code>not_evaluated</code> wrapper is not promoted
+to a guarded source claim. This adds no export capability or panel
+lineage format.</p>
+</div>
+<div id="standalone-exact-source-ca20g012-classification" class="section level3">
+<h3>Standalone exact-source CA20g012 classification</h3>
+<p><code>source_nonresponse_ca20g012.yml</code> is a separate
+package-owned, digest-pinned <code>CA20G012_SOURCE</code> authority,
+version 1.0.0, with a whole-result carrier schema 1.0.0.
+<code>liss_classify_ca20g012(source)</code> accepts only the complete
+reviewed <code>ca20g_EN_1.0p.sav</code> file with its exact filename,
+byte size and SHA-256. It checks the file before and after import and
+parses a verified in-memory byte buffer with
+<code>haven::read_sav(user_na = TRUE, .name_repair = &quot;minimal&quot;)</code>.
+This source authority is independent of the CI registry, native
+carriers, FLAG/applied/view policies and computation fingerprint.</p>
+<p>The target <code>ca20g012</code> is a signed banking/savings balance
+on 2019-12-31 in whole EUR. Only the exact negative encodings
+<code>-9999999999</code> and <code>-9999999998</code> become NA in a
+separate analysis projection. Coded rows require the exact nonmissing
+<code>ca20g078</code> gate equal to one. Their answer status is
+<code>nonresponse_unknown</code>, analysis disposition is
+<code>missing_amount</code> and <code>no_numeric_proposal</code> is
+true. The source’s positive ten-digit SPSS missing declarations conflict
+with its positive eleven-digit labels and codebook forms; the observed
+negative pair is undeclared. No sign/digit repair or authenticated
+don’t-know/refusal mapping follows. Any of the four positive forms
+<code>9999999998</code>, <code>9999999999</code>,
+<code>99999999998</code> or <code>99999999999</code> in
+<code>ca20g012</code> makes classification and validation reject the
+whole call with <code>liss_ca20g012_blocked</code>; no partial result is
+returned. Ordinary signed values, including <code>-9</code> and
+<code>-8</code>, and nonfinite nonmatches remain untouched. Brackets do
+not supply a reconstructed amount or sign. Readiness evaluates the two
+exact source encodings only; <code>overall_amount_validity</code>
+remains <code>not_evaluated</code>.</p>
+<p>The closed wrapper contains exactly <code>original_data</code>,
+<code>analysis</code>, <code>data</code>,
+<code>source_nonresponse</code> and
+<code>source_nonresponse_readiness</code>. <code>original_data</code> is
+the complete unchanged imported Haven tibble, preserving all columns,
+row order, values, classes and metadata. <code>analysis</code> contains
+<code>data</code> and a typed <code>ledger</code>. Only the two
+classified target values change in the analysis frame; source labels and
+missing declarations are retained as descriptive metadata, not as
+evidence for changed analysis values. Top-level <code>data</code>
+duplicates the marked analysis frame for existing consumer guards. The
+ledger records original code, source row ordinal, respondent key, case,
+unresolved subtype evidence and missing-amount disposition. A
+source-cell key combines the source SHA-256, original row ordinal and
+raw field, without inferring ownership from aliases. The classification
+record binds complete coverage, original/analysis/ledger/ readiness
+digests and its own digest using R serialization version 2.</p>
+<p><code>liss_validate_ca20g012(result)</code> requires the complete
+result and reconstructs it against its retained complete original. This
+default checks structural consistency. Supplying <code>source</code>
+additionally rereads the exact verified file and compares its complete
+imported original, including non-target columns and metadata.
+Whole-result RDS retains the object. Validation still requires the
+reconstructed result and any reread source to reproduce the required
+serialized representation. Validation across R or package versions is
+not guaranteed. Extracted frames, subsets, reordered or partial wrappers
+are unsupported. Ordinary hashes do not authenticate origin. A
+consistently substituted original and result can pass structural checks;
+source consistency compares against the trusted file. Neither validation
+mode establishes statistical validity.</p>
+<p>The wrapper and analysis frame use the existing guarded
+collection-result class with distinct CA source/readiness record kinds.
+Those claims deny unsupported consumers; they grant no CI native carrier
+or numerical-consumer approval. Rebinding, income/wealth cleaning,
+applied views, background attachment, panel assembly, reports and
+SAV/CSV export remain unsupported for this result. In explicit
+<code>correct</code> or <code>na_only</code> mode,
+<code>liss_clean_income()</code> can evaluate <code>background</code> to
+check its required <code>NULL</code> value before rejecting the
+unsupported CA parent. Rejection does not guarantee that caller-supplied
+argument expressions remain unevaluated. Deliberately extracting
+unmarked originals or removing every recognized claim leaves unknown
+ownership; aliases cannot recover it. This contract covers no other CA
+field or release and changes no default CA merge recipe or whole-wave
+B03 flag.</p>
+</div>
+<div id="standalone-exact-source-ca20g016-classification" class="section level3">
+<h3>Standalone exact-source CA20g016 classification</h3>
+<p><code>source_nonresponse_ca20g016.yml</code> is a separate
+package-owned, digest-pinned <code>CA20G016_SOURCE</code> authority,
+version 1.0.0, with a whole-result carrier schema 1.0.0.
+<code>liss_classify_ca20g016(source)</code> accepts only the complete
+reviewed <code>ca20g_EN_1.0p.sav</code> file with its exact filename,
+byte size and SHA-256. It checks the file before and after import and
+parses the same verified in-memory byte buffer with
+<code>haven::read_sav(user_na = TRUE, .name_repair = &quot;minimal&quot;)</code>.
+The complete source schema, original row order, lossless unique
+respondent keys and exact target, ID and routing metadata are required.
+This authority is separate from CA20g012, the CI registry and
+native/FLAG/applied/view capabilities.</p>
+<p>The target <code>ca20g016</code> is reported investment value on
+2019-12-31 in whole EUR. The documented range is signed,
+<code>-999999999..999999999</code>; written options may represent debt,
+and legitimate negative balances must be preserved. Ownership depends on
+the source household-role and ownership preloads. The amount is not
+asserted to be a uniform household total or household income.</p>
+<p>Only the exact negative encodings <code>-9999999999</code> and
+<code>-9999999998</code> become NA in a separate analysis projection.
+Coded rows require a finite <code>ca20g006</code> investment gate equal
+to one; this does not require every eligible row to have an answer.
+Their answer status is <code>nonresponse_unknown</code>, subtype
+evidence is <code>unresolved</code>, analysis disposition is
+<code>missing_amount</code> and <code>no_numeric_proposal</code> is
+true. The source’s positive ten-digit SPSS missing declarations conflict
+with its positive eleven-digit labels and codebook forms; the observed
+negative pair is undeclared. No sign/digit repair or authenticated
+don’t-know/refusal mapping follows. Any of <code>9999999998</code>,
+<code>9999999999</code>, <code>99999999998</code> or
+<code>99999999999</code> in <code>ca20g016</code> makes classification
+and validation reject the whole call with
+<code>liss_ca20g016_blocked</code>; no partial result is returned.</p>
+<p>Every nonmatching target value remains unchanged and uncertified,
+including ordinary <code>-9</code>/<code>-8</code>, legitimate
+negatives, either zero sign, fractional values, finite values outside
+the documented range and nonfinite values. Readiness evaluates only the
+two exact source encodings; <code>overall_amount_validity</code> remains
+<code>not_evaluated</code>. The <code>ca20g017</code> follow-up is a
+category item, with substantive codes 1..14 and declared 999, not a
+monetary replacement. It supplies no inferred amount, midpoint, sign,
+donor or authenticated answer subtype.</p>
+<p>The closed wrapper contains exactly <code>original_data</code>,
+<code>analysis</code>, <code>data</code>,
+<code>source_nonresponse</code> and
+<code>source_nonresponse_readiness</code>. <code>original_data</code>
+retains the complete unchanged imported Haven tibble, including every
+column, value, type, class, row order and source attribute.
+<code>analysis</code> contains <code>data</code> and a typed
+<code>ledger</code>. Only the two classified target values change in the
+analysis frame. Its retained labels and missing declarations are
+descriptive source metadata and do not attest the changed analysis
+values. All non-target columns, including raw <code>ca20g012</code> and
+<code>ca20g017</code>, remain exact. Top-level <code>data</code>
+duplicates the marked analysis frame for existing consumer guards.</p>
+<p>The ledger records original code, source row ordinal, respondent key,
+fixed case, unknown subtype, missing-amount disposition and
+no-numeric-proposal flag. A source-cell key combines the exact source
+SHA-256, original row ordinal and raw field. The classification record
+binds complete coverage, the authority and source context, and
+original/analysis/ledger/readiness digests plus its own digest using R
+serialization version 2.</p>
+<p><code>liss_validate_ca20g016(result)</code> requires the complete
+closed result and reconstructs it against its retained complete
+original. This default checks structural consistency. Supplying
+<code>source</code> additionally rereads verified source bytes and
+compares the entire imported original, including all non-target columns
+and metadata. Validation requires both R identity and the required
+version-2 serialized representation of the reconstructed payload and any
+reread original, including signed zeros, missing-value payloads and
+attribute order. Guard marker and readiness values are checked
+separately. Whole-result RDS retains the object; validation across R or
+package versions is not guaranteed. Extracted frames, partial wrappers,
+subsets and reordered results are unsupported. Ordinary hashes do not
+authenticate origin: a consistently substituted original and result may
+pass structural checks. Source consistency compares against the trusted
+file, and neither validation mode establishes statistical validity.</p>
+<p>The wrapper and analysis frame use existing guarded collection-result
+claims with distinct CA016 source/readiness record kinds. These claims
+grant no CI native carrier, cleaner, FLAG, applied, view or export
+capability. Rebinding, income/wealth cleaning, background attachment or
+consumption, panel assembly, reports and SAV/CSV export remain
+unsupported. Rejection does not guarantee that caller-supplied argument
+expressions remain unevaluated, including the cleaner’s required
+<code>background = NULL</code> check in explicit applied modes.
+Extracting unmarked originals or stripping every recognized claim leaves
+unknown ownership; aliases cannot recover it.</p>
+<p>This separate contract changes no CA20g012 authority, result or
+behavior and defines no combined CA012+CA016 carrier. It covers no other
+field or release and changes no default CA merge recipe, whole-wave B03
+flag, numerical method or existing CI parent/view lineage.</p>
+</div>
+<div id="standalone-exact-source-ca20g023-vehicle-boat-and-caravan-value" class="section level3">
+<h3>Standalone exact-source CA20g023 vehicle, boat and caravan
+value</h3>
+<p><code>liss_classify_ca20g023(source)</code> and
+<code>liss_validate_ca20g023(result, source = NULL)</code> use a
+separate <code>CA20G023_SOURCE</code> authority and whole-result carrier
+schema, both version 1.0.0. The authority admits only the complete
+reviewed <code>ca20g_EN_1.0p.sav</code>, with its exact filename, byte
+size and SHA-256. Creation checks the source before and after import and
+parses the same verified in-memory byte buffer with
+<code>haven::read_sav(user_na = TRUE, .name_repair = &quot;minimal&quot;)</code>.
+Complete source schema, original row order, unique nonnegative finite
+lossless respondent keys and exact ID/023/008 metadata are required.
+This is independent of CA012/016 and every CI capability.</p>
+<p>The question estimates total sales value of cars, motorcycles, boats
+and (static) caravans owned on 2019-12-31, in whole EUR. The date
+identifies assets owned then, without an additional valuation-time
+interpretation. Household-role and own/joint ownership context do not
+imply a uniform household total or income. The documented amount domain
+<code>1..999999999</code> is descriptive; the classifier does not
+enforce that range or certify ordinary amounts.</p>
+<p>Only exact raw <code>ca20g023 = -9</code> and <code>-8</code> become
+NA in a separate analysis projection. Coded rows require finite,
+nonmissing ownership gate <code>ca20g008 = 1</code>; this adds no answer
+requirement for other eligible rows. The undeclared negative codes
+receive <code>nonresponse_unknown</code>, <code>unresolved</code>
+subtype evidence, <code>missing_amount</code> disposition and
+<code>no_numeric_proposal = TRUE</code>. CA023’s SAV missing
+declarations AND value labels use positive ten-digit
+<code>9999999998</code>/<code>9999999999</code>; the codebook prints
+positive eleven-digit <code>99999999998</code>/<code>99999999999</code>.
+No sign/digit repair or authenticated don’t-know/refusal mapping
+follows. Encountering any of these four positive forms in the target
+makes classification and validation reject the whole call with
+<code>liss_ca20g023_blocked</code>, without a partial result.</p>
+<p>Positive <code>8</code> and <code>9</code> are ordinary amounts, not
+aliases for the negative codes. Every nonmatching target payload remains
+exact and uncertified, including large negative codes used by other CA
+fields, other negatives, either zero sign, fractions, out-of-range
+values and nonfinite values. Readiness concerns only the two encodings;
+<code>overall_amount_validity</code> stays <code>not_evaluated</code>.
+The <code>ca20g024</code> follow-up is a category item with substantive
+codes 1..14 and declared 999. It supplies no recovered amount, midpoint,
+sign, donor or authenticated subtype. No following bracket is used as a
+monetary replacement.</p>
+<p>The closed result contains exactly <code>original_data</code>,
+<code>analysis</code>, <code>data</code>,
+<code>source_nonresponse</code> and
+<code>source_nonresponse_readiness</code>. The complete unchanged Haven
+import, all values, columns, types, classes, row order and attributes
+remain in <code>original_data</code>. <code>analysis</code> contains a
+marked <code>data</code> frame and a typed <code>ledger</code>;
+top-level <code>data</code> duplicates that frame. All 65 non-target
+columns, including raw <code>ca20g012</code>, <code>ca20g016</code> and
+<code>ca20g024</code>, remain exact. Retained target labels and missing
+declarations describe the original source and do not attest changed
+analysis values.</p>
+<p>The ledger binds source hash, original row ordinal and raw field in
+each cell reference and retains the original code, respondent key, fixed
+case, unknown subtype, missing-amount disposition and
+no-numeric-proposal flag. The record binds complete coverage,
+authority/source/codebook context, reference date and date scope,
+ownership context, descriptive amount domain and metadata-form
+distinction, plus original/analysis/ledger/readiness digests and its own
+digest.</p>
+<p>Default validation reconstructs the complete closed result against
+its retained original and checks structural consistency only. Optional
+source validation rereads verified source bytes and compares the entire
+original, including all non-target columns and metadata. Both R identity
+and version-2 serialized payload equality are required, including
+numeric payloads and attribute order. Equivalent guard placement is
+normalized; marker/readiness values are checked separately. Whole-result
+RDS retains the object; cross-R or cross-package-version validation is
+not guaranteed. Hashes and reconstruction do not authenticate origin: a
+consistently substituted original/result may pass structure. Source
+rereading compares against the trusted file; neither mode establishes
+statistical validity.</p>
+<p>Existing collection claims support denial only. They grant no CI
+native carrier, scalar rebind, cleaner, FLAG/applied/view, background,
+panel, report or SAV/CSV export capability. Rejection does not guarantee
+unevaluated caller expressions, including the cleaner’s required
+<code>background = NULL</code> check in explicit applied modes. Unmarked
+originals or complete claim removal leave unknown ownership; aliases
+cannot recover it. No combined CA012+CA016+CA023 carrier is defined.
+Both older standalone authorities and results, numerical methods,
+existing CI parent/view lineage, default CA merge recipe and whole-wave
+B03 flag are unchanged. No other field or release is covered.</p>
+</div>
+<div id="standalone-exact-source-ca20g014-insurance-payout-and-endowment-savings" class="section level3">
+<h3>Standalone exact-source CA20g014 insurance payout and endowment
+savings</h3>
+<p><code>liss_classify_ca20g014(source)</code> and
+<code>liss_validate_ca20g014(result, source = NULL)</code> use an
+independent <code>CA20G014_SOURCE</code> authority and standalone
+whole-result carrier, both version 1.0.0. Only the complete reviewed
+<code>ca20g_EN_1.0p.sav</code> is admitted: exact filename, byte size
+and SHA-256 before and after import, with Haven parsing the same
+verified memory buffer using <code>user_na = TRUE</code> and minimal
+name repair. Require the full schema, original row order, unique
+nonnegative finite lossless integer-valued double keys and exact ordered
+ID/014/005 metadata. The complete unchanged imported tibble remains in
+<code>original_data</code>.</p>
+<p>The question asks guaranteed minimum payout of single-premium or life
+annuity insurance, OR total savings amount of endowment insurance on
+2019-12-31, in whole EUR. This date differs from September/October 2020
+collection. Household and financial-role instructions distinguish own
+from own-plus-joint assets; there is no uniform household-total, generic
+market/surrender-value or income meaning. The printed amount domain
+<code>1..999999999</code> is descriptive and is not enforced.</p>
+<p>Only exact raw <code>ca20g014 = -9/-8</code> becomes ordinary
+analysis NA. Those coded cells alone require finite, nonmissing
+possession gate <code>ca20g005 = 1</code>. Noncoded rows need no gate
+condition; eligible source-missing answers stay missing. Both codes
+remain <code>nonresponse_unknown</code>, with <code>unresolved</code>
+subtype evidence, <code>missing_amount</code>,
+<code>no_numeric_proposal = TRUE</code> and
+<code>overall_amount_validity = &quot;not_evaluated&quot;</code>. SAV missing
+declarations AND labels use positive ten-digit <code>9999999998</code>/
+<code>9999999999</code>; the codebook uses positive eleven-digit
+<code>99999999998</code>/<code>99999999999</code>. The observed negative
+pair is undeclared; no sign/digit or authenticated subtype repair
+follows. Any of those four positive forms in the target makes creation
+and validation reject the whole call with
+<code>liss_ca20g014_blocked</code>, without a partial result. Positive
+<code>8</code>/<code>9</code> and every other nonmatch remain exact and
+uncertified, including other negatives, either zero sign,
+fractional/out-of-range and nonfinite payloads. All 65 non-target
+columns/order/attributes remain exact.</p>
+<p>The <code>ca20g015</code> column is mandatory under the complete
+schema. Its reference metadata digest is contextual, separate from the
+three admission pins. The record carries
+<code>contextual_metadata$ca20g015</code> with
+<code>role = &quot;context_only&quot;</code>, <code>reference_sha256</code>,
+<code>actual_sha256</code> and
+<code>required_for_admission = FALSE</code>. Reference/actual digest
+equality is not an admission condition. Missing follow-up values, even
+on coded 014 rows, are allowed. Its categories supply no amount,
+midpoint, sign, donor or authenticated subtype. Whole-original digests
+and optional source comparison still bind the actual 015 values and
+metadata.</p>
+<p>The closed result has exactly <code>original_data</code>,
+<code>analysis</code>, <code>data</code>,
+<code>source_nonresponse</code> and
+<code>source_nonresponse_readiness</code>. Analysis contains the
+separate marked <code>data</code> frame and typed 18-column
+<code>ledger</code>; top-level <code>data</code> duplicates that frame.
+Full coverage lists every source row. Cell references bind source hash,
+original ordinal and raw field, retaining key, original code, case,
+unknown subtype and missing-amount/no-numeric-proposal disposition.
+Readiness <code>unresolved_cells = 0</code> concerns cell binding, not
+subtype resolution. Retained analysis labels/missing declarations
+describe the source, not changed NA values.</p>
+<p>Default validation reconstructs the complete result against its
+retained original and establishes structural consistency only. Optional
+source validation rereads verified bytes and compares the entire
+original, including all non-targets and 015 metadata. Both R identity
+and version-2 payload bytes are required, covering signed zero, missing
+payloads, reference identity and attribute order. Harmless analysis
+guard placement is normalized; actual marker/readiness values remain
+checked. Whole-result RDS retains the object, but
+cross-R/package-version validation is not guaranteed. A consistently
+substituted original/result can pass structure; source mode detects
+mismatch with the trusted file. Hashes do not authenticate origin;
+<code>source_authentication</code> and <code>statistical_validity</code>
+are always FALSE.</p>
+<p>Existing collection claims provide denial only. No CI carrier, scalar
+rebind, cleaner, FLAG/applied/view, background, panel, report or SAV/CSV
+export capability is granted. Rejection does not guarantee unevaluated
+caller expressions, including the cleaner’s required
+<code>background = NULL</code> check in explicit applied modes. Unmarked
+originals or complete claim stripping leave unknown ownership; aliases
+cannot restore it. No combined CA carrier is defined. The separate
+CA012/016/023 authorities/results, all numerical methods, complete CI
+parent/view lineage and default CA recipe/B03 behavior remain unchanged.
+No other field/release is covered.</p>
+</div>
+<div id="standalone-exact-source-ca20g025-money-loaned-out" class="section level3">
+<h3>Standalone exact-source CA20g025 money loaned out</h3>
+<p><code>liss_classify_ca20g025(source)</code> and
+<code>liss_validate_ca20g025(result, source = NULL)</code> use an
+independent <code>CA20G025_SOURCE</code> authority and standalone
+whole-result carrier, both version 1.0.0. Only the complete reviewed
+<code>ca20g_EN_1.0p.sav</code> is admitted: exact filename, byte size
+and SHA-256 before and after import, with Haven parsing the same
+verified memory buffer using <code>user_na = TRUE</code> and minimal
+name repair. Require the full schema, original row order, unique
+nonnegative finite lossless integer-valued double keys and exact ordered
+ID/025/010 metadata. The complete unchanged imported tibble remains in
+<code>original_data</code>.</p>
+<p>The question asks money loaned out to family, friends or
+acquaintances on 2019-12-31, in whole EUR. This date differs from
+September/October 2020 collection. Household and financial-role
+instructions distinguish own from own-plus-joint assets; no uniform
+household total, income or numerical wealth method follows. The
+documented <code>1..999999999</code> amount domain is descriptive and is
+not enforced.</p>
+<p>Only exact raw <code>ca20g025 = -9/-8</code> becomes ordinary
+analysis NA. Those coded cells alone require finite, nonmissing
+<code>ca20g010 = 1</code>; this gate uses <code>1 = yes</code>,
+<code>2 = no</code>. Noncoded rows need no gate condition; eligible
+source-missing answers stay missing. Both codes remain
+<code>nonresponse_unknown</code>, with <code>unresolved</code> subtype
+evidence, <code>missing_amount</code>,
+<code>no_numeric_proposal = TRUE</code> and amount validity
+<code>not_evaluated</code>. SAV missing declarations AND labels use
+positive ten-digit <code>9999999998</code>/ <code>9999999999</code>; the
+codebook uses positive eleven-digit
+<code>99999999998</code>/<code>99999999999</code>. The negative pair is
+undeclared; no sign/digit or authenticated subtype repair follows. Any
+of those four positive forms in the target rejects whole creation and
+validation with <code>liss_ca20g025_blocked</code>, without a partial
+result. Positive <code>8</code>/<code>9</code> and every nonmatch remain
+exact and uncertified, including other negatives, both zero signs,
+fractions, out-of-range and nonfinite payloads. All 65 non-target
+columns, row order and metadata remain exact, including
+<code>ca20g012</code>, <code>ca20g014</code>, <code>ca20g016</code>,
+<code>ca20g023</code> and <code>ca20g026</code>.</p>
+<p>The <code>ca20g026</code> column is mandatory under the complete
+schema. Its reference metadata digest is contextual, separate from the
+three admission pins. The record carries
+<code>contextual_metadata$ca20g026</code> with
+<code>role = &quot;context_only&quot;</code>, <code>reference_sha256</code>,
+<code>actual_sha256</code> and
+<code>required_for_admission = FALSE</code>. Reference/actual digest
+equality is not an admission condition. Missing follow-up values, even
+on coded rows, are allowed. Its categories supply no amount, midpoint,
+sign, donor or authenticated subtype. Whole-original digests and
+optional source comparison still bind all actual 026 values and
+metadata.</p>
+<p>The closed result has exactly <code>original_data</code>,
+<code>analysis</code>, <code>data</code>,
+<code>source_nonresponse</code> and
+<code>source_nonresponse_readiness</code>. Analysis contains the
+separate marked <code>data</code> frame and typed 18-column
+<code>ledger</code>; top-level <code>data</code> duplicates that frame.
+Full coverage lists every source row. Cell references bind source hash,
+original ordinal and raw field, retaining key, original code, case,
+unknown subtype and missing-amount/no-numeric-proposal disposition.
+Zero-code complete sources retain full coverage and a typed empty
+ledger; zero-row or miniature originals are unsupported. Readiness
+<code>unresolved_cells = 0</code> concerns cell binding, not subtype
+resolution. Retained analysis labels/missing declarations describe the
+source, not changed NA values. Frequencies are never policy
+constraints.</p>
+<p>Default validation reconstructs the whole result against its retained
+original and establishes structural consistency only. Optional source
+validation rereads verified bytes and compares every original column and
+attribute, including 026. Both R identity and version-2 payload bytes
+are required, covering signed zero, missing payloads, reference identity
+and attribute order. Harmless analysis guard placement is normalized;
+marker/readiness values remain checked. Whole-result RDS retains the
+object, but cross-R/package-version validation is not guaranteed. A
+consistently substituted original/result can pass structure; source mode
+detects mismatch with the trusted file. Hashes do not authenticate
+origin; <code>source_authentication</code> and
+<code>statistical_validity</code> are always FALSE.</p>
+<p>Existing collection claims provide denial only. No CI carrier, scalar
+rebind, cleaner, FLAG/applied/view, background, panel, report or SAV/CSV
+export capability is granted. Rejection does not guarantee unevaluated
+caller expressions, including the cleaner’s required
+<code>background = NULL</code> check in explicit applied modes. Unmarked
+originals or complete claim stripping leave unknown ownership; arbitrary
+wrappers and aliases cannot restore it. No combined CA carrier is
+defined. The four older standalone authorities/results, all numerical
+methods, complete CI parent/view lineage and default CA recipe/B03
+behavior remain unchanged. No other field or release is covered.</p>
 </div>
 </div>
 

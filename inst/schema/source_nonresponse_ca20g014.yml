@@ -1,0 +1,206 @@
+schema_version: 1.0.0
+authority_id: CA20G014_SOURCE
+authority_version: 1.0.0
+creator: liss_classify_ca20g014
+validator: liss_validate_ca20g014
+carrier_schema_version: 1.0.0
+source:
+  filename: ca20g_EN_1.0p.sav
+  sha256: d30acac3d2ca17533fb33ac724e43ff7dc40698139cec42221e1cae104684e47
+  size_bytes: 917084.0
+codebook:
+  filename: codebook_ca20g_EN_1.0.pdf
+  sha256: de43bf124f42083b8817b3cbd5ea1f5dd401a3e084227c850e9482a7756f8780
+  size_bytes: 601298.0
+source_context:
+  module: ca
+  wave: ca20g
+  language: EN
+  release: 1.0p
+field_id: CA20G014_FIELD
+raw_column: ca20g014
+id_column: nomem_encr
+route_column: ca20g005
+required_route_for_coded_rows: 1.0
+construct: guaranteed_minimum_insurance_payout_or_endowment_savings
+unit: EUR_whole
+reference_date: '2019-12-31'
+date_scope: amount asked for on this date; distinct from September and October 2020 collection
+ownership_scope: source household-role and own/joint ownership context; no uniform household total or income interpretation
+analysis_metadata_status: retained source description only; does not attest changed analysis values
+documented_amount_range:
+- 1.0
+- 999999999.0
+source_metadata_nonresponse_forms:
+  na_values: [9999999998.0, 9999999999.0]
+  value_labels: [9999999998.0, 9999999999.0]
+  pdf_forms: [99999999998.0, 99999999999.0]
+scope: complete_raw_source_only
+retained_scope: exact_haven_import
+rows: 5849
+columns:
+- nomem_encr
+- ca20g_m
+- ca20g001
+- ca20g002
+- ca20g003
+- ca20g082
+- ca20g078
+- ca20g005
+- ca20g006
+- ca20g007
+- ca20g008
+- ca20g009
+- ca20g010
+- ca20g011
+- ca20g012
+- ca20g013
+- ca20g014
+- ca20g015
+- ca20g016
+- ca20g017
+- ca20g018
+- ca20g019
+- ca20g020
+- ca20g021
+- ca20g022
+- ca20g023
+- ca20g024
+- ca20g025
+- ca20g026
+- ca20g027
+- ca20g028
+- ca20g079
+- ca20g030
+- ca20g034
+- ca20g035
+- ca20g036
+- ca20g080
+- ca20g041
+- ca20g083
+- ca20g084
+- ca20g081
+- ca20g048
+- ca20g085
+- ca20g086
+- ca20g054
+- ca20g055
+- ca20g056
+- ca20g057
+- ca20g058
+- ca20g087
+- ca20g060
+- ca20g061
+- ca20g062
+- ca20g063
+- ca20g064
+- ca20g065
+- ca20g066
+- ca20g067
+- ca20g068
+- ca20g069
+- ca20g070
+- ca20g071
+- ca20g072
+- ca20g073
+- ca20g074
+- ca20g075
+column_types:
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- double
+- character
+- character
+- character
+- character
+- double
+frame_class:
+- tbl_df
+- tbl
+- data.frame
+metadata_sha256:
+  nomem_encr: a85d081e81be1b50c2ac82f5fe3012b3275d73d3c7556796b5bd923b8f90a1d1
+  ca20g014: 3839ce375078db0ceb2a4f910e05af8ccf1f6faa2e4bfc4068e23103bf5ea041
+  ca20g005: f8e1b6c08d61fc04c1ffb0b8ed47f15b062bb0aa473ada85f21088cfdd50ae86
+contextual_metadata_sha256:
+  ca20g015: 43765b1a533dfcfec21f20f102ad9790dc23c73120d931f01565d659ef1f5fda
+followup_context:
+  raw_column: ca20g015
+  role: context_only
+  documented_codes: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  documented_unknown: 999
+  use: no amount midpoint sign donor or authenticated subtype inference
+codes:
+- -9.0
+- -8.0
+case_ids:
+- CA20G014_N01
+- CA20G014_N02
+unsupported_positive_forms:
+- 9999999998.0
+- 9999999999.0
+- 99999999998.0
+- 99999999999.0
+answer_status: nonresponse_unknown
+analysis_disposition: missing_amount
+no_numeric_proposal: yes
+overall_amount_validity: not_evaluated
+consumers: []

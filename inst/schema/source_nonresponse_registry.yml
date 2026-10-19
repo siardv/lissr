@@ -1,0 +1,118 @@
+# package-owned reviewed authority; the exact bytes are pinned in trusted code
+schema_version: "2.0.0"
+registry_version: "2.0.0"
+records:
+  - contract:
+      rule_id: CI23P339_N01
+      rule_version: "1.0.0"
+      module: ci
+      wave: ci23p
+      language: EN
+      source_filename: ci23p_EN_1.0p.sav
+      source_sha256: 2e4578cafb649cf4bb3e89d7bc27ea50f8ea1f42038e2ba957a055eff4871862
+      raw_column: ci23p339
+      canonical_column: s339
+      code: -9999999999.0
+      construct: household_net_income
+      unit: EUR
+      measurement_period: 2022
+      codebook_filename: codebook_ci23p_EN_1.1.pdf
+      codebook_sha256: 408db5ddadf3e4ab4d3af269dc77a1e6edaf04935b9c2cc833d99904c2bb331f
+      response_validity: source_nonresponse_encoding
+      answer_status: nonresponse_unknown
+      analysis_disposition: missing_amount
+      no_numeric_proposal: true
+    source_release: "1.0p"
+    targets: [ci23p339, s339, ci_s339, nethh, ci00a339]
+    metadata_policy: retain_original_attributes
+    evidence_ref: codebook_ci23p_EN_1.1.pdf:339/229
+    routing:
+      column: ci23p229
+      candidate_answer_status: dont_know
+      subtype_evidence: routing_supported
+    readiness:
+      role: household_income_amount
+      scope: ci23p339=-9999999999 in the exact reviewed source
+    consumers:
+      - name: liss_clean_income
+        construct: household_net_income
+        unit: EUR
+        measurement_period: 2022
+        targets: [ci23p339, s339, ci_s339, nethh, ci00a339]
+fields:
+  - field_id: CI23P337_FIELD
+    field_version: "1.0.0"
+    module: ci
+    wave: ci23p
+    language: EN
+    source_filename: ci23p_EN_1.0p.sav
+    source_sha256: 2e4578cafb649cf4bb3e89d7bc27ea50f8ea1f42038e2ba957a055eff4871862
+    source_release: "1.0p"
+    raw_column: ci23p337
+    canonical_column: s337
+    construct: respondent_taxable_income
+    unit: EUR
+    measurement_period: 2022
+    targets: [ci23p337, s337, ci_s337]
+    metadata_policy: retain_original_attributes
+    codebook_filename: codebook_ci23p_EN_1.1.pdf
+    codebook_sha256: 408db5ddadf3e4ab4d3af269dc77a1e6edaf04935b9c2cc833d99904c2bb331f
+    evidence_ref: codebook_ci23p_EN_1.1.pdf:337
+    cases:
+      - rule_id: CI23P337_N01
+        rule_version: "1.0.0"
+        code: -9999999999.0
+        response_validity: source_nonresponse_encoding
+        answer_status: nonresponse_unknown
+        analysis_disposition: missing_amount
+        no_numeric_proposal: true
+      - rule_id: CI23P337_N02
+        rule_version: "1.0.0"
+        code: -9999999998.0
+        response_validity: source_nonresponse_encoding
+        answer_status: nonresponse_unknown
+        analysis_disposition: missing_amount
+        no_numeric_proposal: true
+    routing: null
+    readiness:
+      role: respondent_taxable_income_amount
+      scope: ci23p337 exact reviewed encoding cases in the exact reviewed source
+    consumers: []
+  - field_id: CI23P338_FIELD
+    field_version: "1.0.0"
+    module: ci
+    wave: ci23p
+    language: EN
+    source_filename: ci23p_EN_1.0p.sav
+    source_sha256: 2e4578cafb649cf4bb3e89d7bc27ea50f8ea1f42038e2ba957a055eff4871862
+    source_release: "1.0p"
+    raw_column: ci23p338
+    canonical_column: s338
+    construct: respondent_estimated_taxable_income
+    unit: EUR
+    measurement_period: 2022
+    targets: [ci23p338, s338, ci_s338]
+    metadata_policy: retain_original_attributes
+    codebook_filename: codebook_ci23p_EN_1.1.pdf
+    codebook_sha256: 408db5ddadf3e4ab4d3af269dc77a1e6edaf04935b9c2cc833d99904c2bb331f
+    evidence_ref: codebook_ci23p_EN_1.1.pdf:338
+    cases:
+      - rule_id: CI23P338_N01
+        rule_version: "1.0.0"
+        code: -9999999999.0
+        response_validity: source_nonresponse_encoding
+        answer_status: nonresponse_unknown
+        analysis_disposition: missing_amount
+        no_numeric_proposal: true
+      - rule_id: CI23P338_N02
+        rule_version: "1.0.0"
+        code: -9999999998.0
+        response_validity: source_nonresponse_encoding
+        answer_status: nonresponse_unknown
+        analysis_disposition: missing_amount
+        no_numeric_proposal: true
+    routing: null
+    readiness:
+      role: respondent_estimated_taxable_income_amount
+      scope: ci23p338 exact reviewed encoding cases in the exact reviewed source
+    consumers: []

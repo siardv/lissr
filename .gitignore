@@ -27,6 +27,8 @@
 !/tests/testthat.R
 !/tests/testthat/
 !/tests/testthat/*.[Rr]
+!/tests/testthat/fixtures/
+!/tests/testthat/fixtures/source_nonresponse_v1_synthetic.rds
 !/vignettes/
 !/vignettes/*.Rmd
 
@@ -60,3 +62,12 @@
 !/inst/doc/*.html
 !/build/
 !/build/vignette.rds
+
+# retain the frozen invented-row scalar v2 compatibility checkpoint
+!/tests/testthat/fixtures/source_nonresponse_v2_synthetic.rds
+
+# retain the frozen invented-row collection v3 compatibility checkpoint
+!/tests/testthat/fixtures/source_nonresponse_v3_synthetic.rds
+
+# retain the frozen invented-row collection v4 compatibility checkpoint
+!/tests/testthat/fixtures/source_nonresponse_v4_synthetic.rds

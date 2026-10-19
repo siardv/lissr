@@ -1,17 +1,35 @@
-# lissr 1.4.1.9000
+# lissr 1.5.0
 
-* Add a completed data-quality assessment beyond household income, covering
-  the available ten core-module collections and monthly Background Variables.
-  The documentation reports measured inconsistencies and coding exposures,
-  conservative correction limits, source caveats and an ordered roadmap.
-  It adds no cleaning functionality and changes no source data or recipes.
+This release adds explicit monthly Background Variables attachment, recorded CV
+fieldwork dates, and source-specific nonresponse workflows that retain raw source
+evidence. These capabilities cover only the documented sources and fields;
+broader data-quality normalization remains future work.
 
-* Correct the Health cross-sectional tutorial to use self-rated health
-  `s004`, exact release filenames and explicit multi-month Background
-  Variables sources. The guide removes unverified printed outputs and
-  explains covariate metadata, missing-data checks and model assumptions.
-  The Health collection note includes the December 2025 repeat; recipe
-  transformations and analytical month/income policies are unchanged.
+## Background Variables and batch merging
+
+* `merge_liss_modules()` now discovers local core-module wave files when
+  `recipe_paths` is omitted. Supply only `data_dir` and `output_dir`; the batch
+  loads built-in recipes for detected modules, without a manual module list
+  or skipped-module messages for absent inputs. Discovery checks module-code
+  subdirectories when present, otherwise the parent folder, and includes
+  earlier downloads in the same folder. Modules run in alphabetical code
+  order, with existing recipe wave coverage. Explicit
+  recipe paths, custom recipes, and warnings from processed modules retain
+  their existing behavior.
+
+* The file catalogue now includes monthly Background Variables ZIP releases
+  from study 322, with filename-derived YYYYMM `wave` codes, `type: archive`,
+  exact published filenames alongside their release descriptions. Its documents have no month
+  (`wave: NA`). Invalid archive month filenames are warned about and omitted.
+  Refresh an existing in-memory catalogue after updating the package.
+
+* Interactive selection prompts for background months separately from core
+  waves and offers ZIP archives and documents explicitly. Calendar month
+  ranges cross year boundaries correctly. Module listings count distinct
+  dated releases, and cached details expose archive counts; the availability matrix retains
+  core waves only. Default SPSS downloads and the ten merge recipes are
+  unchanged. Catalogue metadata does not verify archive contents or provide
+  automatic background attachment or a survey-item month policy.
 
 * `liss_attach_background()` attaches explicitly selected local SAV snapshots
   by respondent and caller-selected survey month. It returns `data`, `audit`
@@ -23,18 +41,194 @@
   and item/part month remain explicit choices, without automatic release ranking,
   format fallback, covariate harmonization or changes to annual income attachment.
 
-* The file catalogue now includes monthly Background Variables ZIP releases
-  from study 322, with filename-derived YYYYMM `wave` codes, `type: archive`,
-  exact published filenames alongside their release descriptions. Its documents have no month
-  (`wave: NA`). Invalid archive month filenames are warned about and omitted.
-  Refresh an existing in-memory catalogue after updating the package.
-* Interactive selection prompts for background months separately from core
-  waves and offers ZIP archives and documents explicitly. Calendar month
-  ranges cross year boundaries correctly. Module listings count distinct
-  dated releases, and cached details expose archive counts; the availability matrix retains
-  core waves only. Default SPSS downloads and the ten merge recipes are
-  unchanged. Catalogue metadata does not verify archive contents or provide
-  automatic background attachment or a survey-item month policy.
+## Source-specific nonresponse
+
+* Add an opt-in source nonresponse guard for the exact verified
+  `ci23p_EN_1.0p.sav` household-income response `ci23p339 = -9999999999`.
+  Source-bound classification preserves raw values and field metadata,
+  records typed per-cell decisions and keeps these responses out of finite
+  income proposals in every cleaner mode, including rule overrides.
+  Flag mode preserves the supplied target, including missing analysis values
+  from a guarded merge; source originals remain in `_observed` and the audit.
+  Reject assigning the source-bound household amount as `category_code`.
+  Explicit source rebinds support raw and legacy merged frames; unguarded
+  defaults remain unchanged. Keep the complete classifier wrapper when
+  cleaning; its unchanged `$data` alone enters unguarded processing. Reordering
+  and subsets require retained metadata; missing exact wave IDs block binding.
+  Guarded merging is currently in memory only,
+  with RDS carrier preservation; panel propagation and SAV/CSV sidecar
+  exports remain unsupported. This scalar household contract does not cover other
+  CI fields, CH or CA. The separate scalar and collection contracts below cover
+  the reviewed CI23p337/338 scope.
+
+* Resolve the source guard against a versioned package-owned registry whose
+  content digest is pinned in package code. Caller recipes select the exact
+  reviewed contract; they cannot approve new sources, fields or policies.
+  Keep the default CI23p339 rule, one-field interface and version-1 carrier
+  unchanged, and validate its household-income consumer
+  approval before numerical preparation. Registry and carrier digests check
+  integrity, not authentication; bare frames without a carrier retain the
+  existing unguarded behavior.
+
+* Add explicit scalar source classification and guarded merge normalization for
+  either CI23p337 or CI23p338 through a schema 2.0.0 recipe containing one complete
+  reviewed field record. Each version-2 carrier holds two exact nonresponse cases
+  under one source/field receipt, with per-case counts and retained metadata.
+  Standalone classification preserves input values; guarded merging excludes
+  only the selected field's exact codes. Taxable carriers cannot enter the
+  household cleaner. Existing guarded inputs cannot be rebound to a tax field,
+  and taxable lineage cannot be rebound to legacy 339. Default recipes and
+  version-1 carriers retain their previous behavior. The scalar interface carries
+  one field. Multi-field carriage requires the explicit collection contracts
+  below; CA20g/CH carriage through this CI interface, subtype inference and
+  taxable numerical cleaning remain unsupported.
+
+* Support one joint taxable guarded CI merge through explicit schema 3.0.0
+  selection of the complete reviewed CI23p337/CI23p338 pair. Validate both
+  original fields before normalizing either and finalize both before attaching
+  one tagged version-3 collection with two complete sealed version-2 scalar
+  receipts. Retain selection order, per-field/case readiness and field-cell
+  totals. Reject version-3 collections in scalar classification/rebinding, household
+  cleaning, reports and panels. Registry approvals, defaults and scalar behavior
+  remain unchanged; no household projection or taxable cleaner is introduced.
+
+* Add explicit schema 4.0.0 guarded CI merging of CI23p337/338/339 through a
+  separately pinned collection adapter. Validate all original receipts before
+  normalizing any field, then retain complete native v2/v2/v1 states in one
+  tagged version-4 collection. Preserve registry-2 authority, scalar/default and
+  two-field version-3 behavior and scalar rebinding/export/panel restrictions.
+  Household consumption requires the separate consumer policy described below.
+  The household collection slot does not add a scalar-v2 field or encoding case.
+
+* Add separately versioned `liss_classify_ca20g012()` and
+  `liss_validate_ca20g012()` for the complete exact reviewed CA20g raw source.
+  Preserve the original Haven import and classify only the two negative
+  `ca20g012` encodings as missing amounts in a separate analysis projection,
+  with unknown subtype, stable source-cell references and no numerical proposal.
+  Structural validation reconstructs the complete result; optional source
+  consistency validation rereads verified bytes. Conflicting positive forms
+  reject the whole call without a partial result. This standalone
+  banking/savings-balance contract adds no CI consumer, alias binding, other CA
+  field or default CA recipe change.
+
+* Add separately versioned `liss_classify_ca20g014()` and
+  `liss_validate_ca20g014()` for exact-source guaranteed minimum insurance payout
+  or endowment savings on 2019-12-31. Preserve the complete original and replace
+  only raw `ca20g014 = -9/-8` with analysis NA, requiring possession gate 005 only
+  on coded rows. Keep all nonmatches and 65 other columns exact, treat follow-up
+  015 metadata as context, and reject conflicting positive forms for the whole
+  call. Unknown subtype and no numerical proposal remain explicit. Separate
+  CA012/016/023 authorities, consumers, numerical methods and default CA/B03
+  behavior are unchanged.
+
+* Add separately versioned `liss_classify_ca20g016()` and
+  `liss_validate_ca20g016()` for exact-source investment-value nonresponse.
+  Preserve the complete original and replace only the two reviewed negative
+  `ca20g016` encodings with analysis NA, retaining legitimate signed values,
+  unknown subtype and no numerical proposal. Require the source investment
+  gate for coded rows and reject conflicting positive forms for the whole call.
+  Complete reconstruction and optional verified-source rereading add no
+  income/wealth consumer, bracket inference, combined CA carrier or default
+  recipe change; the separate CA20g012 contract remains unchanged.
+
+* Add separately versioned `liss_classify_ca20g023()` and
+  `liss_validate_ca20g023()` for exact-source vehicle, boat and caravan
+  sales-value nonresponse. Preserve the complete original and replace only
+  raw `ca20g023 = -9/-8` with analysis NA. Keep positive 8/9 and all nonmatches
+  unchanged, require ownership gate 008 only for coded rows, and reject all
+  conflicting positive forms for the whole call. Retain the field-specific
+  ten-digit SAV versus eleven-digit codebook distinction, unknown subtype and
+  no numerical proposal. Separate CA012/016 contracts, consumers, numerical
+  methods and the default CA recipe remain unchanged.
+
+* Add separately versioned `liss_classify_ca20g025()` and
+  `liss_validate_ca20g025()` for exact-source money loaned out to family,
+  friends or acquaintances on 2019-12-31. Preserve the complete original and
+  replace only raw `ca20g025 = -9/-8` with analysis NA, requiring loan gate 010
+  only on coded rows. Keep all nonmatches and 65 other columns exact, treat
+  follow-up 026 metadata as context, and reject conflicting positive forms for
+  the whole call. Unknown subtype and no numerical proposal remain explicit.
+  Separate CA012/014/016/023 authorities, consumers, numerical methods and
+  default CA/B03 behavior are unchanged.
+
+* Validate CA20g012 result payloads and optional source comparisons using the
+  same version-2 serialized representation as their recorded digests. Reject
+  changed signed zeros, missing-value payloads and attribute order rather than
+  accepting stale component digests through ordinary R equality. Unchanged
+  whole-result RDS transport and equivalent guard-attribute placement remain
+  supported.
+
+* Clarify that whole-result CA20g012 RDS storage does not guarantee validation
+  across R or package versions; validation still requires compatible serialized
+  representations of the reconstructed result and any reread source.
+
+## Guarded household-income results
+
+* Permit household flag simulation on a complete version-4 collection only with
+  explicit `mode = "flag"` and `variables = list(target = "s339")`, under a
+  separately pinned consumer policy. Retain every original column and all three
+  source receipts, exclude source339 codes from numerical proposals and reject
+  bound amount columns in all secondary roles. Add a wrapper-only complete-result
+  integrity record, separate from source readiness. This FLAG policy grants no
+  applied correction; applied results use the distinct capability below.
+  Taxable consumption, guarded backgrounds, rebinding and guarded exports remain
+  blocked.
+
+* Add a separately pinned household applied-result capability for an intact
+  version-4 collection, with explicit `s339` selection and `correct` or `na_only`
+  mode, `background = NULL` and `output_dir = NULL`. Retain the exact accepted
+  native input separately from derived output, preserve both tax fields and
+  non-target columns, and keep source locks missing under rule overrides.
+  `liss_validate_applied_income()` checks whole-result integrity and optionally
+  replays the recorded computation under the matching engine/runtime. Whole RDS
+  is supported; repeats, extracted frames, manual views and guarded exports
+  remain unsupported. Existing native and FLAG resources/readers are unchanged.
+
+* Tighten structural validation of applied household results. Malformed decision
+  columns, audit flags, summary fields and log entries are rejected, including
+  invalid timestamp or duration types that replay otherwise excludes from its
+  semantic comparison. Valid earlier whole-result RDS objects remain structurally
+  readable; replay still requires the recorded computation and runtime.
+
+* Add separately versioned `liss_create_applied_income_view()` and
+  `liss_validate_applied_income_view()` for explicit row-key selections from
+  whole household applied results. Views retain the exact complete parent,
+  project existing data and decisions with stable root ledger ordinals, and
+  distinguish selected source readiness from parent execution. Optional replay
+  executes the complete parent, without fitting selected rows. Existing whole
+  parent replay identities, numerical methods and consumer guards are unchanged.
+  Whole-view RDS is supported; nested views, report/panel consumers and guarded
+  SAV/CSV export remain unsupported.
+
+## Consumer boundaries
+
+* Reject scalar source-result classes and source/readiness attributes before
+  report writing or panel merging, including claims on the selected inner data
+  frame of a partial-name wrapper. Complete scalar carriers can no longer lose
+  lineage through that wrapper path. Ordinary and absent-wave wrapper readiness
+  retain their behavior; guarded export and panel propagation remain unsupported.
+
+* Reject source-result classes and source/readiness attributes that lack a
+  carrier before household-cleaner unwrapping, target resolution or preparation.
+  This closes incomplete scalar-frame claims that previously entered ordinary
+  cleaning. Complete carriers and legacy carrier-free wrapper readiness for
+  unevaluated source scope retain their behavior; no new consumer is enabled.
+
+* Reject source-nonresponse results and residual claims supplied as an income
+  cleaner's background before P01 converts or joins them. Ordinary backgrounds
+  keep their existing behavior; disabling P01 for ordinary income input leaves
+  an unused background ignored.
+
+* Reject recognized source-nonresponse results and residual source, consumer or
+  applied claims at the public `liss_attach_background()` entry, before other
+  arguments are evaluated or background files are read. Ordinary unmarked
+  survey attachment retains its existing behavior; no new consumer is enabled.
+
+* Clarify that conflicting positive CA20g012 forms reject the whole call without
+  a partial result. Document that applied-mode rejection can evaluate the
+  `background` argument while checking its required `NULL` value.
+
+## Recorded dates and recipe corrections
 
 * The Politics and Values (`cv`) recipe now derives recorded fieldwork
   year-months in all 18 waves. Recipe version 1.3.0 uses `_m` in eight
@@ -85,39 +279,13 @@
   validation failures while preserving transformations and merged values;
   other error-severity failures still prevent analytical eligibility.
 
-* Merges under `labelled_policy: to_numeric` now disclose the residual
-  user-missing sweep, which runs after the validation checks, so validation
-  details can count values that the sweep later sets to `NA`. Every `NA_SWEEP`
-  log entry carries a `details` table (column, wave, code, n) in the returned
-  log and the JSONL file, with zero rows when nothing was swept; the text
-  report adds a sweep section only when cells were swept. Codes are grouped by
-  exact numeric value and written with up to 17 significant digits and a `.`
-  decimal mark, also under a decimal-comma `options(OutDec)` or numeric locale
-  (`LC_NUMERIC`); neither setting is changed. All other log fields are
-  serialized as before. Data, sweep predicates, validation results, log-entry
-  counts, summary totals and the top-level merge result fields are unchanged.
-
-* The Housing (`cd`) recipe now applies its existing missing-code recodes to
-  renamed satisfaction, mortgage-debt and WOZ fields. Previously those rules
-  still targeted the old suffix names after renaming, leaving declared missing
-  codes in the merged data and causing range-check failures. CD recipe version
-  1.2.1 preserves the existing wave scopes, recode mappings and validation
-  rules; surviving original suffix targets and substantive values are retained.
-
-* `merge_liss_modules()` now discovers local core-module wave files when
-  `recipe_paths` is omitted. Supply only `data_dir` and `output_dir`; the batch
-  loads built-in recipes for detected modules, without a manual module list
-  or skipped-module messages for absent inputs. Discovery checks module-code
-  subdirectories when present, otherwise the parent folder, and includes
-  earlier downloads in the same folder. Modules run in alphabetical code
-  order, with existing recipe wave coverage. Explicit
-  recipe paths, custom recipes, and warnings from processed modules retain
-  their existing behavior.
-
-* The installed-package test runner now checks every recorded failure and error
-  before returning success. This prevents a test error followed by a cleanup
-  warning or skip from being hidden by testthat's result summary. The standard
-  reporter and successful warning-only or skipped runs are preserved.
+* The Politics and Values (`cv`) recipe now combines its existing `VC01_no_raw_dk`
+  exclusions under one `exclude_variables` key. Previously the `cv17i_Total`
+  declaration masked all 27 suffix exclusions, producing false error-level
+  failures for values the recipe intended to exempt. Retained targets still
+  reject 99, 999 and -9. Transformations and merged values are unchanged; this
+  repairs validation outcomes without introducing new exemptions or changing
+  the engine's exclusion precedence.
 
 * The Politics and Values (`cv`) check `VC01_no_raw_dk` now exempts structural
   -9 on `_m1`, `_m2`, `_m3` and `242` through a separate validation block,
@@ -130,13 +298,12 @@
   error-severity validation failures still prevent output from being valid for
   analysis.
 
-* The Politics and Values (`cv`) recipe now combines its existing `VC01_no_raw_dk`
-  exclusions under one `exclude_variables` key. Previously the `cv17i_Total`
-  declaration masked all 27 suffix exclusions, producing false error-level
-  failures for values the recipe intended to exempt. Retained targets still
-  reject 99, 999 and -9. Transformations and merged values are unchanged; this
-  repairs validation outcomes without introducing new exemptions or changing
-  the engine's exclusion precedence.
+* The Housing (`cd`) recipe now applies its existing missing-code recodes to
+  renamed satisfaction, mortgage-debt and WOZ fields. Previously those rules
+  still targeted the old suffix names after renaming, leaving declared missing
+  codes in the merged data and causing range-check failures. CD recipe version
+  1.2.1 preserves the existing wave scopes, recode mappings and validation
+  rules; surviving original suffix targets and substantive values are retained.
 
 * The Income (`ci`) recipe now reports missing `nomem_encr` values through a
   separate warning-level `V-05_nonmissing` check. `V-05` retains its existing
@@ -153,6 +320,8 @@
   harmonization converts `-9`/`-8` to NA before validation, and the separate
   sentinel check rejects residual codes. Transformations and merged values are
   unchanged; out-of-range observations now receive the declared validation result.
+
+## Validation and audit reporting
 
 * `value_absence` and its aliases now validate every active forbidden-value
   payload after resolving all block scopes and before comparing observations.
@@ -225,6 +394,41 @@
   execution console. Unknown and unevaluable executable checks remain `SKIP`.
   Severities, diagnostic details, validation results and strict/report output
   eligibility are unchanged.
+
+* Merges under `labelled_policy: to_numeric` now disclose the residual
+  user-missing sweep, which runs after the validation checks, so validation
+  details can count values that the sweep later sets to `NA`. Every `NA_SWEEP`
+  log entry carries a `details` table (column, wave, code, n) in the returned
+  log and the JSONL file, with zero rows when nothing was swept; the text
+  report adds a sweep section only when cells were swept. Codes are grouped by
+  exact numeric value and written with up to 17 significant digits and a `.`
+  decimal mark, also under a decimal-comma `options(OutDec)` or numeric locale
+  (`LC_NUMERIC`); neither setting is changed. All other log fields are
+  serialized as before. Data, sweep predicates, validation results, log-entry
+  counts, summary totals and the top-level merge result fields are unchanged.
+
+* The installed-package test runner now checks every recorded failure and error
+  before returning success. This prevents a test error followed by a cleanup
+  warning or skip from being hidden by testthat's result summary. The standard
+  reporter and successful warning-only or skipped runs are preserved.
+
+## Documentation and dependencies
+
+* Add a completed data-quality assessment beyond household income, covering
+  the available ten core-module collections and monthly Background Variables.
+  The documentation reports measured inconsistencies and coding exposures,
+  conservative correction limits, source caveats and an ordered roadmap.
+  It adds no cleaning functionality and changes no source data or recipes.
+
+* Correct the Health cross-sectional tutorial to use self-rated health
+  `s004`, exact release filenames and explicit multi-month Background
+  Variables sources. The guide removes unverified printed outputs and
+  explains covariate metadata, missing-data checks and model assumptions.
+  The Health collection note includes the December 2025 repeat; recipe
+  transformations and analytical month/income policies are unchanged.
+
+* Declare `rlang` as a direct import for the typed CA20g012 and applied-view
+  refusal conditions.
 
 # lissr 1.4.1
 

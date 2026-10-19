@@ -1,7 +1,7 @@
 ^(?!(?:DESCRIPTION|NAMESPACE|LICENSE|NEWS\.md|README\.md)$|(?:R|man|tests|vignettes|inst|build)(?:/|$))
 ^R/(?![^/]+\.R$)
 ^man/(?![^/]+\.Rd$)
-^tests/(?!(?:testthat(?:/[^/]+\.R)?|testthat\.R)$)
+^tests/(?!(?:testthat(?:/[^/]+\.R|/fixtures(?:/source_nonresponse_v[1234]_synthetic\.rds)?)?|testthat\.R)$)
 ^vignettes/(?![^/]+\.Rmd$)
 ^inst/(?!(?:cleaning|doc|extdata|recipes|schema|scripts)(?:/|$))
 ^inst/(?:cleaning|extdata)/(?![^/]+\.ya?ml$)

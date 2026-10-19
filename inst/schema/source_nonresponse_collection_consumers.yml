@@ -1,0 +1,29 @@
+schema_version: 1.0.0
+policy_id: CI23P339_V4_FLAG_CONSUMER
+policy_version: 1.0.0
+authority_registry:
+  schema_version: 2.0.0
+  registry_version: 2.0.0
+  sha256: a2e6694acc5855d2df389df46d66e0c94b705637626309cc309ceee8d840ddc3
+collection_adapter:
+  adapter_id: CI23P_337_338_339_COLLECTION
+  adapter_version: 1.0.0
+  sha256: 5e3235f1b4f78a589622ce27064eecf120c919e81fd95b84fe4a370126ac6c3f
+capabilities:
+- capability_id: CI23P339_V4_FLAG
+  capability_version: 1.0.0
+  consumer: liss_clean_income
+  carrier_schema_version: 4.0.0
+  field_id: CI23P339_FIELD
+  scalar_schema_version: 1.0.0
+  authority_kind: contract
+  authority_id: CI23P339_N01
+  authority_version: 1.0.0
+  construct: household_net_income
+  unit: EUR
+  measurement_period: 2022
+  canonical_column: s339
+  input_scope: complete_validated_collection
+  selection: explicit_variables_target
+  mode: flag
+  retained_scope: complete_collection

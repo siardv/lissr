@@ -1,0 +1,23 @@
+schema_version: 1.0.0
+policy_id: CI23P339_V4_APPLIED_VIEW
+policy_version: 1.0.0
+parent_policy:
+  policy_id: CI23P339_V4_APPLIED_CONSUMER
+  policy_version: 1.0.0
+  sha256: 7c740496b5e7ac28a1b7018addc0c253258bf14c28b74a85506dd33dc65b6d2f
+capability:
+  capability_id: CI23P339_V4_APPLIED_VIEW
+  capability_version: 1.0.0
+  creator: liss_create_applied_income_view
+  validator: liss_validate_applied_income_view
+  parent_kind: applied_income_lineage
+  parent_schema_version: 1.0.0
+  carrier_schema_version: 4.0.0
+  target: s339
+  modes: [correct, na_only]
+  selection: explicit_ordered_unique_row_keys
+  retained_scope: exact_complete_parent
+  computation: projection_only
+  ledger_identity: full_parent_digest_and_root_decision_row
+  readiness_scope: selected_original_source_input
+  transport: whole_view_rds

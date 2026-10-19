@@ -4,15 +4,22 @@
 \alias{merge_liss_module}
 \title{run the full merge pipeline for a single module}
 \usage{
-merge_liss_module(recipe, data_dir, output_dir = ".", strict = FALSE,
-  overwrite = TRUE)
+merge_liss_module(
+  recipe,
+  data_dir,
+  output_dir = ".",
+  strict = FALSE,
+  overwrite = TRUE,
+  source_nonresponse = FALSE
+)
 }
 \arguments{
 \item{recipe}{a parsed recipe list (from \code{\link[=load_recipe]{load_recipe()}}), or a path to a recipe file.}
 
 \item{data_dir}{character. directory containing wave data files.}
 
-\item{output_dir}{character. directory for output files.}
+\item{output_dir}{character. directory for output files, or \code{NULL} to return
+the complete result in memory without writing files.}
 
 \item{strict}{logical. if \code{TRUE}, abort before writing any outputs when a
 validation check with \code{severity: error} fails or cannot be evaluated,
@@ -21,6 +28,25 @@ default \code{FALSE} preserves the historical report-and-continue behavior.}
 
 \item{overwrite}{logical. if \code{FALSE}, abort instead of overwriting an
 existing merged output file. default \code{TRUE} preserves prior behavior.}
+
+\item{source_nonresponse}{logical. opt in to the explicitly selected reviewed
+scalar source classifier before harmonization. The default CI recipe selects
+CI23p339; schema 2.0.0 explicitly selects either CI23p337 or CI23p338 with
+two exact codes under one field receipt. Taxable carriers cannot enter the
+household income cleaner. Package-registry approval is required.
+Schema 3.0.0 explicitly selects the complete CI23p337/CI23p338 pair, validates
+both original fields before normalizing either, and returns a tagged collection
+with two complete scalar receipts. Schema 4.0.0 explicitly selects all three
+CI23p337/338/339 fields through a separately pinned collection adapter. All
+three original checks precede normalization, and the tagged version-4 result
+retains complete native v2/v2/v1 receipts. Registry-2 authority, defaults and
+scalar/pair behavior stay unchanged. Separate pinned policies permit explicit
+household \code{s339} flag simulation or applied \code{correct}/\code{na_only} results on a
+complete version-4 result. Applied results require \code{background = NULL};
+taxable consumption remains unsupported.
+Requires \code{output_dir = NULL}; guarded
+SAV export and automatic panel joining are not yet supported. Retain the
+complete result (or serialize it with \code{saveRDS()}) to preserve its audit.}
 }
 \value{
 a list (invisibly) with elements \code{data}, \code{log}, \code{validation},
