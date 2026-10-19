@@ -74,9 +74,7 @@
 }
 
 .nrca023_hash <- function(value) {
-  hash <- as.character(openssl::sha256(serialize(value, NULL, version = 2L)))
-  attributes(hash) <- NULL
-  hash
+  .nr_identity_hash(value)
 }
 
 .nrca023_unmark <- function(frame) {
@@ -547,7 +545,7 @@ test_that("CA023 authority bytes and helpers remain separate from old standalone
   expect_false(identical(lissr:::.liss_ca023_policy_sha256(), lissr:::.liss_ca012_policy_sha256()))
   expect_false(identical(lissr:::.liss_ca023_policy_sha256(), lissr:::.liss_ca016_policy_sha256()))
   engine <- lissr:::.liss_applied_engine()
-  expect_length(engine$functions, 113L)
+  expect_length(engine$functions, 117L)
   expect_false(any(grepl("ca023", names(engine$functions))))
   path <- lissr:::.liss_ca023_policy_path()
   expect_identical(basename(path), "source_nonresponse_ca20g023.yml")

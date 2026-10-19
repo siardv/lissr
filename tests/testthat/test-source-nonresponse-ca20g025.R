@@ -17,9 +17,7 @@
   size_bytes = 917084)
 
 .nrca025_hash <- function(value) {
-  digest <- as.character(openssl::sha256(serialize(value, NULL, version = 2L)))
-  attributes(digest) <- NULL
-  digest
+  .nr_identity_hash(value)
 }
 
 .nrca025_equal <- function(left, right) identical(left, right) &&
@@ -725,7 +723,7 @@ test_that("CA025 authority is separately pinned and has no runtime CA023 or froz
     lissr:::.liss_ca016_policy_sha256(), lissr:::.liss_ca023_policy_sha256()))
     expect_false(identical(lissr:::.liss_ca025_policy_sha256(), hash))
   engine <- lissr:::.liss_applied_engine()
-  expect_length(engine$functions, 113L)
+  expect_length(engine$functions, 117L)
   expect_false(any(grepl("ca025", names(engine$functions))))
   fixture <- .nrca025_fixture()
   local({

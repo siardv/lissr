@@ -82,7 +82,7 @@ test_that("missing or modified registry bytes block guarded calls only", {
     class = "liss_source_nonresponse_blocked")
   legacy <- lissr::liss_clean_income(fixture$saved$inputs$unguarded,
     variables = list(target = "s339"), mode = "flag", verbose = FALSE)
-  expect_identical(.nrr_stable(legacy), fixture$saved$expected$unguarded$flag)
+  .nr_expect_frozen_unguarded(.nrr_stable(legacy), fixture$saved$expected$unguarded$flag)
 })
 
 test_that("registry structure rejects ambiguous or unsupported records", {
@@ -259,7 +259,7 @@ test_that("old raw and normalized v1 RDS cross-read without migration", {
   for (mode in c("flag", "correct", "na_only")) {
     result <- lissr::liss_clean_income(fixture$saved$inputs$unguarded,
       variables = list(target = "s339"), mode = mode, verbose = FALSE)
-    expect_identical(.nrr_stable(result), fixture$saved$expected$unguarded[[mode]])
+    .nr_expect_frozen_unguarded(.nrr_stable(result), fixture$saved$expected$unguarded[[mode]])
   }
 })
 

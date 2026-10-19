@@ -37,9 +37,7 @@
 }
 
 .nrv_hash <- function(value) {
-  hash <- as.character(openssl::sha256(serialize(value, NULL, version = 2L)))
-  attributes(hash) <- NULL
-  hash
+  .nr_identity_hash(value)
 }
 
 .nrv_unmark <- function(frame) {

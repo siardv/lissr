@@ -30,6 +30,13 @@
 #' that strip target attributes fail closed. Validation does not relax metadata
 #' checks to accommodate such operations.
 #'
+#' Serialized object hashes use profile `1.0.0`: SHA-256 over XDR version-2
+#' R serialization with only the writer-version header fixed to R 4.6.1.
+#' All payload bytes remain significant; raw file hashes are unchanged.
+#' Compatibility covers the R 4.6.1 reference profile, not arbitrary historical
+#' writers or future serialization bodies. Other legacy profiles require their
+#' original package/runtime. Reference identity checks remain separate from digests.
+#'
 #' @param data a data frame, or a merge result containing `data`.
 #' @param source path to the reviewed `ci23p_EN_1.0p.sav` file. Its filename
 #'   and SHA256 must match the contract; a caller-provided hash is insufficient.
@@ -204,9 +211,7 @@ liss_classify_source_nonresponse <- function(data, source, target,
 #' @noRd
 .liss_nonresponse_digest <- function(state) {
   state$digest <- NULL
-  hash <- as.character(openssl::sha256(serialize(state, NULL, version = 2L)))
-  attributes(hash) <- NULL
-  hash
+  .liss_identity_hash(state)
 }
 
 #' @noRd
@@ -2038,9 +2043,7 @@ source_nonresponse_finalize <- function(data, state, target,
   payload <- list(data = result$data, decisions = result$decisions,
     ruleset = result$ruleset, variables = result$variables, mode = result$mode,
     summary = summary)
-  hash <- as.character(openssl::sha256(serialize(payload, NULL, version = 2L)))
-  attributes(hash) <- NULL
-  hash
+  .liss_identity_hash(payload)
 }
 
 #' @noRd

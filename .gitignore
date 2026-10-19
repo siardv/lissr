@@ -2,6 +2,7 @@
 *
 
 # public repository metadata and documentation
+!/.gitattributes
 !/.gitignore
 !/.Rbuildignore
 !/CITATION.cff

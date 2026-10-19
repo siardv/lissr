@@ -98,8 +98,7 @@
   summary$duration_s <- NULL
   payload <- list(data = result$data, decisions = result$decisions, ruleset = result$ruleset,
     variables = result$variables, mode = result$mode, summary = summary)
-  hash <- as.character(openssl::sha256(serialize(payload, NULL, version = 2L)))
-  attributes(hash) <- NULL
+  hash <- .nr_identity_hash(payload)
   expect_identical(ready$result_digest, hash)
   expect_identical(ready$digest, lissr:::.liss_nonresponse_digest(ready))
   expect_identical(checked$state, result$source_nonresponse)
@@ -182,7 +181,7 @@ test_that("new consumer authority leaves every frozen native v1 v2 and v3 valida
   for (mode in names(old$expected$unguarded)) {
     current <- suppressWarnings(lissr::liss_clean_income(old$inputs$unguarded,
       mode = mode, variables = list(target = "s339"), verbose = FALSE))
-    expect_identical(.nrd_stable_clean(current), old$expected$unguarded[[mode]])
+    .nr_expect_frozen_unguarded(.nrd_stable_clean(current), old$expected$unguarded[[mode]])
   }
   for (suffix in c("337", "338")) {
     field <- .nrd_saved(2)$fields[[suffix]]

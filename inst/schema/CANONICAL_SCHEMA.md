@@ -1321,9 +1321,27 @@ removed; such bare frames retain the documented legacy boundary.
 
 The legacy one-field carrier remains schema version `1.0.0`, including its original
 recipe rule object and key order. Registry metadata is resolved outside that
-carrier. Valid old RDS carriers are validated without migration or
-registry-driven resealing;
+carrier. Valid R 4.6.1 reference-profile RDS carriers are validated without
+migration or registry-driven resealing;
 source, target, metadata, complete-row and digest checks remain in force.
+Serialized object hashes now use the explicit identity profile `1.0.0`:
+SHA-256 over XDR version-2 R serialization, with only the four writer-version
+header bytes fixed to R 4.6.1. Format and minimum-reader words, every payload
+byte, types, encodings, attributes and their order remain significant. Raw SAV,
+codebook and policy-file hashes are unchanged. Direct R identity and serialized
+payload equality checks remain separate; equal digests are not reference identity.
+The profile preserves the verified R 4.6.1 reference representation. It does not
+infer a writer for an arbitrary old carrier, normalize changing object bodies,
+or promise compatibility with every R/package version. Other legacy profiles
+require their original package/runtime; there is no permissive digest fallback.
+
+New applied computation identities use schema `2.0.0`, include the serialization
+profile, and fingerprint all identity helpers with the existing computation.
+Reference-profile schema-1 computation records remain structurally readable.
+They do not become the new computation identity: replay requires exact recorded
+code, runtime, platform and dependency identity, so a changed computation rejects
+legacy replay even within the same R version. Numerical methods are unchanged.
+
 The carrier uses version-2 R serialization with SHA256 for integrity and
 preserves typed reasons and exact doubles in an RDS round trip. The digest is
 an integrity check, not an authentication claim. Automatic SAV/CSV lineage

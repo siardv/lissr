@@ -43,6 +43,15 @@ broader data-quality normalization remains future work.
 
 ## Source-specific nonresponse
 
+* Preserve the exact bytes of bundled source-nonresponse policies in Git
+  checkouts on Windows by requiring LF line endings.
+
+* Use an explicit reference-writer serialization profile for source-nonresponse
+  object hashes, preserving payload bytes and existing reference-profile pins
+  across R writer-version headers. New applied computation identities record
+  this profile in schema 2.0.0. Legacy computation records remain structurally
+  readable under the reference profile; a changed computation still blocks replay.
+
 * Add an opt-in source nonresponse guard for the exact verified
   `ci23p_EN_1.0p.sav` household-income response `ci23p339 = -9999999999`.
   Source-bound classification preserves raw values and field metadata,

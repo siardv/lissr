@@ -48,4 +48,15 @@ supported, but replay fails explicitly. Guarded reports, panels, exports,
 repeated consumption, background attachment and taxable cleaning are unsupported.
 Removing all lineage claims deliberately leaves ordinary unguarded input;
 names or values alone cannot recover source ownership.
+
+Serialized object hashes use profile \verb{1.0.0}: SHA-256 over XDR version-2
+R serialization with only the writer-version header fixed to R 4.6.1.
+All payload bytes remain significant; raw file hashes are unchanged.
+Compatibility covers the R 4.6.1 reference profile, not arbitrary historical
+writers or future serialization bodies. Other legacy profiles require their
+original package/runtime. Reference identity checks remain separate from digests.
+
+New computation identities use schema \verb{2.0.0} and record this profile.
+Reference-profile schema-1 records remain structurally readable, but a changed
+computation identity rejects replay even when the R runtime is unchanged.
 }

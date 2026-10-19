@@ -105,7 +105,7 @@ test_that("claims on a frame cannot escape the existing partial data unwrap", {
   saved <- .nr_claim_saved()
   for (mode in c("flag", "correct", "na_only")) {
     current <- suppressWarnings(.nr_claim_clean(list(data_partial = saved$inputs$unguarded), mode = mode))
-    expect_identical(.nr_claim_stable(current), saved$expected$unguarded[[mode]])
+    .nr_expect_frozen_unguarded(.nr_claim_stable(current), saved$expected$unguarded[[mode]])
   }
   # the frozen T2c baseline emits five partial-$data warnings for this wrapper
   withr::local_options(warnPartialMatchDollar = TRUE)
@@ -116,7 +116,7 @@ test_that("claims on a frame cannot escape the existing partial data unwrap", {
       invokeRestart("muffleWarning")
     })
   expect_identical(warnings, rep("partial match of 'data' to 'data_partial'", 5L))
-  expect_identical(.nr_claim_stable(current), saved$expected$unguarded$flag)
+  .nr_expect_frozen_unguarded(.nr_claim_stable(current), saved$expected$unguarded$flag)
 })
 
 test_that("malformed readiness attributes cannot evade missing carrier rejection", {
@@ -236,7 +236,7 @@ test_that("neutral unclassified wrapper readiness slots preserve ordinary cleani
     list(data = frame, source_nonresponse_readiness = list(schema_version = "2.0.0", status = "not_evaluated")))) {
     for (mode in c("flag", "correct", "na_only")) {
       current <- suppressWarnings(.nr_claim_clean(input, mode = mode))
-      expect_identical(.nr_claim_stable(current), saved$expected$unguarded[[mode]])
+      .nr_expect_frozen_unguarded(.nr_claim_stable(current), saved$expected$unguarded[[mode]])
       expect_null(current[["source_nonresponse"]])
       expect_identical(current$source_nonresponse_readiness$status, "not_evaluated")
     }

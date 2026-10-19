@@ -74,4 +74,11 @@ after resealing; no external authenticated parent anchor exists. Replay
 checks execution outputs under trusted code/runtime, not source authenticity
 or statistical validity. Removing every recognized claim leaves unknown
 ownership; aliases cannot recover it.
+
+Serialized object hashes use profile \verb{1.0.0}: SHA-256 over XDR version-2
+R serialization with only the writer-version header fixed to R 4.6.1.
+All payload bytes remain significant; raw file hashes are unchanged.
+Compatibility covers the R 4.6.1 reference profile, not arbitrary historical
+writers or future serialization bodies. Other legacy profiles require their
+original package/runtime. Reference identity checks remain separate from digests.
 }

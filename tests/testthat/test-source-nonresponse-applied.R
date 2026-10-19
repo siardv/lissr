@@ -509,7 +509,11 @@ test_that("frozen native scalar collection and FLAG compatibility remains intact
     for (mode in names(old$expected[[name]])) {
       result <- suppressWarnings(lissr::liss_clean_income(input, mode = mode,
         variables = list(target = target), verbose = FALSE))
-      expect_identical(.nra_stable(result), old$expected[[name]][[mode]])
+      if (name == "unguarded") {
+        .nr_expect_frozen_unguarded(.nra_stable(result), old$expected[[name]][[mode]])
+      } else {
+        expect_identical(.nra_stable(result), old$expected[[name]][[mode]])
+      }
     }
   }
   for (suffix in c("337", "338")) {

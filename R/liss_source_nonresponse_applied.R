@@ -1,8 +1,6 @@
 # separate analytical output never replaces the native source observations
 .liss_applied_hash <- function(value) {
-  hash <- as.character(openssl::sha256(serialize(value, NULL, version = 2L)))
-  attributes(hash) <- NULL
-  hash
+  .liss_identity_hash(value)
 }
 
 .liss_applied_policy_path <- function() {
@@ -157,6 +155,7 @@
   # deparsed computation is stable across installed and development namespaces
   functions <- c("liss_clean_income", "apply_ruleset_overrides", "validate_cleaning_ruleset",
     "resolve_cleaning_variables", "numeric_view", "declared_missing_codes", "fnum", "fmt_plain",
+    ".liss_identity_profile", ".liss_identity_normalize", ".liss_identity_bytes", ".liss_identity_hash",
     "dist_stats", "wave_years_from", "first_rule", "rule_enabled", "rp", "new_ledger",
     "ledger_add", "ledger_frame", "clean_log_entry", "generate_candidates", "finite_vals",
     "stat_mode_num", "power10_magnitude", "local_log_volatility", "robust_zscore",
@@ -183,11 +182,12 @@
       body = paste(deparse(body(fn), width.cutoff = 500L), collapse = "\n")))
   }, character(1))
   dependencies <- c("cli", "dplyr", "haven", "openssl", "rlang", "tibble", "vctrs", "yaml")
-  list(schema_version = "1.0.0", functions = hashes,
+  list(schema_version = "2.0.0", functions = hashes,
     constants = c(CLEANING_ACTIONS = .liss_applied_hash(get("CLEANING_ACTIONS", envir = ns)),
       CLEANING_RULE_KEYS = .liss_applied_hash(get("CLEANING_RULE_KEYS", envir = ns))),
     runtime = list(r = R.version$version.string, platform = R.version$platform,
-      dependencies = vapply(dependencies, function(name) as.character(utils::packageVersion(name)), character(1))))
+      dependencies = vapply(dependencies, function(name) as.character(utils::packageVersion(name)), character(1))),
+    serialization = .liss_identity_profile())
 }
 
 .liss_applied_engine_validate <- function(engine) {
@@ -195,8 +195,11 @@
     identical(names(attributes(value)), "names") && !is.null(names(value)) &&
     !anyNA(names(value)) && all(nzchar(names(value))) && !anyDuplicated(names(value)) &&
     !anyNA(value) && all(grepl("^[a-f0-9]{64}$", value))
-  if (!.liss_applied_closed(engine, c("schema_version", "functions", "constants", "runtime")) ||
-      !identical(engine$schema_version, "1.0.0") || !hashes(engine$functions) || !hashes(engine$constants) ||
+  keys <- c("schema_version", "functions", "constants", "runtime")
+  legacy <- .liss_applied_closed(engine, keys) && identical(engine$schema_version, "1.0.0")
+  current <- .liss_applied_closed(engine, c(keys, "serialization")) &&
+    identical(engine$schema_version, "2.0.0") && identical(engine$serialization, .liss_identity_profile())
+  if ((!legacy && !current) || !hashes(engine$functions) || !hashes(engine$constants) ||
       !.liss_applied_closed(engine$runtime, c("r", "platform", "dependencies")) ||
       !.liss_applied_scalar(engine$runtime$r) || !.liss_applied_scalar(engine$runtime$platform) ||
       !is.character(engine$runtime$dependencies) || !.liss_applied_plain(engine$runtime$dependencies) ||
@@ -377,6 +380,17 @@
 #' repeated consumption, background attachment and taxable cleaning are unsupported.
 #' Removing all lineage claims deliberately leaves ordinary unguarded input;
 #' names or values alone cannot recover source ownership.
+#'
+#' Serialized object hashes use profile `1.0.0`: SHA-256 over XDR version-2
+#' R serialization with only the writer-version header fixed to R 4.6.1.
+#' All payload bytes remain significant; raw file hashes are unchanged.
+#' Compatibility covers the R 4.6.1 reference profile, not arbitrary historical
+#' writers or future serialization bodies. Other legacy profiles require their
+#' original package/runtime. Reference identity checks remain separate from digests.
+#'
+#' New computation identities use schema `2.0.0` and record this profile.
+#' Reference-profile schema-1 records remain structurally readable, but a changed
+#' computation identity rejects replay even when the R runtime is unchanged.
 #'
 #' @param result complete applied collection result, including `source_input`,
 #'   saved `invocation` and `applied_lineage`.
