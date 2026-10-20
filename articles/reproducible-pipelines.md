@@ -291,6 +291,11 @@ description of your cleaning steps in the appendix, point reviewers to
 the YAML file. Every rule has a `description` field, and boundary rules
 have `comparability` contracts with explicit rationales.
 
+Record the `lissr` package version and exact Git commit used for each
+analysis, and include both identifiers in the replication materials. For
+GitHub installations, record the full commit SHA rather than only a
+branch name, since branches can change.
+
 For a paper’s methods section, a minimal reference looks like:
 
 > Data were merged using the lissr R package (v1.4.0) with recipe

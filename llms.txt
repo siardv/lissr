@@ -7,11 +7,6 @@ longitudinal LISS panel waves with reproducible, recipe-driven YAML
 workflows that record provenance. A rule-driven household-income
 cleaning framework records decisions in audit ledgers and reports.
 
-> **Repository history note:** The `v1.4.0` history was amended during
-> release finalization while the GitHub workflow was being refined. For
-> reproducibility, record the package version and Git commit used for an
-> analysis.
-
 ## Installation
 
 ``` r
