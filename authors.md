@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/siardv/lissr/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/siardv/lissr/blob/v1.5.0/DESCRIPTION)
 
 van den Bosch S (2026). *lissr: Access, Download, Harmonize, and Merge
 LISS Panel Data*. R package version 1.5.0,
