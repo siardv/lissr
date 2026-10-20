@@ -170,6 +170,8 @@ liss_classify_source_nonresponse <- function(data, source, target,
     ledger$candidate_answer_status[routed] <- routing$candidate_answer_status
     ledger$subtype_evidence[routed] <- routing$subtype_evidence
   }
+  # materialize generated columns and names before R 4.5 serializes growth flags
+  ledger <- ledger[seq_along(ledger)]
   state <- list(schema_version = "1.0.0", rule = rule, source = receipt,
                 target = target, wave_col = wave_col, id_col = id_col,
                 normalized = FALSE, coverage = coverage, ledger = ledger,
@@ -1016,6 +1018,8 @@ source_nonresponse_finalize <- function(data, state, target,
   ledger$construct <- rep(field$construct, nrow(ledger))
   ledger$candidate_answer_status <- rep(NA_character_, nrow(ledger))
   ledger$subtype_evidence <- rep("unresolved", nrow(ledger))
+  # materialize generated columns and names before R 4.5 serializes growth flags
+  ledger <- ledger[seq_along(ledger)]
   state <- list(schema_version = "2.0.0", field = field, source = receipt,
                 target = target, wave_col = wave_col, id_col = id_col,
                 normalized = FALSE, coverage = coverage, ledger = ledger,

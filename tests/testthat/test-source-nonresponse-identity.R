@@ -257,3 +257,80 @@ test_that("a synthetic legacy engine stays structural and cannot claim new repla
   expect_error(lissr::liss_validate_applied_income(result, replay = TRUE),
     "replay is unsupported", class = "liss_source_nonresponse_blocked")
 })
+
+test_that("new v1 and v2 ledger identities survive serialization roundtrips", {
+  reference_bytes <- function(value) {
+    bytes <- serialize(value, NULL, ascii = FALSE, xdr = TRUE, version = 2L)
+    bytes[7:10] <- as.raw(c(0L, 4L, 6L, 1L))
+    bytes
+  }
+  roundtrip <- function(value) {
+    unserialize(serialize(value, NULL, ascii = FALSE, xdr = TRUE, version = 2L))
+  }
+  check_case <- function(case) {
+    directory <- withr::local_tempdir()
+    source <- file.path(directory, case$receipt$filename)
+    expect_true(file.create(source), info = case$name)
+    testthat::local_mocked_bindings(
+      .liss_nonresponse_source_state = function(path) case$receipt,
+      .liss_nonresponse_read_source = function(path) case$raw,
+      .package = "lissr")
+    expect_true(nrow(case$raw) > 0L, info = case$name)
+    expect_true(nrow(case$ledger) > 0L, info = case$name)
+    for (empty in c(FALSE, TRUE)) {
+      label <- paste(case$name, if (empty) "empty" else "full")
+      input <- if (empty) case$raw[FALSE, , drop = FALSE] else case$raw
+      expected_ledger <- if (empty) case$ledger[FALSE, , drop = FALSE] else case$ledger
+      result <- lissr::liss_classify_source_nonresponse(input, source,
+        case$target, recipe = case$recipe)
+      state <- result$source_nonresponse
+      expect_identical(reference_bytes(names(state$ledger)),
+        reference_bytes(c(names(expected_ledger))), info = label)
+      expect_identical(reference_bytes(state$ledger),
+        reference_bytes(expected_ledger), info = label)
+      restored <- roundtrip(state)
+      expect_identical(result$data, input, info = label)
+      expect_identical(names(result$data), names(case$raw), info = label)
+      expect_identical(state$schema_version, case$schema_version, info = label)
+      expect_identical(state$ledger, expected_ledger, info = label)
+      expect_identical(attributes(state$ledger), attributes(expected_ledger), info = label)
+      expect_identical(names(state$ledger), names(case$ledger), info = label)
+      expect_identical(state$ledger$source_key, expected_ledger$source_key, info = label)
+      expect_identical(state$readiness$status,
+        if (empty) "not_evaluated" else "passed", info = label)
+      expect_equal(state$readiness$evaluated_cells, nrow(input), info = label)
+      expect_equal(state$readiness$classified_cells, nrow(expected_ledger), info = label)
+      expect_identical(nrow(state$coverage), nrow(input), info = label)
+      if (empty) {
+        expect_identical(nrow(state$ledger), 0L, info = label)
+      } else {
+        expect_true(nrow(state$ledger) > 0L, info = label)
+      }
+      expect_identical(state, restored, info = label)
+      expect_identical(reference_bytes(state), reference_bytes(restored), info = label)
+      expect_identical(lissr:::.liss_identity_bytes(state), reference_bytes(state), info = label)
+      expect_identical(lissr:::.liss_identity_bytes(state),
+        lissr:::.liss_identity_bytes(restored), info = label)
+      expect_identical(reference_bytes(state$ledger),
+        reference_bytes(roundtrip(state$ledger)), info = label)
+      payload <- state
+      payload$digest <- NULL
+      hash <- as.character(openssl::sha256(reference_bytes(payload)))
+      attributes(hash) <- NULL
+      expect_identical(state$digest, hash, info = label)
+      expect_identical(lissr:::.liss_nonresponse_digest(restored), state$digest, info = label)
+    }
+  }
+  v1 <- readRDS(testthat::test_path("fixtures", "source_nonresponse_v1_synthetic.rds"))
+  v2 <- readRDS(testthat::test_path("fixtures", "source_nonresponse_v2_synthetic.rds"))
+  check_case(list(name = "v1 339", raw = v1$inputs$raw$data,
+    receipt = v1$inputs$raw$source_nonresponse$source,
+    ledger = v1$inputs$raw$source_nonresponse$ledger,
+    target = "ci23p339", schema_version = "1.0.0", recipe = NULL))
+  for (suffix in c("337", "338")) {
+    saved <- v2$fields[[suffix]]
+    check_case(list(name = paste("v2", suffix), raw = v2$raw,
+      receipt = v2$receipt, ledger = saved$inputs$raw$source_nonresponse$ledger,
+      target = paste0("ci23p", suffix), schema_version = "2.0.0", recipe = saved$recipe))
+  }
+})

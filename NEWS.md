@@ -46,6 +46,10 @@ broader data-quality normalization remains future work.
 * Preserve the exact bytes of bundled source-nonresponse policies in Git
   checkouts on Windows by requiring LF line endings.
 
+* Keep source-nonresponse ledger identities stable on R 4.5 by materializing
+  generated columns and their names before sealing. Source values and
+  serialization rules are unchanged.
+
 * Use an explicit reference-writer serialization profile for source-nonresponse
   object hashes, preserving payload bytes and existing reference-profile pins
   across R writer-version headers. New applied computation identities record
