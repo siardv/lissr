@@ -4742,7 +4742,7 @@ merge_liss_panel <- function(results,
       .groups = "drop")
   }
 
-  # sequential join, enforced one-to-one (dplyr >= 1.1.0) so a duplicate-key
+  # sequential join, enforced one-to-one (dplyr >= 1.1.1) so a duplicate-key
   # regression in any module surfaces loudly instead of multiplying rows
   panel <- prefixed[[1]]
   if (length(prefixed) > 1) {

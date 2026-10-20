@@ -1,3 +1,9 @@
+# lissr (development version)
+
+* Correct the minimum dplyr requirement to 1.1.1, matching the `relationship`
+  argument used by panel joins. Join behavior and duplicate-key safeguards
+  are unchanged.
+
 # lissr 1.5.0
 
 This release adds explicit monthly Background Variables attachment, recorded CV

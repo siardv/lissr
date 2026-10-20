@@ -148,6 +148,45 @@ test_that("a rule failing mid-execution rolls back to a logged no-op", {
 
 # ---- panel join guards and shared-column coalescing (T1.3) ------------------
 
+test_that("panel joins without shared columns preserve keyed module values", {
+  a <- data.frame(nomem_encr = c(2L, 1L, 4L), wave_year = 2020L,
+                  amount = c(20L, 10L, 40L))
+  b <- data.frame(nomem_encr = c(1L, 3L, 2L), wave_year = 2020L,
+                  amount = c(1.5, 3.5, 2.5))
+  inputs <- list(a = a, b = b)
+  expected <- list(
+    full = list(keys = c(2L, 1L, 4L, 3L), a = c(20L, 10L, 40L, NA_integer_),
+                b = c(2.5, 1.5, NA_real_, 3.5)),
+    inner = list(keys = c(2L, 1L), a = c(20L, 10L), b = c(2.5, 1.5)),
+    left = list(keys = c(2L, 1L, 4L), a = c(20L, 10L, 40L),
+                b = c(2.5, 1.5, NA_real_))
+  )
+
+  for (join in names(expected)) {
+    panel <- suppressMessages(merge_liss_panel(inputs, join_type = join,
+                                               shared_cols = character()))
+    expect_identical(names(panel), c("nomem_encr", "wave_year", "a_amount", "b_amount"))
+    expect_identical(panel$nomem_encr, expected[[join]]$keys)
+    expect_identical(panel$wave_year, rep(2020L, length(expected[[join]]$keys)))
+    expect_identical(panel$a_amount, expected[[join]]$a)
+    expect_identical(panel$b_amount, expected[[join]]$b)
+  }
+  expect_identical(inputs, list(a = a, b = b))
+})
+
+test_that("a single-module panel attaches shared columns without changing rows", {
+  a <- data.frame(nomem_encr = c(2L, 1L, 4L), wave_year = 2020L,
+                  nohouse_encr = c(NA_integer_, 11L, 44L),
+                  amount = c(20L, 10L, 40L))
+
+  panel <- suppressMessages(merge_liss_panel(list(a = a)))
+  expect_identical(names(panel), c("nomem_encr", "wave_year", "nohouse_encr", "a_amount"))
+  expect_identical(panel$nomem_encr, a$nomem_encr)
+  expect_identical(panel$wave_year, a$wave_year)
+  expect_identical(panel$nohouse_encr, a$nohouse_encr)
+  expect_identical(panel$a_amount, a$amount)
+})
+
 test_that("merge_liss_panel aborts on duplicated join keys, naming the module", {
   a <- data.frame(nomem_encr = c(1, 1), wave_year = c(2020, 2020), a1 = 1:2)
   b <- data.frame(nomem_encr = 1, wave_year = 2020, b1 = 1)
