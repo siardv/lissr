@@ -2,6 +2,11 @@
 
 ## lissr (development version)
 
+- Declare minimum versions of haven (2.4.2), readr (2.0.0), rvest
+  (1.0.0), stringr (1.3.0), tidyr (1.1.0), and yaml (2.1.19) for the
+  labelled-data, import, catalogue, and recipe APIs already used by the
+  package.
+
 - Correct the minimum dplyr requirement to 1.1.1, matching the
   `relationship` argument used by panel joins. Join behavior and
   duplicate-key safeguards are unchanged.
