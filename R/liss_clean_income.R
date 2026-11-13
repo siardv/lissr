@@ -78,7 +78,7 @@ liss_cleaning_ruleset <- function(path = NULL) {
   if (!file.exists(path)) {
     cli::cli_abort("ruleset file not found: {.path {path}}")
   }
-  rs <- yaml::read_yaml(path)
+  rs <- yaml::read_yaml(path, eval.expr = FALSE)
   rs$meta$source_path <- normalizePath(path)
   val <- validate_cleaning_ruleset(rs, quiet = TRUE)
   if (!val$valid) {

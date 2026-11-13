@@ -1,4 +1,9 @@
-# lissr (development version)
+# lissr 1.5.1
+
+* `value_absence` checks also compare text values with the 17-significant-digit
+  form of each numeric forbidden value. Text in that form is matched on every
+  platform, including R 4.1 on Apple silicon, where `as.numeric()` can read it
+  as a neighbouring number. Numeric columns and shorter text match as before.
 
 * Declare minimum versions of haven (2.4.2), readr (2.0.0), rvest (1.0.0),
   stringr (1.3.0), tidyr (1.1.0), and yaml (2.1.19) for the labelled-data,
@@ -7,6 +12,43 @@
 * Correct the minimum dplyr requirement to 1.1.1, matching the `relationship`
   argument used by panel joins. Join behavior and duplicate-key safeguards
   are unchanged.
+
+* Parse declarative YAML recipes, cleaning rules and source-nonresponse policies
+  with embedded R expression evaluation disabled. Recipe conditions continue to
+  use the existing restricted condition evaluator.
+
+* Validate ZIP member names and extraction destinations before promoting staged
+  regular files. Unsafe or ambiguous paths and linked destination components
+  are rejected; ordinary nested paths and replacement of regular files remain
+  supported. Multi-file extraction is not transactional, and archives are
+  retained when extraction fails.
+
+* Report a download as unsuccessful when its temporary file cannot be renamed
+  to the final filename. Failed finalization no longer proceeds to extraction
+  or reports a successful download; partial-file cleanup remains best effort.
+
+* Require testthat >= 3.1.8 for the framework APIs and namespace-mocking behavior
+  used by the test suite.
+
+## Replay compatibility
+
+* The YAML-loading fix changes two functions included in the applied-income
+  computation fingerprint. Fingerprint membership and algorithms are unchanged.
+  Existing receipts remain subject to the existing structural validation, but
+  replay requires a matching engine fingerprint and can reject receipts made
+  with the older engine. Retain the original package version and full source
+  commit when reproducing earlier computations; this update does not migrate
+  or reseal earlier receipts.
+
+## Known limitations
+
+* The existing D09 income-cleaning rule can flag boundary changes in otherwise
+  flat household-income series. Review its recorded decisions before accepting
+  corrections; this maintenance update does not change that rule.
+
+* The existing CH H01/H02 recipe payloads contain keys that their executors
+  ignore. Their intended label corrections remain unresolved and the existing
+  recipe warning remains. No CH value-recoding change is included here.
 
 # lissr 1.5.0
 

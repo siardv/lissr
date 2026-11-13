@@ -324,7 +324,7 @@ liss_classify_source_nonresponse <- function(data, source, target,
   if (is.null(recipe)) recipe <- system.file("recipes", "ci_merge_recipe.yml",
                                             package = "lissr", mustWork = TRUE)
   if (is.character(recipe) && length(recipe) == 1L)
-    recipe <- yaml::yaml.load_file(recipe)
+    recipe <- yaml::yaml.load_file(recipe, eval.expr = FALSE)
   errors <- validate_source_nonresponse_contracts(recipe, "source binding")
   if (length(errors)) .liss_nonresponse_abort(c("invalid source nonresponse contract", errors))
   if (is.null(recipe$source_nonresponse))
@@ -759,7 +759,7 @@ source_nonresponse_finalize <- function(data, state, target,
   if (is.null(recipe)) recipe <- system.file("recipes", "ci_merge_recipe.yml",
                                             package = "lissr", mustWork = TRUE)
   if (is.character(recipe) && length(recipe) == 1L)
-    recipe <- yaml::yaml.load_file(recipe)
+    recipe <- yaml::yaml.load_file(recipe, eval.expr = FALSE)
   errors <- validate_source_nonresponse_contracts(recipe, "source binding")
   if (length(errors)) .liss_nonresponse_abort(c("invalid source nonresponse contract", errors))
   block <- recipe$source_nonresponse

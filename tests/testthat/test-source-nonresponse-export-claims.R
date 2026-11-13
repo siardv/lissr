@@ -1,4 +1,11 @@
 # all rows and native carriers used here are frozen invented fixtures
+.nr_export_partial_warns <- function() tryCatch({
+  list(data_partial = 1L)$data
+  FALSE
+}, warning = function(condition) TRUE)
+
+.nr_export_partial_before <- .nr_export_partial_warns()
+
 .nr_export_saved <- function(version = 1L) {
   readRDS(testthat::test_path("fixtures",
     paste0("source_nonresponse_v", version, "_synthetic.rds")))
@@ -226,7 +233,11 @@ test_that("ordinary partial matching warning vectors exact precedence and ambigu
   frame <- ordinary$data
   marked <- .nr_export_saved()$inputs$normalized$data
   directory <- withr::local_tempdir()
-  withr::local_options(warnPartialMatchDollar = TRUE)
+  # R 4.1 keeps warning after the unset option is restored to NULL, so a logical
+  # value is restored instead
+  partial_before <- isTRUE(getOption("warnPartialMatchDollar"))
+  withr::defer(options(warnPartialMatchDollar = partial_before))
+  options(warnPartialMatchDollar = TRUE)
   capture <- function(expr) {
     warnings <- character()
     value <- withCallingHandlers(force(expr), warning = function(warning) {
@@ -258,4 +269,8 @@ test_that("ordinary partial matching warning vectors exact precedence and ambigu
   report <- capture(lissr::liss_cleaning_report(result, file.path(directory, "ambiguous"), verbose = FALSE))
   expect_identical(report$warnings, character())
   expect_true(all(file.exists(unlist(report$value))))
+})
+
+test_that("the partial matching warning switch does not outlive the previous test", {
+  expect_identical(.nr_export_partial_warns(), .nr_export_partial_before)
 })

@@ -360,8 +360,13 @@ test_that("CA023 rejects all four positive forms during classification and retai
 test_that("CA023 no-hit sources have a complete coverage table and typed empty ledger", {
   fixture <- .nrca023_fixture(.nrca023_frame(c(8, 9, 0, -10.5, 0.125, -9999999999, -9999999998, NA_real_, NaN, Inf, -Inf)))
   result <- lissr::liss_classify_ca20g023(fixture$source)
+  # use the class placement already accepted by the moved-guard test
+  expected_frame <- fixture$frame
+  expected_class <- class(expected_frame)
+  class(expected_frame) <- NULL
+  class(expected_frame) <- expected_class
   expect_identical(serialize(.nrca023_unmark(result$data), NULL, version = 2L),
-    serialize(fixture$frame, NULL, version = 2L))
+    serialize(expected_frame, NULL, version = 2L))
   expect_identical(nrow(result$source_nonresponse$coverage), 5849L)
   expect_identical(result$source_nonresponse$coverage$classified, rep(FALSE, 5849L))
   ledger <- result$analysis$ledger

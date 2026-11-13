@@ -145,7 +145,8 @@ liss_download <- function(.hosted = NULL, .dir = "liss",
         cd <- res$headers[["content-disposition"]]
         fname <- parse_content_disposition(cd, fallback = row$file)
         out_path <- file.path(dir_path, fname)
-        file.rename(tmp, out_path)
+        if (!isTRUE(file.rename(tmp, out_path)))
+          stop("cannot finalize downloaded file")
 
         if (.unzip && grepl("\\.zip$", fname, ignore.case = TRUE)) {
           extracted <- .verify_unzip(out_path, dir_path)

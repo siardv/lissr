@@ -1,4 +1,11 @@
 # these tests use invented rows and frozen synthetic carriers only
+.nr_claim_partial_warns <- function() tryCatch({
+  list(data_partial = 1L)$data
+  FALSE
+}, warning = function(condition) TRUE)
+
+.nr_claim_partial_before <- .nr_claim_partial_warns()
+
 .nr_claim_saved <- function(version = 1L) {
   readRDS(testthat::test_path("fixtures",
     paste0("source_nonresponse_v", version, "_synthetic.rds")))
@@ -108,7 +115,11 @@ test_that("claims on a frame cannot escape the existing partial data unwrap", {
     .nr_expect_frozen_unguarded(.nr_claim_stable(current), saved$expected$unguarded[[mode]])
   }
   # the frozen T2c baseline emits five partial-$data warnings for this wrapper
-  withr::local_options(warnPartialMatchDollar = TRUE)
+  # R 4.1 keeps warning after the unset option is restored to NULL, so a logical
+  # value is restored instead
+  partial_before <- isTRUE(getOption("warnPartialMatchDollar"))
+  withr::defer(options(warnPartialMatchDollar = partial_before))
+  options(warnPartialMatchDollar = TRUE)
   warnings <- character()
   current <- withCallingHandlers(.nr_claim_clean(list(data_partial = saved$inputs$unguarded)),
     warning = function(warning) {
@@ -117,6 +128,10 @@ test_that("claims on a frame cannot escape the existing partial data unwrap", {
     })
   expect_identical(warnings, rep("partial match of 'data' to 'data_partial'", 5L))
   .nr_expect_frozen_unguarded(.nr_claim_stable(current), saved$expected$unguarded$flag)
+})
+
+test_that("the partial matching warning switch does not outlive the previous test", {
+  expect_identical(.nr_claim_partial_warns(), .nr_claim_partial_before)
 })
 
 test_that("malformed readiness attributes cannot evade missing carrier rejection", {

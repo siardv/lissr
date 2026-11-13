@@ -43,7 +43,7 @@ audit_liss_recipes <- function(paths = NULL, quiet = FALSE) {
               checks = 0L, executable = 0L, documentary = 0L, skip = 0L)
 
   for (p in paths) {
-    r <- yaml::yaml.load_file(p)
+    r <- yaml::yaml.load_file(p, eval.expr = FALSE)
     mod <- r$meta$module %||% basename(p)
     wave_ids <- vapply(r$wave_index %||% list(),
                        function(w) as.character(w$id %||% ""), character(1))

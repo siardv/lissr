@@ -27,7 +27,7 @@
 onboard_new_wave <- function(recipe_path, new_file, prev_wave_id = NULL,
                              prev_file = NULL) {
 
-  recipe <- yaml::yaml.load_file(recipe_path)
+  recipe <- yaml::yaml.load_file(recipe_path, eval.expr = FALSE)
   mod <- recipe$meta$module
 
   cli::cli_h1("onboarding new wave for module {toupper(mod)}")

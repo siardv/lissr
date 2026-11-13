@@ -33,7 +33,7 @@
 #' specifications, and statuses (internal)
 #' @noRd
 .load_action_registry <- function(path) {
-  reg  <- yaml::yaml.load_file(path)
+  reg  <- yaml::yaml.load_file(path, eval.expr = FALSE)
   secs <- c("variable_rules", "harmonization_rules",
             "boundary_rules", "drop_retain_rules")
   acts <- stats::setNames(vector("list", length(secs)), secs)
@@ -186,7 +186,7 @@ if (!exists("validate_source_nonresponse_contracts", mode = "function")) {
 load_recipe <- function(path) {
   cli::cli_inform("loading recipe: {.file {path}}")
   txt <- readLines(path, warn = FALSE, encoding = "UTF-8")
-  r   <- yaml::yaml.load(paste(txt, collapse = "\n"))
+  r   <- yaml::yaml.load(paste(txt, collapse = "\n"), eval.expr = FALSE)
 
   # run pre-flight validation (fail-fast)
   validate_recipe(r, path)
@@ -3183,6 +3183,11 @@ run_validations <- function(df, checks, log_entries) {
             if (!length(forbidden$numeric) && !length(forbidden$character)) next
             forbidden_chr <- forbidden$character
             forbidden <- forbidden$numeric
+            # the 17-digit text of a double names that double alone, so it is
+            # also matched as text: as.numeric() does not read such text
+            # exactly on every platform
+            finite <- forbidden[is.finite(forbidden)]
+            if (length(finite)) forbidden_chr <- c(forbidden_chr, sprintf("%.17g", finite))
             for (col in bl$columns) {
               raw <- df[[col]][bl$rows]
               vals <- suppressWarnings(as.numeric(raw))

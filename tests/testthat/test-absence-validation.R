@@ -396,6 +396,11 @@ test_that("absence preserves logical promotion and both numeric precision matche
                    "1 forbidden value(s)", fixed = TRUE)
     }
   }
+  # the 17-digit text of the neighbouring double names another value
+  check <- .absence_check()
+  check$forbidden_values <- 1 / 3
+  neighbour <- sprintf("%.17g", 1 / 3 + 2^-54)
+  expect_true(.absence_validation(check, data.frame(s005 = neighbour))$results[[1]]$passed)
 })
 
 test_that("absence keeps actual missing observations separate from literal missing codes", {
