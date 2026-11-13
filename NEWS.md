@@ -1,5 +1,10 @@
 # lissr 1.5.1
 
+* Check Windows archive destination entries against their resolved paths so
+  links within the output directory are rejected even when link reporting is
+  incomplete. Ambiguous Windows short-name paths are rejected. Archive tests
+  use a supported assertion for filesystems with distinct case/Unicode names.
+
 * `value_absence` checks also compare text values with the 17-significant-digit
   form of each numeric forbidden value. Text in that form is matched on every
   platform, including R 4.1 on Apple silicon, where `as.numeric()` can read it

@@ -132,12 +132,33 @@ sanitize_filename <- function(x, fallback = "download.bin") {
        sizes = listing$Length, file_indices = file_indices)
 }
 
+# compare listed entries with resolved paths when Windows link reporting is incomplete
+.liss_zip_windows_component <- function(path) {
+  parent <- dirname(path)
+  if (!dir.exists(parent)) return(invisible(NULL))
+  entries <- list.files(parent, all.files = TRUE, no.. = TRUE)
+  name <- basename(path)
+  entry <- entries[entries == name]
+  if (!length(entry)) entry <- entries[tolower(entries) == tolower(name)]
+  if (!length(entry)) {
+    if (file.exists(path) || dir.exists(path) || grepl("~[0-9]", name))
+      stop("ambiguous Windows ZIP destination component")
+    return(invisible(NULL))
+  }
+  if (length(entry) != 1L) stop("ambiguous Windows ZIP destination component")
+  expected <- file.path(normalizePath(parent, winslash = "/", mustWork = TRUE), entry)
+  resolved <- normalizePath(file.path(parent, entry), winslash = "/", mustWork = TRUE)
+  if (!identical(resolved, expected)) stop("linked Windows ZIP destination component")
+  invisible(NULL)
+}
+
 # check every existing component before creating or replacing a destination
 .liss_zip_target <- function(root, parts, directory, blocked = character()) {
   current <- root
   prefix <- paste0(sub("/+$", "", root), "/")
   for (index in seq_along(parts)) {
     current <- file.path(current, parts[[index]])
+    if (.Platform$OS.type == "windows") .liss_zip_windows_component(current)
     link <- Sys.readlink(current)
     if (!is.na(link) && nzchar(link)) stop("linked ZIP destination component")
     real <- if (file.exists(current) || dir.exists(current))

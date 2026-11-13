@@ -84,7 +84,7 @@ test_that("archive staging rejects file aliases on filesystems that alias those 
       expect_null(result, info = name)
       expect_identical(list.files(output, all.files = TRUE, no.. = TRUE), character(), info = name)
     } else {
-      expect_length(result, 2L, info = name)
+      expect_identical(length(result), 2L, info = name)
       expect_identical(.archive_read(file.path(output, names[[1L]])), charToRaw("first"))
       expect_identical(.archive_read(file.path(output, names[[2L]])), charToRaw("second"))
     }
@@ -138,6 +138,58 @@ test_that("archive destinations reject linked parents, leaves and dangling links
     expect_false(file.exists(file.path(outside, "missing.txt")))
     expect_identical(.archive_stage_names(output), character())
   }
+})
+
+test_that("Windows destination checks reject redirects even without link reporting", {
+  root <- .archive_test_root()
+  on.exit(unlink(root, recursive = TRUE, expand = FALSE), add = TRUE)
+  target <- lissr:::.liss_zip_target
+  environment(target) <- list2env(list(
+    .Platform = utils::modifyList(.Platform, list(OS.type = "windows")),
+    Sys.readlink = function(paths) rep("", length(paths))), parent = environment(target))
+  testthat::local_mocked_bindings(.liss_zip_target = target, .package = "lissr")
+  nested <- .archive_fixture_write("nested", file.path(root, "nested.zip"))
+  single <- .archive_fixture_write("single", file.path(root, "single.zip"))
+  for (kind in c("inside_parent", "inside_leaf", "dangling")) {
+    output <- file.path(root, kind)
+    dir.create(output)
+    inside <- file.path(output, "real")
+    dir.create(inside)
+    marker <- file.path(inside, "payload.txt")
+    writeBin(charToRaw("inside unchanged"), marker)
+    parent <- kind == "inside_parent"
+    destination <- if (kind == "dangling") file.path(inside, "missing.txt") else if (parent) inside else marker
+    link <- file.path(output, if (parent) "child" else "payload.txt")
+    expect_true(file.symlink(destination, link), info = kind)
+    archive <- if (parent) nested else single
+    before <- .archive_read(archive)
+    expect_null(lissr:::.verify_unzip(archive, output), info = kind)
+    expect_identical(.archive_read(marker), charToRaw("inside unchanged"), info = kind)
+    expect_false(file.exists(file.path(inside, "missing.txt")), info = kind)
+    expect_identical(.archive_read(archive), before, info = kind)
+    expect_identical(.archive_stage_names(output), character(), info = kind)
+  }
+  output <- file.path(root, "ordinary")
+  dir.create(output)
+  writeBin(charToRaw("old payload"), file.path(output, "payload.txt"))
+  expect_identical(lissr:::.verify_unzip(single, output), file.path(output, "payload.txt"))
+  expect_identical(.archive_read(file.path(output, "payload.txt")), charToRaw("new payload"))
+  expect_identical(lissr:::.verify_unzip(nested, output), file.path(output, "child/payload.txt"))
+  expect_identical(.archive_read(file.path(output, "child", "payload.txt")), charToRaw("new nested"))
+})
+
+test_that("Windows destination inspection preserves regular names and rejects ambiguous aliases", {
+  root <- .archive_test_root()
+  on.exit(unlink(root, recursive = TRUE, expand = FALSE), add = TRUE)
+  inspect <- lissr:::.liss_zip_windows_component
+  regular <- file.path(root, "MixedCase.txt")
+  writeBin(charToRaw("unchanged"), regular)
+  expect_null(inspect(regular))
+  expect_null(inspect(file.path(root, "MIXEDCASE.TXT")))
+  expect_null(inspect(file.path(root, "new.txt")))
+  expect_null(inspect(file.path(root, "new", "payload.txt")))
+  expect_error(inspect(file.path(root, "MIXEDC~1.TXT")), "ambiguous Windows")
+  expect_identical(.archive_read(regular), charToRaw("unchanged"))
 })
 
 test_that("archive staging accepts a caller selected root alias but rejects descendants", {
